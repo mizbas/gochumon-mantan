@@ -739,6 +739,19 @@ function tapRack(x){
   flights.push({c, k: tg.k, j: tg.j, from: {x: p.x, y: p.y}, t0: T, dur: 520}); stored.splice(k, 1);
   bottlesOut++; thaw(); play("pick", {gain:.5, rate:1.2});
 }
+// 満タン瓶は、その色の注文があれば自動で渡す（栓が閉まるのを見せてから）
+function autoDeliver(){
+  bottles.forEach((b,i) => {
+    if (!b.corked || busy.has(i) || T - (b.corkT||0) < 650) return;
+    if (findTarget(b.units[0].c)){ if (sel === i) sel = -1; deliver(i); }
+  });
+  for (let k=stored.length-1;k>=0;k--){
+    const c = stored[k], tg = findTarget(c); if (!tg) continue;
+    seats[tg.k].res[tg.j] = true; const p = rackSlot(k);
+    flights.push({c, k: tg.k, j: tg.j, from: {x: p.x, y: p.y}, t0: T, dur: 520}); stored.splice(k, 1);
+    bottlesOut++; thaw(); play("pick", {gain:.5, rate:1.2});
+  }
+}
 function buyBottle(){
   if (!running || bought >= BUY_COST.length) return; audio();
   const cost = BUY_COST[bought];
@@ -813,6 +826,7 @@ function frame(ts){
   if (running){
     T += dt*SPEED;
     if (T >= iceTick){ iceTick = T + 15000; if (bottles.some(b => b.ice)) thaw(); }
+    autoDeliver();
     updateSeats();
     if (window.__bot) bot();
   }
@@ -944,9 +958,7 @@ function draw(){
         ctx.fillStyle = "#2f6f8f"; ctx.font = `900 ${sh.w*.4}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.ice, x, y + 1); }
       ctx.restore(); }
     if (b.corked && !wanted().includes(b.units[0].c)){ ctx.fillStyle = "#bba895"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-      ctx.fillText("タップで保管", p.x, p.y - sh.H/2 - sh.w*.3); }
-    else if (b.corked && wanted().includes(b.units[0].c)){ ctx.fillStyle = "#f2b54a"; ctx.font = `900 ${Math.max(11, sh.w*.28)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-      ctx.fillText("タップで渡す", p.x, p.y - sh.H/2 - sh.w*.3 + Math.sin(T/200)*2); }
+      ctx.fillText("注文待ち", p.x, p.y - sh.H/2 - sh.w*.3); }
     else if (!b.units.length && !b.ice){ ctx.fillStyle = "#7d6c5d"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("空き瓶", p.x, p.y + sh.H/2 + sh.w*.28); }
   });
   // 注いでいる瓶
@@ -1050,10 +1062,10 @@ function showIntro(i){
   $("introRules").innerHTML = i === 0 ? `
     ・瓶をタップ → 別の瓶をタップで注ぎます<br>
     ・同じ色が4杯たまると<b>栓をして満タン瓶</b>のできあがり<br>
-    ・満タン瓶をタップすると、その色を頼んだお客さんに渡せます<br>
+    ・満タン瓶は、その色を頼んだお客さんに自動で渡ります。注文がなければ棚で待機します<br>
     ・注文の瓶を全部渡すと代金がもらえます。早いとチップ、続けて満足させると連続ボーナス<br>
     ・「仕入れ」をタップすると、上に見えている瓶の中身が空き瓶に入ります（空き瓶が必要）<br>
-    ・注文のない色の満タン瓶は、タップで「保管棚」へ（3本まで）。あとで注文が来たら保管棚から渡せます<br>
+    ・棚をあけたいときは、待機中の満タン瓶をタップすると「保管棚」へ下げられます（3本まで。注文が来たら自動で渡ります）<br>
     ・空き瓶が足りないときは、プレイ中に財布のお金で空き瓶を追加できます（1ステージ2本まで）<br>
     ・こまったら瓶を選んで「流し」へ（1杯 ${yen(DUMP_COST)}）` :
     (S.n === 1 && WORLDS[S.w-1].note ? `<b>新しいお店：</b>${WORLDS[S.w-1].note}<br><br>` : "") +
