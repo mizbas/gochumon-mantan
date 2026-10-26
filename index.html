@@ -291,46 +291,46 @@ const WORLDS = [
   {w:5, name:"港町の酒場",     note:"仕入れは回数に限りがあります（残り回数は仕入れ台に表示）。「団体さん」は2色を2本ずつ、満タン瓶4本の大口注文で、待てる時間は長く、代金は2倍。"},
 ];
 const STAGES = [
-  {w:1, colors:3, ord:[1,1], seats:2, guests:6,  pat:60, shelf:3, spare:2, goal:700},
-  {w:1, colors:3, ord:[1,2], seats:2, guests:8,  pat:55, shelf:3, spare:2, goal:1300},
-  {w:1, colors:4, ord:[1,2], seats:3, guests:9,  pat:52, shelf:4, spare:2, goal:1500},
-  {w:1, colors:4, ord:[1,2], seats:3, guests:10, pat:50, shelf:4, spare:2, goal:1600},
-  {w:1, colors:5, ord:[1,2], seats:3, guests:10, pat:46, shelf:5, spare:2, goal:1800},
-  {w:1, colors:5, ord:[1,3], seats:3, guests:11, pat:48, shelf:5, spare:2, goal:2000},
-  {w:1, colors:6, ord:[1,3], seats:3, guests:11, pat:52, shelf:6, spare:2, goal:2200},
-  {w:1, colors:6, ord:[2,3], seats:3, guests:10, pat:58, shelf:6, spare:2, goal:2500},
-  {w:2, colors:4, ord:[1,2], seats:3, guests:8,  pat:58, shelf:4, spare:2, goal:1100, hide:true},
-  {w:2, colors:4, ord:[1,2], seats:3, guests:9,  pat:56, shelf:4, spare:2, goal:1300, hide:true},
-  {w:2, colors:5, ord:[1,2], seats:3, guests:9,  pat:55, shelf:5, spare:2, goal:1400, hide:true},
-  {w:2, colors:5, ord:[1,2], seats:3, guests:10, pat:54, shelf:5, spare:2, goal:1600, hide:true},
-  {w:2, colors:5, ord:[1,3], seats:3, guests:10, pat:55, shelf:5, spare:2, goal:1700, hide:true},
-  {w:2, colors:6, ord:[1,3], seats:3, guests:10, pat:57, shelf:6, spare:2, goal:1900, hide:true},
-  {w:2, colors:6, ord:[1,3], seats:3, guests:11, pat:57, shelf:6, spare:2, goal:2000, hide:true},
-  {w:2, colors:6, ord:[2,3], seats:3, guests:9,  pat:70, shelf:6, spare:2, goal:2200, hide:true},
-  {w:3, colors:5, ord:[1,2], seats:3, guests:9,  pat:52, shelf:5, spare:2, goal:1500, rush:.25},
-  {w:3, colors:5, ord:[1,2], seats:3, guests:10, pat:50, shelf:5, spare:2, goal:1800, rush:.3},
-  {w:3, colors:6, ord:[1,2], seats:3, guests:10, pat:52, shelf:6, spare:2, goal:1900, rush:.3},
-  {w:3, colors:6, ord:[1,3], seats:3, guests:10, pat:54, shelf:6, spare:2, goal:2000, rush:.3},
-  {w:3, colors:6, ord:[1,3], seats:3, guests:11, pat:56, shelf:6, spare:2, goal:2200, rush:.3, hide:true},
-  {w:3, colors:7, ord:[1,3], seats:3, guests:11, pat:56, shelf:7, spare:2, goal:2400, rush:.3},
-  {w:3, colors:7, ord:[1,3], seats:3, guests:12, pat:58, shelf:7, spare:2, goal:2600, rush:.35, hide:true},
-  {w:3, colors:7, ord:[2,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:2800, rush:.35, hide:true},
-  {w:4, colors:5, ord:[1,2], seats:3, guests:9,  pat:56, shelf:5, spare:2, goal:1700, ice:[2]},
-  {w:4, colors:5, ord:[1,2], seats:3, guests:10, pat:55, shelf:5, spare:2, goal:1800, ice:[2,4]},
-  {w:4, colors:6, ord:[1,2], seats:3, guests:10, pat:56, shelf:6, spare:2, goal:1900, ice:[2,4], iceSpare:true},
-  {w:4, colors:6, ord:[1,3], seats:3, guests:10, pat:62, shelf:6, spare:2, goal:2000, ice:[2,4]},
-  {w:4, colors:6, ord:[1,3], seats:3, guests:11, pat:58, shelf:6, spare:2, goal:2100, ice:[2,4], hide:true},
-  {w:4, colors:7, ord:[1,3], seats:3, guests:11, pat:58, shelf:7, spare:2, goal:2200, ice:[2,3,5], iceSpare:true},
-  {w:4, colors:7, ord:[1,3], seats:3, guests:11, pat:58, shelf:7, spare:2, goal:2300, ice:[3,5], rush:.3},
-  {w:4, colors:7, ord:[2,3], seats:3, guests:10, pat:66, shelf:7, spare:2, goal:2400, ice:[2,4,6], hide:true},
-  {w:5, colors:5, ord:[1,2], seats:3, guests:9,  pat:56, shelf:5, spare:2, goal:2000, supply:26, vip:.15},
-  {w:5, colors:5, ord:[1,2], seats:3, guests:10, pat:55, shelf:5, spare:2, goal:2100, supply:28, vip:.2},
-  {w:5, colors:6, ord:[1,2], seats:3, guests:10, pat:56, shelf:6, spare:2, goal:2200, supply:30, vip:.2},
-  {w:5, colors:6, ord:[1,3], seats:3, guests:10, pat:64, shelf:6, spare:2, goal:2300, supply:32, vip:.2, rush:.2},
-  {w:5, colors:6, ord:[1,3], seats:3, guests:11, pat:64, shelf:6, spare:2, goal:2300, supply:34, vip:.2, hide:true},
-  {w:5, colors:7, ord:[1,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:2400, supply:36, vip:.25, ice:[2,4]},
-  {w:5, colors:7, ord:[1,3], seats:3, guests:12, pat:64, shelf:7, spare:2, goal:2500, supply:38, vip:.25, rush:.25, hide:true},
-  {w:5, colors:7, ord:[2,3], seats:3, guests:11, pat:72, shelf:7, spare:2, goal:2600, supply:36, vip:.3, ice:[3,5], hide:true},
+  {w:1, colors:3, ord:[1,1], seats:2, guests:6,  pat:60, shelf:3, spare:2, goal:800},
+  {w:1, colors:3, ord:[1,2], seats:2, guests:8,  pat:55, shelf:3, spare:2, goal:1600},
+  {w:1, colors:4, ord:[1,2], seats:3, guests:9,  pat:52, shelf:4, spare:2, goal:1800},
+  {w:1, colors:4, ord:[1,2], seats:3, guests:10, pat:50, shelf:4, spare:2, goal:2000},
+  {w:1, colors:5, ord:[1,2], seats:3, guests:10, pat:46, shelf:5, spare:2, goal:2300},
+  {w:1, colors:5, ord:[1,3], seats:3, guests:11, pat:48, shelf:5, spare:2, goal:2600},
+  {w:1, colors:6, ord:[1,3], seats:3, guests:11, pat:52, shelf:6, spare:2, goal:2800},
+  {w:1, colors:6, ord:[2,3], seats:3, guests:10, pat:58, shelf:6, spare:2, goal:3300},
+  {w:2, colors:4, ord:[1,2], seats:3, guests:8,  pat:58, shelf:4, spare:2, goal:1500, hide:true},
+  {w:2, colors:4, ord:[1,2], seats:3, guests:9,  pat:56, shelf:4, spare:2, goal:1700, hide:true},
+  {w:2, colors:5, ord:[1,2], seats:3, guests:9,  pat:55, shelf:5, spare:2, goal:1900, hide:true},
+  {w:2, colors:5, ord:[1,2], seats:3, guests:10, pat:54, shelf:5, spare:2, goal:2200, hide:true},
+  {w:2, colors:5, ord:[1,3], seats:3, guests:10, pat:55, shelf:5, spare:2, goal:2400, hide:true},
+  {w:2, colors:6, ord:[1,3], seats:3, guests:10, pat:57, shelf:6, spare:2, goal:2700, hide:true},
+  {w:2, colors:6, ord:[1,3], seats:3, guests:11, pat:57, shelf:6, spare:2, goal:2800, hide:true},
+  {w:2, colors:6, ord:[2,3], seats:3, guests:9,  pat:70, shelf:6, spare:2, goal:3100, hide:true},
+  {w:3, colors:5, ord:[1,2], seats:3, guests:9,  pat:52, shelf:5, spare:2, goal:2200, rush:.25},
+  {w:3, colors:5, ord:[1,2], seats:3, guests:10, pat:50, shelf:5, spare:2, goal:2600, rush:.3},
+  {w:3, colors:6, ord:[1,2], seats:3, guests:10, pat:52, shelf:6, spare:2, goal:2800, rush:.3},
+  {w:3, colors:6, ord:[1,3], seats:3, guests:10, pat:54, shelf:6, spare:2, goal:3000, rush:.3},
+  {w:3, colors:6, ord:[1,3], seats:3, guests:11, pat:56, shelf:6, spare:2, goal:3300, rush:.3, hide:true},
+  {w:3, colors:7, ord:[1,3], seats:3, guests:11, pat:56, shelf:7, spare:2, goal:3700, rush:.3},
+  {w:3, colors:7, ord:[1,3], seats:3, guests:12, pat:58, shelf:7, spare:2, goal:4000, rush:.35, hide:true},
+  {w:3, colors:7, ord:[2,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:4400, rush:.35, hide:true},
+  {w:4, colors:5, ord:[1,2], seats:3, guests:9,  pat:56, shelf:5, spare:2, goal:2700, ice:[2]},
+  {w:4, colors:5, ord:[1,2], seats:3, guests:10, pat:55, shelf:5, spare:2, goal:2900, ice:[2,4]},
+  {w:4, colors:6, ord:[1,2], seats:3, guests:10, pat:56, shelf:6, spare:2, goal:3000, ice:[2,4], iceSpare:true},
+  {w:4, colors:6, ord:[1,3], seats:3, guests:10, pat:62, shelf:6, spare:2, goal:3200, ice:[2,4]},
+  {w:4, colors:6, ord:[1,3], seats:3, guests:11, pat:58, shelf:6, spare:2, goal:3400, ice:[2,4], hide:true},
+  {w:4, colors:7, ord:[1,3], seats:3, guests:11, pat:58, shelf:7, spare:2, goal:3600, ice:[2,3,5], iceSpare:true},
+  {w:4, colors:7, ord:[1,3], seats:3, guests:11, pat:58, shelf:7, spare:2, goal:3800, ice:[3,5], rush:.3},
+  {w:4, colors:7, ord:[2,3], seats:3, guests:10, pat:66, shelf:7, spare:2, goal:4000, ice:[2,4,6], hide:true},
+  {w:5, colors:5, ord:[1,2], seats:3, guests:9,  pat:56, shelf:5, spare:2, goal:3400, supply:26, vip:.15},
+  {w:5, colors:5, ord:[1,2], seats:3, guests:10, pat:55, shelf:5, spare:2, goal:3600, supply:28, vip:.2},
+  {w:5, colors:6, ord:[1,2], seats:3, guests:10, pat:56, shelf:6, spare:2, goal:3800, supply:30, vip:.2},
+  {w:5, colors:6, ord:[1,3], seats:3, guests:10, pat:64, shelf:6, spare:2, goal:4000, supply:32, vip:.2, rush:.2},
+  {w:5, colors:6, ord:[1,3], seats:3, guests:11, pat:64, shelf:6, spare:2, goal:4000, supply:34, vip:.2, hide:true},
+  {w:5, colors:7, ord:[1,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:4200, supply:36, vip:.25, ice:[2,4]},
+  {w:5, colors:7, ord:[1,3], seats:3, guests:12, pat:64, shelf:7, spare:2, goal:4500, supply:38, vip:.25, rush:.25, hide:true},
+  {w:5, colors:7, ord:[2,3], seats:3, guests:11, pat:72, shelf:7, spare:2, goal:4700, supply:36, vip:.3, ice:[3,5], hide:true},
 ];
 STAGES.forEach(st => { const n = STAGES.filter(x => x.w === st.w).indexOf(st) + 1; st.id = st.w + "-" + n; st.n = n; });
 const STORE_MAX = 3, RACK_COST = [200, 400], BUY_COST = [300, 600];
@@ -339,9 +339,9 @@ const storeMax = () => has("rack") ? 4 : STORE_MAX;
 const RACK_COST_ALL = [200, 400, 800];
 const PRICE = 150, DUMP_COST = 10;
 const UPG = [
-  {id:"pat",    name:"くつろげる椅子",   desc:"お客さんの待てる時間 +12%",        max:6, cost:[300, 700, 1400, 2600, 4500, 7000]},
-  {id:"price",  name:"上等なお酒",       desc:"1本あたりの値段 +10%",              max:8, cost:[400, 900, 1800, 3200, 5000, 8000, 12000, 18000]},
-  {id:"tip",    name:"笑顔の接客",       desc:"早く出したときのチップ +10%",       max:5, cost:[300, 800, 1800, 3500, 6000]},
+  {id:"pat",    name:"くつろげる椅子",   desc:"お客さんの待てる時間 +12%",        max:6, cost:[400, 1000, 2000, 4000, 7000, 12000]},
+  {id:"price",  name:"上等なお酒",       desc:"1本あたりの値段 +10%",              max:8, cost:[500, 1200, 2500, 4500, 8000, 14000, 22000, 35000]},
+  {id:"tip",    name:"笑顔の接客",       desc:"早く出したときのチップ +10%",       max:5, cost:[400, 1000, 2500, 5000, 9000]},
   {id:"refill", name:"仕入れの目利き",   desc:"仕入れる瓶に入っている色の種類が少なくなる", max:2, cost:[700, 2000]},
 ];
 const BOTTLES = [
@@ -349,29 +349,29 @@ const BOTTLES = [
   {id:"flask",   name:"三角フラスコ",   cost:1500},
   {id:"tube",    name:"試験管",         cost:2500},
   {id:"square",  name:"角瓶",           cost:4000},
-  {id:"gold",    name:"金の瓶",         cost:30000, rank:9},
-  {id:"crystal", name:"クリスタルの瓶", cost:60000, rank:14},
+  {id:"gold",    name:"金の瓶",         cost:120000, rank:14},
+  {id:"crystal", name:"クリスタルの瓶", cost:250000, rank:20},
 ];
 const SPECIAL = [
-  {id:"cat",    ic:"🐈", name:"看板ねこ",       desc:"カウンターに猫が座ります。チップ +20%",              cost:8000,  rank:3},
-  {id:"spout",  ic:"✨", name:"金の注ぎ口",     desc:"注ぐ速さが1.5倍に",                                  cost:12000, rank:5},
-  {id:"ledger", ic:"📒", name:"目利きの帳面",   desc:"仕入れ台で3本先まで中身が見える",                    cost:15000, rank:6},
-  {id:"rack",   ic:"🗄️", name:"大きな保管棚",   desc:"保管棚が最初から2つ（最大4つまで増やせる）",         cost:20000, rank:8},
-  {id:"juke",   ic:"🎵", name:"ジュークボックス", desc:"連続ボーナスの上限が2倍→3倍に",                    cost:30000, rank:10},
-  {id:"sand",   ic:"⏳", name:"魔法の砂時計",   desc:"1ステージに1回、待っている全員の待ち時間を+10秒",    cost:40000, rank:12},
-  {id:"branch", ic:"🏪", name:"二号店の看板",   desc:"毎回の売上の10%が「評判ボーナス」として財布に入る",  cost:60000, rank:15},
+  {id:"cat",    ic:"🐈", name:"看板ねこ",       desc:"カウンターに猫が座ります。チップ +20%",              cost:30000,  rank:5},
+  {id:"spout",  ic:"✨", name:"金の注ぎ口",     desc:"注ぐ速さが1.5倍に",                                  cost:50000,  rank:8},
+  {id:"ledger", ic:"📒", name:"目利きの帳面",   desc:"仕入れ台で3本先まで中身が見える",                    cost:60000,  rank:10},
+  {id:"rack",   ic:"🗄️", name:"大きな保管棚",   desc:"保管棚が最初から2つ（最大4つまで増やせる）",         cost:90000,  rank:12},
+  {id:"juke",   ic:"🎵", name:"ジュークボックス", desc:"連続ボーナスの上限が2倍→3倍に",                    cost:150000, rank:15},
+  {id:"sand",   ic:"⏳", name:"魔法の砂時計",   desc:"1ステージに1回、待っている全員の待ち時間を+10秒",    cost:200000, rank:18},
+  {id:"branch", ic:"🏪", name:"二号店の看板",   desc:"毎回の売上の10%が「評判ボーナス」として財布に入る",  cost:300000, rank:22},
 ];
 const ROOMS = [
   {id:"walnut", name:"木のバー",         cost:0,    wall:["#5a3a24","#2a1b12","#140e0b"], counter:"#6a4129", ctop:"#8a5a3a", under:"#24170f", shelf:"#5b3c27", stop:"#7a5436", chair:"rgba(0,0,0,.25)"},
   {id:"marble", name:"大理石のラウンジ", cost:2000, wall:["#6b6a72","#34333a","#1a1a1f"], counter:"#d9d4cc", ctop:"#f4f1ea", under:"#26252b", shelf:"#8d8a86", stop:"#bdb8b0", chair:"rgba(0,0,0,.3)"},
   {id:"neon",   name:"ネオンの夜",       cost:3500, wall:["#5b2a7a","#22123a","#0d0818"], counter:"#2a2140", ctop:"#e94fd0", under:"#120b1f", shelf:"#3a2f5c", stop:"#4fd8e9", chair:"rgba(233,79,208,.18)"},
   {id:"wafu",   name:"和の酒場",         cost:5000, wall:["#6b4a2a","#3a2a1a","#1a120b"], counter:"#c49a5c", ctop:"#e2c08a", under:"#2a1d12", shelf:"#8a6a3e", stop:"#b08a52", chair:"rgba(30,60,40,.35)"},
-  {id:"palace", name:"宮殿のバー",       cost:80000, rank:16, wall:["#8a2a3a","#4a1020","#1e050c"], counter:"#c9a03a", ctop:"#f3d77a", under:"#2a0a12", shelf:"#9a7a2a", stop:"#f3d77a", chair:"rgba(243,215,122,.18)"},
-  {id:"space",  name:"宇宙のバー",       cost:150000, rank:20, wall:["#24305e","#0e1430","#04060f"], counter:"#3a4670", ctop:"#8fd3f4", under:"#0a0e20", shelf:"#2a3560", stop:"#8fd3f4", chair:"rgba(143,211,244,.15)"},
+  {id:"palace", name:"宮殿のバー",       cost:300000, rank:22, wall:["#8a2a3a","#4a1020","#1e050c"], counter:"#c9a03a", ctop:"#f3d77a", under:"#2a0a12", shelf:"#9a7a2a", stop:"#f3d77a", chair:"rgba(243,215,122,.18)"},
+  {id:"space",  name:"宇宙のバー",       cost:500000, rank:26, wall:["#24305e","#0e1430","#04060f"], counter:"#3a4670", ctop:"#8fd3f4", under:"#0a0e20", shelf:"#2a3560", stop:"#8fd3f4", chair:"rgba(143,211,244,.15)"},
 ];
 // ランク：累計売上で 1〜30。数ランクごとに称号が変わる
 const RANK_MAX = 30;
-const rankReq = n => n <= 1 ? 0 : Math.round(400*Math.pow(n-1, 1.85)/100)*100;
+const rankReq = n => n <= 1 ? 0 : Math.round(600*Math.pow(n-1, 1.9)/100)*100;
 const rankOf = total => { let r = 1; while (r < RANK_MAX && total >= rankReq(r+1)) r++; return r; };
 const rankReward = n => n*150;
 const TITLES = [[1,"見習い"],[3,"新人バーテンダー"],[6,"一人前のバーテンダー"],[9,"シェイカーの達人"],[12,"名店の店長"],[15,"街の人気者"],[18,"満タン職人"],[21,"伝説のマスター"],[25,"満タンの神様"],[30,"永遠の看板"]];
@@ -1046,7 +1046,7 @@ function draw(){
     if (shakeT[i] && T - shakeT[i] < 300){ const a = (T - shakeT[i])/300; x += Math.sin(a*Math.PI*6)*(1-a)*sh.w*.1; }
     ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(p.x, p.y + sh.H/2 - 1, sh.w*.45, sh.w*.1, 0, 0, 7); ctx.fill();
     let layers = b.units.map(u => ({c:u.c, v:1, h:u.h, rev:u.rev})), wave = 0;
-    if (pr && pr.to === i){ const prog = Math.max(0, Math.min(1, (T - pr.t0 - pr.T1)/pr.T2)); layers = pr.dstBefore.map(u => ({c:u.c, v:1})).concat([{c:pr.c, v: pr.n*prog}]); wave = prog>0 && prog<1 ? sh.w*.035 : 0; }
+    if (pr && pr.to === i){ const prog = Math.max(0, Math.min(1, (T - pr.t0 - pr.T1)/pr.T2)); layers = pr.dstBefore.map(u => ({c:u.c, v:1, h:u.h})).concat([{c:pr.c, v: pr.n*prog}]); wave = prog>0 && prog<1 ? sh.w*.035 : 0; }
     else if (waveT[i]){ const a = (T - waveT[i])/900; if (a < 1) wave = sh.w*.04*(1-a); }
     if (b.refillT != null && T - b.refillT < 500){ const k = (T - b.refillT)/500; layers = layers.map(L => ({...L, v: L.v*k})); }
     let corkK = null, glow = false;
