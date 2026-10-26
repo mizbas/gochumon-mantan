@@ -349,31 +349,32 @@ const BOTTLES = [
   {id:"flask",   name:"三角フラスコ",   cost:1500},
   {id:"tube",    name:"試験管",         cost:2500},
   {id:"square",  name:"角瓶",           cost:4000},
-  {id:"gold",    name:"金の瓶",         cost:120000, rank:14},
-  {id:"crystal", name:"クリスタルの瓶", cost:250000, rank:20},
+  {id:"gold",    name:"金の瓶",         cost:120000, rank:12},
+  {id:"crystal", name:"クリスタルの瓶", cost:250000, rank:15},
 ];
 const SPECIAL = [
-  {id:"cat",    ic:"🐈", name:"看板ねこ",       desc:"カウンターに猫が座ります。チップ +20%",              cost:30000,  rank:5},
-  {id:"spout",  ic:"✨", name:"金の注ぎ口",     desc:"注ぐ速さが1.5倍に",                                  cost:50000,  rank:8},
+  {id:"cat",    ic:"🐈", name:"看板ねこ",       desc:"カウンターに猫が座ります。チップ +20%",              cost:30000,  rank:7},
+  {id:"spout",  ic:"✨", name:"金の注ぎ口",     desc:"注ぐ速さが1.5倍に",                                  cost:50000,  rank:9},
   {id:"ledger", ic:"📒", name:"目利きの帳面",   desc:"仕入れ台で3本先まで中身が見える",                    cost:60000,  rank:10},
-  {id:"rack",   ic:"🗄️", name:"大きな保管棚",   desc:"保管棚が最初から2つ（最大4つまで増やせる）",         cost:90000,  rank:12},
-  {id:"juke",   ic:"🎵", name:"ジュークボックス", desc:"連続ボーナスの上限が2倍→3倍に",                    cost:150000, rank:15},
-  {id:"sand",   ic:"⏳", name:"魔法の砂時計",   desc:"1ステージに1回、待っている全員の待ち時間を+10秒",    cost:200000, rank:18},
-  {id:"branch", ic:"🏪", name:"二号店の看板",   desc:"毎回の売上の10%が「評判ボーナス」として財布に入る",  cost:300000, rank:22},
+  {id:"rack",   ic:"🗄️", name:"大きな保管棚",   desc:"保管棚が最初から2つ（最大4つまで増やせる）",         cost:90000,  rank:11},
+  {id:"juke",   ic:"🎵", name:"ジュークボックス", desc:"連続ボーナスの上限が2倍→3倍に",                    cost:150000, rank:13},
+  {id:"sand",   ic:"⏳", name:"魔法の砂時計",   desc:"1ステージに1回、待っている全員の待ち時間を+10秒",    cost:200000, rank:14},
+  {id:"branch", ic:"🏪", name:"二号店の看板",   desc:"毎回の売上の10%が「評判ボーナス」として財布に入る",  cost:300000, rank:16},
 ];
 const ROOMS = [
   {id:"walnut", name:"木のバー",         cost:0,    wall:["#5a3a24","#2a1b12","#140e0b"], counter:"#6a4129", ctop:"#8a5a3a", under:"#24170f", shelf:"#5b3c27", stop:"#7a5436", chair:"rgba(0,0,0,.25)"},
   {id:"marble", name:"大理石のラウンジ", cost:2000, wall:["#6b6a72","#34333a","#1a1a1f"], counter:"#d9d4cc", ctop:"#f4f1ea", under:"#26252b", shelf:"#8d8a86", stop:"#bdb8b0", chair:"rgba(0,0,0,.3)"},
   {id:"neon",   name:"ネオンの夜",       cost:3500, wall:["#5b2a7a","#22123a","#0d0818"], counter:"#2a2140", ctop:"#e94fd0", under:"#120b1f", shelf:"#3a2f5c", stop:"#4fd8e9", chair:"rgba(233,79,208,.18)"},
   {id:"wafu",   name:"和の酒場",         cost:5000, wall:["#6b4a2a","#3a2a1a","#1a120b"], counter:"#c49a5c", ctop:"#e2c08a", under:"#2a1d12", shelf:"#8a6a3e", stop:"#b08a52", chair:"rgba(30,60,40,.35)"},
-  {id:"palace", name:"宮殿のバー",       cost:300000, rank:22, wall:["#8a2a3a","#4a1020","#1e050c"], counter:"#c9a03a", ctop:"#f3d77a", under:"#2a0a12", shelf:"#9a7a2a", stop:"#f3d77a", chair:"rgba(243,215,122,.18)"},
-  {id:"space",  name:"宇宙のバー",       cost:500000, rank:26, wall:["#24305e","#0e1430","#04060f"], counter:"#3a4670", ctop:"#8fd3f4", under:"#0a0e20", shelf:"#2a3560", stop:"#8fd3f4", chair:"rgba(143,211,244,.15)"},
+  {id:"palace", name:"宮殿のバー",       cost:300000, rank:17, wall:["#8a2a3a","#4a1020","#1e050c"], counter:"#c9a03a", ctop:"#f3d77a", under:"#2a0a12", shelf:"#9a7a2a", stop:"#f3d77a", chair:"rgba(243,215,122,.18)"},
+  {id:"space",  name:"宇宙のバー",       cost:500000, rank:20, wall:["#24305e","#0e1430","#04060f"], counter:"#3a4670", ctop:"#8fd3f4", under:"#0a0e20", shelf:"#2a3560", stop:"#8fd3f4", chair:"rgba(143,211,244,.15)"},
 ];
 // ランク：累計売上で 1〜30。数ランクごとに称号が変わる
 const RANK_MAX = 30;
-const rankReq = n => n <= 1 ? 0 : Math.round(600*Math.pow(n-1, 1.9)/100)*100;
+// 後半ほど急に重くなる：全ステージを一通りクリアしてランク14〜15、最高ランク30は累計約410万円
+const rankReq = n => n <= 1 ? 0 : Math.round(400*Math.pow(n-1, 2)*Math.pow(1.09, n-1)/100)*100;
 const rankOf = total => { let r = 1; while (r < RANK_MAX && total >= rankReq(r+1)) r++; return r; };
-const rankReward = n => n*150;
+const rankReward = n => Math.max(150*n, Math.round((rankReq(n) - rankReq(n-1))*.05/50)*50);
 const TITLES = [[1,"見習い"],[3,"新人バーテンダー"],[6,"一人前のバーテンダー"],[9,"シェイカーの達人"],[12,"名店の店長"],[15,"街の人気者"],[18,"満タン職人"],[21,"伝説のマスター"],[25,"満タンの神様"],[30,"永遠の看板"]];
 const titleOfRank = r => { let t = TITLES[0][1]; for (const [n, name] of TITLES) if (r >= n) t = name; return t; };
 const has = id => (save.special || []).includes(id);
