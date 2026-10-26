@@ -1079,7 +1079,7 @@ function checkTrophies(quiet){
 }
 function runToast(){
   if (toastOn || !toastQ.length) return; toastOn = true;
-  const t = toastQ.shift(); $("toastB").textContent = t.name; $("toast").querySelector(".ic").textContent = t.ic;
+  const t = toastQ.shift(); $("toastB").textContent = t.name; $("toast").querySelector(".ic").textContent = t.ic; $("toastS").textContent = t.sub || "トロフィー獲得";
   $("toast").classList.add("show"); play("kira", {gain:.5});
   setTimeout(() => { $("toast").classList.remove("show"); setTimeout(() => { toastOn = false; runToast(); }, 400); }, 2400);
 }
@@ -1247,7 +1247,31 @@ function bot(){
 }
 
 showMap();
-if ("serviceWorker" in navigator && location.protocol === "https:") window.addEventListener("load", () => navigator.serviceWorker.register("sw.js", {updateViaCache: "none"}).catch(()=>{}));
+/* ---------- 新しい版への切り替え ---------- */
+// 開いたときと、裏から戻ってきたときに新しい版がないか確かめる（約2KB）。
+// 新しい版が届いたら、マップ画面ならすぐ、遊んでいる最中なら閉店してマップに戻ったときに読み込み直す。
+let updateReady = false;
+function applyUpdate(){
+  if (!updateReady) return;
+  const busyNow = !$("play").classList.contains("hidden") || !$("intro").classList.contains("hidden") || !$("result").classList.contains("hidden");
+  if (busyNow) return;
+  try { sessionStorage.setItem("justUpdated", "1"); } catch(e){}
+  location.reload();
+}
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
+  const hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener("controllerchange", () => { if (hadController){ updateReady = true; applyUpdate(); } });
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js", {updateViaCache: "none"}).then(reg => {
+      const check = () => { if (document.visibilityState === "visible") reg.update().catch(()=>{}); };
+      document.addEventListener("visibilitychange", check);
+      window.addEventListener("pageshow", check);
+    }).catch(()=>{});
+  });
+  setInterval(applyUpdate, 1500);
+}
+try { if (sessionStorage.getItem("justUpdated")){ sessionStorage.removeItem("justUpdated");
+  setTimeout(() => { toastQ.push({ic:"✨", name:"最新版に更新しました", sub:"お知らせ"}); runToast(); }, 600); } } catch(e){}
 window.__g = { get stored(){ return stored; }, get stats(){ return {money, servedN, missed, dumped, maxCombo, bottlesOut}; }, set speed(v){ SPEED = v; }, showIntro, get ended(){ return ended; }, get save(){ return save; }, drawVessel, bottleShape };
 })();
 </script>
