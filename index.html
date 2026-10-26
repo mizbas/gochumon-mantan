@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>とくとくバー</title>
-<meta name="description" content="同じ色を満タンの瓶に集めて、お客さんの注文に応えるお店経営パズル">
+<title>ご注文は満タンで</title>
+<meta name="description" content="お客さんの注文どおりの色を満タンの瓶に注いで渡す、お店経営パズル">
 <meta name="theme-color" content="#17110f">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="とくとくバー">
+<meta name="apple-mobile-web-app-title" content="ご注文は満タンで">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-180.png">
@@ -45,7 +45,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
 .badge b{color:var(--cream)}
 .hero{display:flex;flex-direction:column;align-items:center;gap:2px}
 #heroCv{width:260px;height:160px;max-width:100%}
-h1{font-family:var(--hand);font-weight:400;font-size:50px;line-height:1;margin:0;letter-spacing:.06em}
+h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-height:1.1;margin:0;letter-spacing:.04em;text-align:center;text-wrap:balance}
 .sub{color:var(--mute);font-size:14px;text-align:center}
 .world{border-radius:22px;background:var(--walnut);padding:16px;display:flex;flex-direction:column;gap:12px}
 .world h2{margin:0;font-family:var(--hand);font-weight:400;font-size:clamp(19px,5.6vw,25px);display:flex;justify-content:space-between;align-items:baseline;gap:8px;white-space:nowrap}
@@ -164,8 +164,8 @@ h1{font-family:var(--hand);font-weight:400;font-size:50px;line-height:1;margin:0
     </div>
     <div class="hero">
       <canvas id="heroCv" width="520" height="320" aria-hidden="true"></canvas>
-      <h1>とくとくバー</h1>
-      <div class="sub">同じ色を満タンの瓶に集めて、注文に応えよう</div>
+      <h1>ご注文は満タンで</h1>
+      <div class="sub">注文どおりの色を満タンの瓶にして、お客さんに渡そう</div>
     </div>
     <button class="go" id="contBtn">1-1 をはじめる</button>
     <div id="worlds" style="display:flex;flex-direction:column;gap:14px"></div>

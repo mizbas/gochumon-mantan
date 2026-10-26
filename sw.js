@@ -1,9 +1,9 @@
-// とくとくバー オフライン用
+// ご注文は満タンで オフライン用
 // ゲームを更新するときは VERSION だけ書き換える。
 // ブラウザはこの小さなファイル（約1KB）だけを確かめ、変わっていたときだけ新しい版をダウンロードする。
-const VERSION = "2026-10-27b";
+const VERSION = "2026-10-27c";
 const APP = "tokutoku-app-" + VERSION;        // ゲーム本体（版ごと）
-const STATIC = "tokutoku-static-v1";           // アイコンとフォント（版をまたいで使い回す）
+const STATIC = "tokutoku-static-v2";           // アイコンとフォント（版をまたいで使い回す）
 const APP_FILES = ["./", "index.html", "manifest.json"];
 const STATIC_FILES = ["icon-180.png", "icon-192.png", "icon-512.png"];
 
