@@ -1,0 +1,16 @@
+{
+  "name": "とくとくバー",
+  "short_name": "とくとくバー",
+  "description": "同じ色を満タンの瓶に集めて注文に応えるお店経営パズル",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#17110f",
+  "theme_color": "#17110f",
+  "lang": "ja",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
+  ]
+}
