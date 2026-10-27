@@ -1238,19 +1238,21 @@ const freezeGap = () => S.w === 4 && S.n ? 30000 - (S.n - 1)*1000 : 26000;
 function freezeOK(i){ const b = bottles[i]; return b && !b.glass && !b.ice && !b.corked && !busy.has(i) && sel !== i; }
 function coldWave(){
   if (!S.ice || !lay) return;
-  const frozen = bottles.filter(b => b.ice).length, maxIce = 2;
+  // 詰まないように：凍っている瓶が1本でもあるうちは寒波は来ない。凍らせるのは「今の注文に関係のない色」の瓶を優先
+  const frozen = bottles.filter(b => b.ice).length, maxIce = 1;
   if (!freezeWarn && T >= freezeT - FREEZE_WARN){
-    if (frozen >= maxIce){ freezeT = T + 6000; return; }
+    if (frozen >= maxIce || emptyIdx() < 0){ freezeT = T + 6000; return; } // 空き瓶がないときも来ない
+    const need = wantedNow(), score = i => bottles[i].units.filter(u => need.includes(u.c)).length;
     const cand = bottles.map((b, i) => i).filter(i => freezeOK(i) && bottles[i].units.length);
-    const pool = cand.length ? cand : bottles.map((b, i) => i).filter(freezeOK);
-    if (!pool.length){ freezeT = T + 6000; return; }
+    if (!cand.length){ freezeT = T + 6000; return; }
+    const best = Math.min(...cand.map(score)), pool = cand.filter(i => score(i) === best);
     freezeWarn = {i: pool[Math.floor(Math.random()*pool.length)], t0: T};
     floatText(W/2, lay.counterY + 40, "寒波が来る！", "#9ed8f0", 1.1); play("ice", {gain:.35, rate:1.2});
   }
   if (freezeWarn && T - freezeWarn.t0 >= FREEZE_WARN){
     let i = freezeWarn.i; freezeWarn = null;
-    if (!freezeOK(i)){ const alt = bottles.map((b, k) => k).filter(k => freezeOK(k) && bottles[k].units.length); i = alt.length ? alt[0] : -1; }
-    if (i >= 0 && bottles.filter(b => b.ice).length < maxIce){ bottles[i].ice = S.n >= 5 ? 3 : 2; undoSnap = null; play("ice", {gain:.6});
+    if (!freezeOK(i)) i = -1;
+    if (i >= 0 && bottles.filter(b => b.ice).length < maxIce){ bottles[i].ice = 1; undoSnap = null; play("ice", {gain:.6});
       floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "凍った！", "#9ed8f0", .9);
       for (let k=0;k<12;k++) parts.push({x: lay.pos[i].x + R(-lay.sh.w*.4, lay.sh.w*.4), y: lay.pos[i].y + R(-lay.sh.H*.3, lay.sh.H*.3), vx:R(-1,1), vy:R(-1.4,-.2), t0:T, life:R(500,900), r:R(1.5,3), ice:true}); }
     freezeT = T + freezeGap();
