@@ -473,13 +473,24 @@ const yen = n => "¥" + Math.round(n).toLocaleString();
 /* ---------- 音（効果音ラボの素材） ---------- */
 let ac = null, master = null; const BUF = {};
 function b64(s){ const bin = atob(s), u = new Uint8Array(bin.length); for (let i=0;i<bin.length;i++) u[i] = bin.charCodeAt(i); return u.buffer; }
+// アプリから離れると、スマホは音の仕組みを止める。戻ってから最初に画面に触れたときに必ず復活させる。
+// iPhoneは一度止まると「動いているのに音が出ない」ことがあるので、音の仕組みを作り直す。
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+let audioStale = false;
+function rebuildAudio(){
+  const k = bgmKey || bgmWant; try { if (bgmNode) bgmNode.stop(); } catch(e){}
+  try { ac.close(); } catch(e){}
+  ac = null; master = null; bgmGain = null; bgmNode = null; bgmKey = null; bgmTok++;
+  bgmWant = k; audio();
+}
 function audio(){
-  if (ac){ if (ac.state === "suspended") ac.resume(); return; }
+  if (ac && audioStale){ audioStale = false; if (IOS || ac.state === "closed") { rebuildAudio(); return; } }
+  if (ac){ if (ac.state !== "running") ac.resume().then(() => { if (ac && ac.state !== "running") rebuildAudio(); }, () => rebuildAudio()); return; }
   try{
     ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.connect(ac.destination);
     bgmGain = ac.createGain(); bgmGain.connect(ac.destination); applyVolume(); protect();
     const s = ac.createBufferSource(); s.buffer = ac.createBuffer(1,1,22050); s.connect(master); s.start(0);
-    for (const k in SND){ const done = b => { BUF[k] = b; }; const p = ac.decodeAudioData(b64(SND[k]), done, ()=>{}); if (p && p.then) p.then(done).catch(()=>{}); }
+    for (const k in SND){ if (BUF[k]) continue; const done = b => { BUF[k] = b; }; const p = ac.decodeAudioData(b64(SND[k]), done, ()=>{}); if (p && p.then) p.then(done).catch(()=>{}); }
     if (bgmWant) { const k = bgmWant; bgmWant = null; bgm(k); }
   }catch(e){ ac = null; }
 }
@@ -526,7 +537,12 @@ function bgm(key){
     .then(ab => new Promise((ok, ng) => { const p = ac.decodeAudioData(ab, ok, ng); if (p && p.then) p.then(ok, ng); }))
     .then(buf => { for (const k in BGMBUF) delete BGMBUF[k]; BGMBUF[file] = buf; start(buf); }).catch(() => {});
 }
-document.addEventListener("visibilitychange", () => { if (!ac) return; if (document.visibilityState === "hidden") ac.suspend(); else ac.resume(); });
+document.addEventListener("visibilitychange", () => { if (!ac) return;
+  if (document.visibilityState === "hidden"){ audioStale = true; try { ac.suspend(); } catch(e){} }
+  else if (!IOS) ac.resume().catch(() => {}); });
+window.addEventListener("pageshow", e => { if (e.persisted && ac) audioStale = true; });
+// どこを触っても、止まっている音を起こす
+["pointerdown", "touchend", "keydown"].forEach(ev => document.addEventListener(ev, () => { if (!ac || audioStale || ac.state !== "running") audio(); }, {capture: true, passive: true}));
 function play(name, o={}){
   if (!save.sound || !ac || !BUF[name] || window.__mute) return;
   const b = BUF[name], s = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (o.delay||0);
