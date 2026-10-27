@@ -397,6 +397,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
     <div class="set-row"><span>音</span><button class="tog on" id="sndTog">オン</button></div>
     <div class="set-row"><span>BGM</span><input type="range" id="bgmVol" min="0" max="100" step="5"><output id="bgmOut">60</output></div>
     <div class="set-row"><span style="width:auto">見分けやすいモード<br><small style="font-weight:400;color:#7d6c5d">色に記号を重ねて表示</small></span><button class="tog" id="cbTog">オフ</button></div>
+    <div class="set-row"><span style="width:auto">軽量モード<br><small style="font-weight:400;color:#7d6c5d">動きがカクつくときに。画面を少し粗くして軽くします</small></span><button class="tog" id="liteTog">オフ</button></div>
     <div class="set-row"><span>効果音</span><input type="range" id="seVol" min="0" max="100" step="5"><output id="seOut">100</output></div>
     <div class="set-h">データの引き継ぎ</div>
     <div id="protV"></div>
@@ -844,7 +845,24 @@ function hex(h){ const n = parseInt(h.slice(1),16); return [n>>16, n>>8&255, n&2
 function shade(h, k){ const [r,g,b] = hex(h); const f = v => Math.round(k>0 ? v+(255-v)*k : v*(1+k)); return `rgb(${f(r)},${f(g)},${f(b)})`; }
 function pathOf(c, P){ c.beginPath(); c.moveTo(P[0][0], P[0][1]); for (let i=1;i<P.length;i++) c.lineTo(P[i][0], P[i][1]); c.closePath(); }
 
+// 動いていない瓶は、一度描いた絵を使い回す（重さ対策：つやのグラデーションなどを毎回描かない）
+const VCACHE = new Map(), VRES = 2;
 function drawVessel(c, sh, x, y, a, layers0, o={}){
+  const still = a === 0 && !o.wave && o.alpha == null && (o.cork == null || o.cork === 1) && layers0.every(L => Number.isInteger(L.v) && (L.rev == null || o.t == null || o.t - L.rev >= 320));
+  if (!still) return drawVesselRaw(c, sh, x, y, a, layers0, o);
+  const key = sh.style + "|" + sh.w + "|" + layers0.map(L => L.c + (L.h ? "h" : "") + L.v).join(",") + "|" + (o.cork == null ? "" : 1) + (o.sel ? "s" : "") + (o.glow ? "g" : "") + (o.dark ? "d" : "") + (save.cb ? "c" : "");
+  let sp = VCACHE.get(key);
+  if (!sp){
+    if (VCACHE.size > 160) VCACHE.clear();
+    const m = sh.t*3 + 4, minX = Math.min(...sh.P.map(p => p[0])) - m, maxX = Math.max(...sh.P.map(p => p[0])) + m, top = sh.top - sh.H*.2 - m, bot = sh.bottom + m;
+    const cv2 = document.createElement("canvas"); cv2.width = Math.ceil((maxX - minX)*VRES); cv2.height = Math.ceil((bot - top)*VRES);
+    const x2 = cv2.getContext("2d"); x2.setTransform(VRES, 0, 0, VRES, 0, 0);
+    drawVesselRaw(x2, sh, -minX, -top, 0, layers0, Object.assign({}, o, {t: null}));
+    sp = {cv: cv2, ox: minX, oy: top, w: maxX - minX, h: bot - top}; VCACHE.set(key, sp);
+  }
+  c.drawImage(sp.cv, x + sp.ox, y + sp.oy, sp.w, sp.h);
+}
+function drawVesselRaw(c, sh, x, y, a, layers0, o={}){
   const layers = [];
   for (const L of layers0){ if (L.v <= .001) continue; const q = layers[layers.length-1]; if (q && q.c === L.c && !q.h && !L.h && q.rev == null && L.rev == null) q.v += L.v; else layers.push({...L}); }
   // 傾いていない瓶は、形ごとに一度だけ計算した液面の表を使い回す（重さ対策）
@@ -1120,7 +1138,7 @@ function startStage(i){
 
 function layout(){
   const st = $("stage"); W = st.clientWidth; H = st.clientHeight;
-  dpr = Math.min(window.devicePixelRatio || 1, 2); cv.width = W*dpr; cv.height = H*dpr;
+  dpr = Math.min(window.devicePixelRatio || 1, save.lite ? 1.25 : (save.dprCap || 2)); cv.width = W*dpr; cv.height = H*dpr;
   const n = bottles.length + 3, usableW = Math.min(W - 16, 680);
   const counterY = Math.min(H*.36, 250), shelfTop = counterY + 26, availH = H - shelfTop - 10;
   let best = null;
@@ -1557,9 +1575,18 @@ document.addEventListener("gesturestart", e => e.preventDefault());
 
 /* ---------- ループ ---------- */
 const ease = t => t<.5 ? 2*t*t : 1-Math.pow(-2*t+2,2)/2;
+// 重い端末では、プレイ中のコマの速さを見て、自動で画面の細かさを少し下げる（次回からもその設定で始める）
+let perfN = 0, perfSum = 0;
+function perfWatch(dt){
+  if (save.lite || !running || paused || dt <= 0 || dt > 100) return;
+  perfSum += dt; perfN++;
+  if (perfN >= 150){ const avg = perfSum/perfN; perfN = 0; perfSum = 0;
+    const cap = save.dprCap || 2;
+    if (avg > 21 && cap > 1.25 && Math.min(window.devicePixelRatio || 1, cap) > 1.25){ save.dprCap = Math.max(1.25, cap - .25); persist(); layout(); } }
+}
 function frame(ts){
   requestAnimationFrame(frame);
-  const dt = Math.min(50, ts - (lastTs || ts)); lastTs = ts;
+  const dt = Math.min(50, ts - (lastTs || ts)); perfWatch(ts - (lastTs || ts)); lastTs = ts;
   if ($("play").classList.contains("hidden") || !lay) return;
   if (running && !paused){
     T += dt*SPEED;
@@ -1633,12 +1660,50 @@ function buildBg(){
   if (room.id === "space"){ ctx.fillStyle = "rgba(255,255,255,.8)"; for (let i=0;i<60;i++){ const x = (i*97) % W, y = (i*61) % Math.max(10, cy - 10); ctx.beginPath(); ctx.arc(x, y, (i%3)*.5 + .6, 0, 7); ctx.fill(); } }
   if (room.id === "palace"){ ctx.fillStyle = "rgba(243,215,122,.25)"; for (let i=0;i<4;i++){ const x = W*(.125 + .25*i); ctx.beginPath(); ctx.arc(x, 26, 14, 0, 7); ctx.fill(); ctx.fillRect(x - 1, 0, 2, 14); } }
   drawFine(ctx, upg("price"), cy);
+  seats.forEach((st, k) => { const p = lay.seatPos[k], size = Math.min(lay.seatW*.42, 64), headY = cy - size*.62; drawChair(ctx, p.x, headY, size, cy, upg("pat")); });
   if (has("branch")) drawBranchSign(ctx, cy);
   return bg;
 }
 // 灯台の光：左右にゆっくり往復する
 const beamX = () => W/2 + Math.sin((T - darkT)/1100)*W*.42;
 const litAt = x => Math.abs(x - beamX()) < (lay ? lay.slot*.7 : 40);
+// 少しずつしか動かない飾りは、別の絵に描いておいて 0.11秒ごとに描き直す
+function slowLayer(name, need, paint, y0 = 0, y1 = lay.counterY + 24){
+  if (!need()) return;
+  const now = performance.now(), L = lay.slow || (lay.slow = {});
+  let e = L[name];
+  if (!e){ const cv2 = document.createElement("canvas"); cv2.width = Math.ceil(W*dpr); cv2.height = Math.ceil((y1 - y0)*dpr); e = L[name] = {cv: cv2, x: cv2.getContext("2d"), t: -1e9}; }
+  if (now - e.t > 110){ e.t = now; e.x.setTransform(1,0,0,1,0,0); e.x.clearRect(0, 0, e.cv.width, e.cv.height); e.x.setTransform(dpr,0,0,dpr,0,-y0*dpr); paint(e.x); }
+  ctx.drawImage(e.cv, 0, y0, e.cv.width/dpr, e.cv.height/dpr);
+}
+// 注文の吹き出しは、中身が変わったときだけ描き直す（重さ対策）
+const BCACHE = new Map();
+function bubbleSprite(s, bw, bh, cell, n){
+  const key = [bw|0, bh|0, cell|0, s.cock ? s.cock.join("") : s.order.join(""), s.got.map(g => g ? 1 : 0).join(""), s.rush ? 1 : 0, s.vip ? 1 : 0, s.critic ? 1 : 0, s.regular ? 1 : 0, save.cb ? 1 : 0].join("|");
+  let sp = BCACHE.get(key);
+  if (!sp){
+    if (BCACHE.size > 120) BCACHE.clear();
+    const w = bw + 24, h = bh + 30, cv2 = document.createElement("canvas"); cv2.width = Math.ceil(w*VRES); cv2.height = Math.ceil(h*VRES);
+    const c = cv2.getContext("2d"); c.setTransform(VRES, 0, 0, VRES, 0, 0);
+    const bx = 12, by = 14, px = bx + bw/2;
+    c.fillStyle = "#f6ead6"; rr(c, bx, by, bw, bh, 14); c.fill();
+    if (s.rush){ c.strokeStyle = "#d9473a"; c.lineWidth = 3; rr(c, bx, by, bw, bh, 14); c.stroke();
+    c.fillStyle = "#d9473a"; rr(c, bx + bw - 34, by - 9, 36, 18, 9); c.fill(); c.fillStyle = "#fff"; c.font = `900 11px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("急ぎ", bx + bw - 16, by); }
+    const tag = (txt, col, fg) => { c.font = `900 11px "Zen Kaku Gothic New",sans-serif`; const tw = c.measureText(txt).width + 14; c.strokeStyle = col; c.lineWidth = 3; rr(c, bx, by, bw, bh, 14); c.stroke();
+    c.fillStyle = col; rr(c, bx + bw - tw + 2, by - 9, tw, 18, 9); c.fill(); c.fillStyle = fg; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(txt, bx + bw - tw/2 + 2, by); };
+    if (s.critic) tag("評論家", "#8e5cc4", "#fff");
+    if (s.cock) tag("カクテル", "#d6418f", "#fff");
+    if (s.regular) tag("常連さん", "#3f8f4a", "#fff");
+    if (s.vip){ c.strokeStyle = "#e0a020"; c.lineWidth = 3; rr(c, bx, by, bw, bh, 14); c.stroke();
+    c.fillStyle = "#e0a020"; rr(c, bx + bw - 40, by - 9, 42, 18, 9); c.fill(); c.fillStyle = "#2a1a0c"; c.font = `900 11px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("団体", bx + bw - 19, by); }
+    c.fillStyle = "#f6ead6";
+    c.beginPath(); c.moveTo(px - 7, by + bh - 1); c.lineTo(px, by + bh + 8); c.lineTo(px + 7, by + bh - 1); c.fill();
+    if (s.cock) drawCock(c, px, by + bh - 13, bh*.66, s.cock, false);
+    else s.order.forEach((cc, j) => miniBottle(c, px + (j - (n-1)/2)*cell, by + bh - 14, bh*.62, COLORS[cc], s.got[j], cc));
+    sp = {cv: cv2, w, h}; BCACHE.set(key, sp);
+  }
+  return sp;
+}
 /* ---------- ショップで買ったものの見た目 ---------- */
 function drawChair(c, x, headY, size, cy, lv){
   const top = headY - size*(lv >= 5 ? .42 : lv >= 3 ? .3 : .2), w = size*(lv >= 5 ? 1.6 : lv >= 3 ? 1.5 : 1.4), h = cy - top;
@@ -1808,13 +1873,13 @@ function draw(){
     ctx.fillStyle = "rgba(255,255,255,.75)"; for (let i=0;i<26;i++){ const sx = wx + ((i*53) % ww), sy = 14 + ((i*37 + T*.02*(1 + i%3)) % wh); ctx.beginPath(); ctx.arc(sx, sy, 1.2 + i%2, 0, 7); ctx.fill(); }
   }
   if (S.w === 9 || S.dark){ /* 灯台の光は下で */ }
-  if (has("juke")) drawJuke(ctx, cy);
-  { const d = decorOn("ceil"); if (d) drawDecor(ctx, d, 0, 0, W, T); }
-  { const d = decorOn("wall"); if (d) drawDecor(ctx, d, W/2, cy*.06, Math.min(48, cy*.22), T); }
+  slowLayer("back", () => (has("juke") || decorOn("ceil") || decorOn("wall")), c => {
+    if (has("juke")) drawJuke(c, cy);
+    { const d = decorOn("ceil"); if (d) drawDecor(c, d, 0, 0, W, T); }
+    { const d = decorOn("wall"); if (d) drawDecor(c, d, W/2, cy*.06, Math.min(48, cy*.22), T); } });
   // お客さん
   seats.forEach((s, k) => {
     const p = lay.seatPos[k], size = Math.min(lay.seatW*.42, 64), headY = cy - size*.62;
-    drawChair(ctx, p.x, headY, size, cy, upg("pat"));
     if (s.state === "empty") return;
     let dy = 0, alpha = 1;
     if (s.state === "in"){ const a = Math.min(1, (T - s.t0)/450); dy = (1 - ease(a))*size*1.2; alpha = a; }
@@ -1832,29 +1897,17 @@ function draw(){
     if (s.state === "wait" || s.state === "in"){
       const n = s.cock ? 1.4 : s.order.length, bh = Math.min(lay.seatW*.42, 62), cell = Math.min(bh*.62, (lay.seatW*1.05 - 18)/n), bw = Math.max(bh*1.15, n*cell + 18), bx = p.x - bw/2, by = Math.max(4, headY - size*.72 - bh - 8);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = "#f6ead6"; rr(ctx, bx, by, bw, bh, 14); ctx.fill();
-      if (s.rush){ ctx.strokeStyle = "#d9473a"; ctx.lineWidth = 3; rr(ctx, bx, by, bw, bh, 14); ctx.stroke();
-        ctx.fillStyle = "#d9473a"; rr(ctx, bx + bw - 34, by - 9, 36, 18, 9); ctx.fill(); ctx.fillStyle = "#fff"; ctx.font = `900 11px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("急ぎ", bx + bw - 16, by); }
-      const tag = (txt, col, fg) => { ctx.font = `900 11px "Zen Kaku Gothic New",sans-serif`; const tw = ctx.measureText(txt).width + 14; ctx.strokeStyle = col; ctx.lineWidth = 3; rr(ctx, bx, by, bw, bh, 14); ctx.stroke();
-        ctx.fillStyle = col; rr(ctx, bx + bw - tw + 2, by - 9, tw, 18, 9); ctx.fill(); ctx.fillStyle = fg; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, bx + bw - tw/2 + 2, by); };
-      if (s.critic) tag("評論家", "#8e5cc4", "#fff");
-      if (s.cock) tag("カクテル", "#d6418f", "#fff");
-      if (s.regular) tag("常連さん", "#3f8f4a", "#fff");
-      if (s.vip){ ctx.strokeStyle = "#e0a020"; ctx.lineWidth = 3; rr(ctx, bx, by, bw, bh, 14); ctx.stroke();
-        ctx.fillStyle = "#e0a020"; rr(ctx, bx + bw - 40, by - 9, 42, 18, 9); ctx.fill(); ctx.fillStyle = "#2a1a0c"; ctx.font = `900 11px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("団体", bx + bw - 19, by); }
-      ctx.fillStyle = "#f6ead6";
-      ctx.beginPath(); ctx.moveTo(p.x - 7, by + bh - 1); ctx.lineTo(p.x, by + bh + 8); ctx.lineTo(p.x + 7, by + bh - 1); ctx.fill();
-      if (s.cock) drawCock(ctx, p.x, by + bh - 13, bh*.66, s.cock, false);
-      else s.order.forEach((c, j) => miniBottle(ctx, p.x + (j - (n-1)/2)*cell, by + bh - 14, bh*.62, COLORS[c], s.got[j], c));
+      { const sp = bubbleSprite(s, bw, bh, cell, n); ctx.drawImage(sp.cv, bx - 12, by - 14, sp.w, sp.h); }
       const left = s.state === "wait" ? Math.max(0, 1 - (T - s.t0)/s.pat) : 1;
       ctx.fillStyle = "rgba(42,26,12,.15)"; rr(ctx, bx + 8, by + bh - 10, bw - 16, 5, 2.5); ctx.fill();
       ctx.fillStyle = left > .5 ? "#4caf50" : left > .25 ? "#e0a020" : "#d9473a"; rr(ctx, bx + 8, by + bh - 10, (bw - 16)*left, 5, 2.5); ctx.fill();
       ctx.globalAlpha = 1;
     }
   });
-  drawFlowers(ctx, cy, upg("tip"));
-  if (has("cat")) drawCat(ctx, cy);
-  { const d = decorOn("counter"); if (d){ const sz = Math.min(40, lay.seatW*.3); drawDecor(ctx, d, sz*.85, cy + 1, sz, T); } }
+  slowLayer("front", () => (upg("tip") || has("cat") || decorOn("counter")), c => {
+    drawFlowers(c, cy, upg("tip"));
+    if (has("cat")) drawCat(c, cy);
+    { const d = decorOn("counter"); if (d){ const sz = Math.min(40, lay.seatW*.3); drawDecor(c, d, sz*.85, cy + 1, sz, T); } } }, cy - 90, cy + 8);
   if (happyNow()){ const left = Math.ceil((hhT + HH_LEN - T)/1000), bw = Math.min(W - 24, 260), bx = W/2 - bw/2, by = cy + 30;
     ctx.globalAlpha = .92; ctx.fillStyle = "#3a1f0c"; rr(ctx, bx, by, bw, 26, 13); ctx.fill(); ctx.strokeStyle = `hsl(${(T*.2)%360},90%,65%)`; ctx.lineWidth = 2; rr(ctx, bx, by, bw, 26, 13); ctx.stroke();
     ctx.fillStyle = "#ffd56b"; ctx.font = `900 13px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`🍻 ハッピーアワー 代金1.5倍　あと${left}秒`, W/2, by + 13); ctx.globalAlpha = 1; }
@@ -2286,6 +2339,7 @@ function showMap(){
 }
 /* ---------- 設定・データの引き継ぎ ---------- */
 function renderSettings(){
+  $("liteTog").textContent = save.lite ? "オン" : "オフ"; $("liteTog").classList.toggle("on", !!save.lite);
   $("cbTog").textContent = save.cb ? "オン" : "オフ"; $("cbTog").classList.toggle("on", !!save.cb);
   $("sndTog").textContent = save.sound ? "オン" : "オフ"; $("sndTog").classList.toggle("on", save.sound);
   $("bgmVol").value = Math.round(save.bgmVol*100); $("bgmOut").textContent = $("bgmVol").value;
@@ -2299,6 +2353,7 @@ const markBackup = () => { save.backupT = Date.now(); save.backupTotal = save.to
 $("bkupBtn").onclick = () => $("setBtn").onclick();
 $("setBtn").onclick = () => { audio(); renderSettings(); $("xferMsg").textContent = ""; $("settings").classList.remove("hidden"); };
 $("setClose").onclick = () => $("settings").classList.add("hidden");
+$("liteTog").onclick = () => { save.lite = !save.lite; if (!save.lite) save.dprCap = 2; persist(); renderSettings(); play("pick"); };
 $("cbTog").onclick = () => { save.cb = !save.cb; persist(); renderSettings(); play("pick"); };
 $("sndTog").onclick = () => { audio(); save.sound = !save.sound; persist(); applyVolume(); renderSettings(); play("pick"); };
 $("bgmVol").oninput = e => { save.bgmVol = e.target.value/100; $("bgmOut").textContent = e.target.value; applyVolume(); };
