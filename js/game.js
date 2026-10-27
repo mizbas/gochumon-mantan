@@ -39,15 +39,15 @@ function shortColors(){
   const have = {}; bottles.forEach(b => b.units.forEach(u => have[u.c] = (have[u.c]||0) + 1)); stored.forEach(c => have[c] = (have[c]||0) + CAP);
   return Object.keys(need).map(Number).filter(c => (have[c]||0) < need[c]);
 }
-// 次に仕入れる瓶に、足りない色が1つも入っていなければ、足りない色入りの瓶に差し替える（運だけで詰まないように）
+// 足りない色が、次の瓶にもその次の瓶にも入っていなければ、その次の瓶（小さく見えている瓶）を足りない色入りに差し替える。
+// 目の前の瓶は変えないので、1回仕入れれば必ず届く（運だけで詰まないように）
 let stockFixT = 0;
 function stockFix(){
-  if (!stock.length || S.mode === "prep" || T < stockFixT) return; stockFixT = T + 400;
-  const sh = shortColors(); if (!sh.length || stock[0].some(c => sh.includes(c))) return;
-  const f = pick(sh), u = stockUnits(); if (!u.includes(f)) u[0] = f;
-  // 足りない色を一番上に2つ並べる
-  const rest = u.filter(c => c !== f); stock[0] = rest.slice(0, CAP - 2).concat([f, f]);
-  while (stock[0].length < CAP) stock[0].unshift(f);
+  if (stock.length < 2 || S.mode === "prep" || T < stockFixT) return; stockFixT = T + 400;
+  const sh = shortColors(); if (!sh.length || stock[0].some(c => sh.includes(c)) || stock[1].some(c => sh.includes(c))) return;
+  const f = pick(sh), rest = stockUnits().filter(c => c !== f).slice(0, CAP - 2);
+  while (rest.length < CAP - 2) rest.unshift(f);
+  stock[1] = rest.concat([f, f]); // 足りない色を一番上に2つ
 }
 let lives = 3, elvl = 1, runStart = 0;
 let resQ = [];           // 予約：次に来るお客さんの注文
