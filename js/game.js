@@ -32,6 +32,23 @@ function stockUnits(){
   return u;
 }
 let stock = [], stockT = 0;
+// 足りない色：お客さんが待っている色なのに、棚・保管・次の仕入れを合わせても満タン分に届かない色
+function shortColors(){
+  const need = {}; wantedNow().forEach(c => need[c] = (need[c]||0) + CAP);
+  const cg = cockGuest(); if (cg) cg.cock.forEach(c => need[c] = (need[c]||0) + 1);
+  const have = {}; bottles.forEach(b => b.units.forEach(u => have[u.c] = (have[u.c]||0) + 1)); stored.forEach(c => have[c] = (have[c]||0) + CAP);
+  return Object.keys(need).map(Number).filter(c => (have[c]||0) < need[c]);
+}
+// 次に仕入れる瓶に、足りない色が1つも入っていなければ、足りない色入りの瓶に差し替える（運だけで詰まないように）
+let stockFixT = 0;
+function stockFix(){
+  if (!stock.length || S.mode === "prep" || T < stockFixT) return; stockFixT = T + 400;
+  const sh = shortColors(); if (!sh.length || stock[0].some(c => sh.includes(c))) return;
+  const f = pick(sh), u = stockUnits(); if (!u.includes(f)) u[0] = f;
+  // 足りない色を一番上に2つ並べる
+  const rest = u.filter(c => c !== f); stock[0] = rest.slice(0, CAP - 2).concat([f, f]);
+  while (stock[0].length < CAP) stock[0].unshift(f);
+}
 let lives = 3, elvl = 1, runStart = 0;
 let resQ = [];           // 予約：次に来るお客さんの注文
 let darkT = Infinity;    // 停電
@@ -725,7 +742,7 @@ function frame(ts){
   if (running && !paused){
     T += dt*SPEED;
     if (T >= iceTick){ iceTick = T + (S.mode === "prep" ? 15000 : 10000); if (bottles.some(b => b.ice)) thaw(); }
-    coldWave(); lockWave();
+    coldWave(); lockWave(); stockFix();
     if (S.dark && T >= darkT + DARK_LEN){ darkT = T + 26000; }
     if (S.dark && darkSoon() && !S._dw){ S._dw = 1; floatText(W/2, lay.counterY + 40, "停電しそう…", "#9eb8f0", 1); }
     if (S.dark && darkNow() && S._dw === 1){ S._dw = 2; play("wrong", {gain:.2, rate:.6}); }
