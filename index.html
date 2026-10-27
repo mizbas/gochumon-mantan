@@ -380,14 +380,14 @@ const STAGES = [
   {w:2, colors:6, ord:[1,3], seats:3, guests:10, pat:57, shelf:6, spare:2, goal:2700, hide:true},
   {w:2, colors:6, ord:[1,3], seats:3, guests:11, pat:57, shelf:6, spare:2, goal:2800, hide:true},
   {w:2, colors:6, ord:[2,3], seats:3, guests:9,  pat:70, shelf:6, spare:2, goal:3100, hide:true},
-  {w:3, colors:5, ord:[1,2], seats:3, guests:9,  pat:52, shelf:5, spare:2, goal:2200, rush:.25},
-  {w:3, colors:5, ord:[1,2], seats:3, guests:10, pat:50, shelf:5, spare:2, goal:2600, rush:.3},
-  {w:3, colors:6, ord:[1,2], seats:3, guests:10, pat:52, shelf:6, spare:2, goal:2800, rush:.3},
-  {w:3, colors:6, ord:[1,3], seats:3, guests:10, pat:54, shelf:6, spare:2, goal:3000, rush:.3},
-  {w:3, colors:6, ord:[1,3], seats:3, guests:11, pat:56, shelf:6, spare:2, goal:3300, rush:.3, hide:true},
-  {w:3, colors:7, ord:[1,3], seats:3, guests:11, pat:56, shelf:7, spare:2, goal:3700, rush:.3},
-  {w:3, colors:7, ord:[1,3], seats:3, guests:12, pat:58, shelf:7, spare:2, goal:4000, rush:.35, hide:true},
-  {w:3, colors:7, ord:[2,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:4400, rush:.35, hide:true},
+  {w:3, colors:5, ord:[1,2], seats:3, guests:9,  pat:52, shelf:5, spare:2, goal:2400, rush:.25},
+  {w:3, colors:5, ord:[1,2], seats:3, guests:10, pat:50, shelf:5, spare:2, goal:2900, rush:.3},
+  {w:3, colors:6, ord:[1,2], seats:3, guests:10, pat:52, shelf:6, spare:2, goal:3100, rush:.3},
+  {w:3, colors:6, ord:[1,3], seats:3, guests:10, pat:54, shelf:6, spare:2, goal:3300, rush:.3},
+  {w:3, colors:6, ord:[1,3], seats:3, guests:11, pat:56, shelf:6, spare:2, goal:3600, rush:.3, hide:true},
+  {w:3, colors:7, ord:[1,3], seats:3, guests:11, pat:56, shelf:7, spare:2, goal:4100, rush:.3},
+  {w:3, colors:7, ord:[1,3], seats:3, guests:12, pat:58, shelf:7, spare:2, goal:4400, rush:.35, hide:true},
+  {w:3, colors:7, ord:[2,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:4800, rush:.35, hide:true},
   {w:4, colors:5, ord:[1,2], seats:3, guests:9,  pat:56, shelf:5, spare:2, goal:2700, ice:[2]},
   {w:4, colors:5, ord:[1,2], seats:3, guests:10, pat:55, shelf:5, spare:2, goal:2900, ice:[2,4]},
   {w:4, colors:6, ord:[1,2], seats:3, guests:10, pat:56, shelf:6, spare:2, goal:3000, ice:[2,4], iceSpare:true},
@@ -467,6 +467,7 @@ const DECOR = [
   {id:"calendar",   slot:"wall",    name:"日めくりカレンダー"},
   {id:"record",     slot:"wall",    name:"金のレコード"},
   {id:"plaque",     slot:"wall",    name:"満タン賞の盾"},
+  {id:"neonsign",   slot:"wall",    name:"「満タン」ネオンサイン"},
   {id:"plant",      slot:"counter", name:"観葉植物"},
   {id:"register",   slot:"counter", name:"レトロなレジ"},
   {id:"lamp",       slot:"counter", name:"ランプ"},
@@ -482,12 +483,16 @@ const REWARDS = [
   {id:"el12",  k:"elv",  v:12,    give:{money:10000}},
   {id:"el15",  k:"elv",  v:15,    give:{decor:"chandelier", title:"不夜城の主"}},
   {id:"el20",  k:"elv",  v:20,    give:{decor:"maneki", title:"伝説の夜番"}},
+  {id:"el25",  k:"elv",  v:25,    give:{money:30000, title:"夜明けまで満タン"}},
+  {id:"el30",  k:"elv",  v:30,    give:{money:50000, title:"満タンの神話"}},
   {id:"em5",   k:"emon", v:5000,  give:{decor:"plant"}},
   {id:"em10",  k:"emon", v:10000, give:{money:2000}},
   {id:"em20",  k:"emon", v:20000, give:{decor:"painting"}},
   {id:"em30",  k:"emon", v:30000, give:{money:8000}},
   {id:"em50",  k:"emon", v:50000, give:{decor:"record", title:"エンドレスの帝王"}},
   {id:"em80",  k:"emon", v:80000, give:{decor:"mobile", money:20000}},
+  {id:"em150", k:"emon", v:150000, give:{money:30000}},
+  {id:"em200", k:"emon", v:200000, give:{decor:"neonsign", title:"エンドレスの覇者"}},
   {id:"rk5",   k:"rank", v:5,     give:{decor:"garland"}},
   {id:"rk10",  k:"rank", v:10,    give:{decor:"register"}},
   {id:"rk15",  k:"rank", v:15,    give:{decor:"lamp"}},
@@ -854,7 +859,7 @@ function dailyDef(){
   if (gm.includes("rush")) d.rush = .3;
   if (gm.includes("ice")){ d.ice = colors >= 7 ? [2,3,5] : [2,4]; d.pat += 2; }
   if (gm.includes("supply")){ d.supply = 34 + (colors-5)*2; d.vip = .2; d.pat += 4; }
-  d.goal = Math.round((3900 + 250*(colors-5) - (d.hide ? 300 : 0) - (d.supply ? 200 : 0) - (d.ice ? 200 : 0))/100)*100;
+  d.goal = Math.round((4500 + 250*(colors-5) - (d.hide ? 300 : 0) - (d.supply ? 200 : 0) - (d.ice ? 200 : 0))/100)*100;
   return d;
 }
 const ENDLESS = () => ({id:"エンドレス", mode:"endless", w:1, n:0, colors:4, ord:[1,2], seats:3, guests:Infinity, pat:62, shelf:5, spare:2, goal:0});
@@ -864,7 +869,12 @@ const specialOpen = k => (save.stars[k === "endless" ? "1-8" : "2-8"] || 0) >= 1
 function endlessStep(){
   const lv = 1 + Math.floor(servedN/5); if (lv <= elvl) return;
   elvl = lv; const msg = [];
-  S.pat = 62*Math.max(.5, 1 - .035*(lv-1));
+  S.pat = 62*(lv <= 10 ? 1 - .035*(lv-1) : Math.max(.3, .685*Math.pow(.96, lv-10)));
+  if ((lv === 11 || lv === 18) && S.colors < 8){ S.colors++; bottles.push({units: [], spare:true}); lift.push(0); layout(); msg.push(`新しい色「${CNAME[S.colors-1]}」が入荷`); }
+  if (lv === 13){ S.rush = .45; msg.push("急ぎのお客さんが増えた"); }
+  if (lv === 14){ S.vip = .3; msg.push("団体さんが増えた"); }
+  if (lv === 16) msg.push("待ち時間がどんどん短く");
+  if (lv === 20){ S.rush = .5; S.vip = .35; msg.push("店は大混雑！"); }
   if ((lv === 3 || lv === 5) && S.colors < 6){ S.colors++; bottles.push({units: [], spare:true}); lift.push(0); layout(); msg.push(`新しい色「${CNAME[S.colors-1]}」が入荷`); }
   if (lv === 4){ S.ord = [1,3]; msg.push("注文が増えてきた"); }
   if (lv === 8){ S.ord = [2,3]; msg.push("大口の注文が中心に"); }
@@ -967,7 +977,7 @@ function updateSeats(){
 function payGuest(k){
   const s = seats[k], n = s.order.length, sp = lay.seatPos[k];
   const left = Math.max(0, 1 - (T - s.t0)/s.pat);
-  const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.6 : 1)*(s.vip ? 2 : 1);
+  const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1);
   const tip = base*(.3 + .1*upg("tip"))*(has("cat") ? 1.2 : 1)*Math.max(0, (left - .5)/.5);
   combo++; maxCombo = Math.max(maxCombo, combo);
   const bonus = base*Math.min(has("juke") ? 2 : 1, (combo-1)*.1);
@@ -1149,10 +1159,10 @@ function hud(){
   }
   $("leftL").textContent = "人まち";
   $("moneyG").textContent = `目標 ${yen(S.goal)}` + (money >= S.goal ? " 達成！" : "") + `・経費 ${yen(expSupply + rentOf(S))}` + (combo >= 2 ? `・${combo}連続` : "");
-  const max = S.goal*1.7;
+  const max = S.goal*2.2;
   $("moneyBar").style.width = Math.min(100, money/max*100) + "%";
   $("moneyBar").style.background = money >= S.goal ? "var(--good)" : "var(--amber)";
-  $("m1").style.left = (1/1.7*100) + "%"; $("m2").style.left = (1.25/1.7*100) + "%"; $("m3").style.left = (1.5/1.7*100) + "%";
+  $("m1").style.left = (1/2.2*100) + "%"; $("m2").style.left = (STAR2/2.2*100) + "%"; $("m3").style.left = (STAR3/2.2*100) + "%";
   const waiting = guestsLeft + seats.filter(s => s.state === "in" || s.state === "wait").length;
   $("leftV").textContent = waiting;
 }
@@ -1359,6 +1369,9 @@ function drawDecor(c, id, x, y, s, t){ // x,y = 天井:左上(幅s) 壁:上の�
   case "plaque": { const w = s, h = s*1.2; c.fillStyle = "#6a4129"; c.beginPath(); c.moveTo(x - w/2, y); c.lineTo(x + w/2, y); c.lineTo(x + w/2, y + h*.6); c.quadraticCurveTo(x + w/2, y + h*.9, x, y + h); c.quadraticCurveTo(x - w/2, y + h*.9, x - w/2, y + h*.6); c.closePath(); c.fill();
     c.strokeStyle = "#e0b54a"; c.lineWidth = 2.5; c.stroke(); c.fillStyle = "#e0b54a"; rr(c, x - w*.12, y + h*.15, w*.24, h*.5, w*.08); c.fill(); c.fillRect(x - w*.05, y + h*.08, w*.1, h*.1);
     c.fillStyle = "#fff2b0"; c.fillRect(x - w*.08, y + h*.3, w*.05, h*.25); break; }
+  case "neonsign": { const w = s*1.9, h = s*.8, on = Math.sin(t/90) > -.9 || Math.floor(t/2000) % 3; c.fillStyle = "rgba(20,10,25,.85)"; rr(c, x - w/2, y, w, h, 8); c.fill();
+    c.strokeStyle = "#5a3a6a"; c.lineWidth = 2; rr(c, x - w/2, y, w, h, 8); c.stroke(); c.font = `900 ${Math.round(h*.52)}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
+    c.shadowColor = "#ff4fd0"; c.shadowBlur = on ? 12 : 0; c.fillStyle = on ? "#ffd0f4" : "#7a4a70"; c.fillText("満タン", x, y + h/2 + 1); c.shadowBlur = 0; break; }
   case "plant": { c.fillStyle = "#3f7d3a"; for (let k=0;k<7;k++){ const a = -Math.PI/2 + (k - 3)*.4 + Math.sin(t/1200 + k)*.05; c.beginPath(); c.ellipse(x + Math.cos(a)*s*.45, y - s*.45 + Math.sin(a)*s*.55, s*.14, s*.32, a + Math.PI/2, 0, 7); c.fill(); }
     c.fillStyle = "#b5653a"; c.beginPath(); c.moveTo(x - s*.32, y - s*.42); c.lineTo(x + s*.32, y - s*.42); c.lineTo(x + s*.24, y); c.lineTo(x - s*.24, y); c.closePath(); c.fill(); break; }
   case "register": { c.fillStyle = "#8a6a3a"; rr(c, x - s*.55, y - s*.55, s*1.1, s*.55, 4); c.fill(); c.fillStyle = "#c9962e"; rr(c, x - s*.42, y - s*.95, s*.84, s*.42, 4); c.fill();
@@ -1540,7 +1553,8 @@ function draw(){
 requestAnimationFrame(frame);
 
 /* ---------- 閉店 ---------- */
-function starsFor(i, m){ const g = STAGES[i].goal; return m >= g*1.5 ? 3 : m >= g*1.25 ? 2 : m >= g ? 1 : 0; }
+const STAR2 = 1.5, STAR3 = 2;
+function starsFor(i, m){ const g = STAGES[i].goal; return m >= g*STAR3 ? 3 : m >= g*STAR2 ? 2 : m >= g ? 1 : 0; }
 function titleOf(total){ return [0, titleOfRank(rankOf(total))]; }
 function profitOf(){ const rent = rentOf(S), exp = expSupply + rent; return {rent, exp, profit: Math.max(0, money - exp)}; }
 function profitHTML(pf){
@@ -1599,7 +1613,7 @@ function endSpecial(){
     e.combo = Math.max(e.combo||0, maxCombo); e.plays = (e.plays||0) + 1;
     e.runs = (e.runs || []).concat([{m: money, lv: elvl, sv: servedN, t: Date.now()}]).sort((a,b) => b.m - a.m).slice(0, 5);
   } else {
-    clear = money >= S.goal; st = money >= S.goal*1.5 ? 3 : money >= S.goal*1.25 ? 2 : clear ? 1 : 0;
+    clear = money >= S.goal; st = money >= S.goal*STAR3 ? 3 : money >= S.goal*STAR2 ? 2 : clear ? 1 : 0;
     const dd = save.daily; if (dd.key !== S.key){ for (const k in dd) delete dd[k]; dd.key = S.key; dd.best = 0; dd.bonus = false; }
     newBest = money > (dd.best||0); if (newBest) dd.best = money;
     if (clear && !dd.bonus){ dd.bonus = true; bonus = Math.round(money*.5/10)*10; save.dailyClears = (save.dailyClears||0) + 1; }
@@ -1723,7 +1737,7 @@ function showIntro(i){
     ・こまったら瓶を選んで「流し」へ（1杯 ${yen(DUMP_COST)}）<br>
     ・財布に入るのは<b>利益</b>です。売上から、仕入れ代（1回 ${yen(SUPPLY_COST)}）と家賃・光熱費（${yen(rentOf(S))}）を引いた分です` :
     (S.n === 1 && WORLDS[S.w-1].note ? `<b>新しいお店：</b>${WORLDS[S.w-1].note}<br><br>` : "") +
-    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・凍った瓶" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*1.25)}、★3 は ${yen(S.goal*1.5)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
+    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・凍った瓶" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*STAR2)}、★3 は ${yen(S.goal*STAR3)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
   const r = stageRec(S.id), stn = save.stars[S.id] || 0;
   $("introRec").innerHTML = recBox(`${S.id} の記録`, r ? [["ベスト売上", yen(r.best) + (r.bestT ? `（${md(r.bestT)}）` : ""), 1], ["星", "★".repeat(stn) + "☆".repeat(3-stn)]]
       .concat(r.plays ? [["最高連続", `${r.combo||0}連続`], ["最多のお客さん", `${r.served||0}人`], ["全員満足", `${r.perfect||0}回`], ["遊んだ回数", `${r.plays}回（クリア ${r.clears||0}回）`]] : []) : [], "まだ記録はありません");

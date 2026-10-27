@@ -1,7 +1,7 @@
 // ご注文は満タンで オフライン用
 // ゲームを更新するときは VERSION だけ書き換える。
 // ブラウザはこの小さなファイル（約1KB）だけを確かめ、変わっていたときだけ新しい版をダウンロードする。
-const VERSION = "2026-10-27q";
+const VERSION = "2026-10-27r";
 const APP = "tokutoku-app-" + VERSION;        // ゲーム本体（版ごと）
 const STATIC = "tokutoku-static-v2";           // アイコンとフォント（版をまたいで使い回す）
 const APP_FILES = ["./", "index.html", "manifest.json"];
