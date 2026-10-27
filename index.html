@@ -43,6 +43,33 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
 .purse b{font-family:var(--hand);font-weight:400;font-size:20px;font-variant-numeric:tabular-nums}
 .badge{flex:1;min-width:0;text-align:right;font-size:13px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .badge b{color:var(--cream)}
+.pchip{display:flex;align-items:center;gap:10px;background:var(--walnut-2);border-radius:20px;padding:6px 14px 6px 6px;text-align:left;box-shadow:inset 0 -3px 0 rgba(0,0,0,.2);width:100%}
+.pchip canvas{width:44px;height:44px;border-radius:50%;background:#3a2a1c;flex:none}
+.pchip .t{flex:1;min-width:0;line-height:1.3}
+.pchip .t b{display:block;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pchip .t small{display:block;font-size:12px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pchip .go2{font-size:12px;color:var(--amber);font-weight:700;flex:none}
+.pcard{background:var(--ink);color:var(--paper);border-radius:20px;padding:16px 14px 14px;margin:6px 0 10px}
+.pcard canvas{width:110px;height:110px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#5a3a24,#2a1b12)}
+.pcard .shop{font-family:var(--hand);font-size:26px;color:var(--amber);margin-top:6px;line-height:1.2;word-break:break-all}
+.pcard .own{font-size:14px;color:#e9dcc4;margin-top:2px}
+.pcard .ttl{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:12px;background:#3a2a1c;color:var(--amber);font-size:12.5px;font-weight:700}
+.pcard .msg{margin-top:8px;font-size:13.5px;color:#f6ead6;font-style:normal;word-break:break-all}
+.pcard .pid{margin-top:8px;font-size:11px;color:#8a7660;letter-spacing:1px}
+.pstats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 12px}
+.pstats div{background:#efe1c6;border-radius:12px;padding:7px 8px;text-align:left}
+.pstats small{display:block;font-size:11px;color:#8a7660}
+.pstats b{font-size:15px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.pf-l{display:block;text-align:left;font-size:13px;font-weight:900;color:var(--rust);margin:12px 0 4px}
+.pf-in{width:100%;height:44px;border-radius:12px;border:1.5px solid #d8c7a8;background:#fffaf0;padding:0 12px;font:inherit;font-size:16px;color:var(--ink)}
+.pf-n{font-size:11px;color:#8a7660;text-align:right;margin-top:2px}
+.pick{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.pick button{border-radius:14px;background:#eadbc1;padding:4px;border:3px solid transparent}
+.pick button.on{border-color:var(--rust)}
+.pick button:disabled{opacity:.35}
+.pick canvas{width:52px;height:52px;display:block}
+.pick .sw{width:34px;height:34px;border-radius:50%;display:block}
+.pick .ac{padding:6px 10px;font-size:13px;font-weight:700;color:var(--ink-2)}
 .badge span{color:var(--amber);font-weight:700}
 .rbar{height:5px;border-radius:3px;background:rgba(255,255,255,.1);margin-top:5px;overflow:hidden}
 .rbar i{display:block;height:100%;background:var(--amber)}
@@ -220,6 +247,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
       <div class="purse"><span class="coin"></span><b id="walletV">¥0</b></div>
       <div class="badge"><span id="rankV">ランク1</span>　<b id="titleV">見習い</b><div class="rbar"><i id="rankBar"></i></div></div>
     </div>
+    <button class="pchip" id="pChip"><canvas id="pChipCv" width="88" height="88"></canvas><span class="t"><b id="pChipShop">満タン亭</b><small id="pChipOwn">店主 さん</small></span><span class="go2">プロフィール ›</span></button>
     <div class="hero">
       <canvas id="heroCv" width="520" height="320" aria-hidden="true"></canvas>
       <h1>ご注文は満タンで</h1>
@@ -333,6 +361,30 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
     <h2 id="pauseH">一時停止中</h2>
     <p class="rules" id="pauseP" style="text-align:center">時間は止まっています。</p>
     <div class="btns" style="flex-direction:column"><button class="b-main" id="pauseGo" style="flex:none">再開する</button><button class="b-sub" id="pauseTop" style="flex:none">お店を閉めてマップに戻る</button></div>
+  </div>
+</div>
+
+<div id="profile" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="pfH">
+  <div class="card">
+    <h2 id="pfH">プロフィール</h2>
+    <div id="pfView">
+      <div class="pcard"><canvas id="pfCv" width="220" height="220"></canvas><div class="shop" id="pfShop"></div><div class="own" id="pfOwn"></div><div class="ttl" id="pfTtl"></div><div class="msg" id="pfMsg"></div><div class="pid" id="pfId"></div></div>
+      <div class="pstats" id="pfStats"></div>
+      <div class="set-btns"><button class="m" id="pfEdit">編集する</button><button id="pfCopy">プロフィールをコピー</button></div>
+      <div id="pfCopied" class="set-p" style="text-align:center;min-height:18px"></div>
+    </div>
+    <div id="pfForm" class="hidden">
+      <label class="pf-l" for="pfShopIn">お店の名前</label><input class="pf-in" id="pfShopIn" maxlength="12" autocomplete="off"><div class="pf-n">12文字まで</div>
+      <label class="pf-l" for="pfNameIn">店主の名前（ニックネーム）</label><input class="pf-in" id="pfNameIn" maxlength="10" autocomplete="off"><div class="pf-n">10文字まで・本名は入れないでね</div>
+      <label class="pf-l" for="pfMsgIn">ひとこと</label><input class="pf-in" id="pfMsgIn" maxlength="24" autocomplete="off" placeholder="例：今日も満タンでお待ちしてます"><div class="pf-n">24文字まで</div>
+      <div class="pf-l">アバター</div><div class="pick" id="pfAva"></div>
+      <div class="pf-l">服の色</div><div class="pick" id="pfWear"></div>
+      <div class="pf-l">小物</div><div class="pick" id="pfAcc"></div>
+      <div class="pf-l">好きな色（プロフィールの飾りに使います）</div><div class="pick" id="pfFav"></div>
+      <div id="pfErr" class="set-p" style="color:#c0392b;font-weight:700;min-height:18px;text-align:center"></div>
+      <div class="set-btns"><button id="pfCancel">やめる</button><button class="m" id="pfSave">保存する</button></div>
+    </div>
+    <button class="close" id="pfClose">閉じる</button>
   </div>
 </div>
 
@@ -582,11 +634,16 @@ const TROPHIES = [
 
 /* ---------- 保存 ---------- */
 const KEY = "tokutoku-fever-v1";
-const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, cb:false, tutDone:false, endingSeen:false, rec:{}, dailyHist:{}, claimed:{}, titles:[], titleSel:null, decor:{owned:[], ceil:null, wall:null, counter:null}, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
+const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, cb:false, profile:null, playDays:0, lastDay:"", tutDone:false, endingSeen:false, rec:{}, dailyHist:{}, claimed:{}, titles:[], titleSel:null, decor:{owned:[], ceil:null, wall:null, counter:null}, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
 let save = fresh();
 const loadSave = s => Object.assign(fresh(), s, {stats: Object.assign(fresh().stats, s.stats || {}), endless: Object.assign(fresh().endless, s.endless || {}), rec: s.rec || {}, dailyHist: s.dailyHist || {}, claimed: s.claimed || {}, titles: s.titles || [], decor: Object.assign(fresh().decor, s.decor || {})});
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.stats) save = loadSave(s); } catch(e){}
-if (!save.tutDone && (save.stars["1-1"] || 0) >= 1) save.tutDone = true; // 前から遊んでいる人はチュートリアル済み
+if (!save.tutDone && (save.stars["1-1"] || 0) >= 1) save.tutDone = true;
+// プロフィール（個人情報なし）。店主IDはランキングを作るときの目印として、この端末で1回だけ作る
+function newId(){ const a = new Uint8Array(6); (crypto.getRandomValues ? crypto.getRandomValues(a) : a.forEach((_, i) => a[i] = Math.random()*256)); const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let t = ""; a.forEach(v => t += abc[v % 32]); return t.slice(0,3) + "-" + t.slice(3); }
+function ensureProfile(){ if (!save.profile) save.profile = {id: newId(), shop: "", name: "", msg: "", g: 0, wear: 0, acc: "none", fav: 2, since: Date.now(), set: false}; if (!save.profile.since) save.profile.since = Date.now();
+  const first = Math.min(...Object.values(save.trophies || {}).filter(v => typeof v === "number"), save.profile.since); save.profile.since = first; }
+ensureProfile(); // 前から遊んでいる人はチュートリアル済み
 const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch(e){} };
 // 以前の「空き瓶を増やす」強化は、ステージ中に買う形に変えたので払い戻す
 if (save.upg.spare){ save.wallet += [0, 800, 3200][Math.min(2, save.upg.spare)]; delete save.upg.spare; persist(); }
@@ -806,10 +863,10 @@ const GUESTS = [
   {fur:"#c7c2b8", ear:"dog",    cheek:"#e7b0a0", wear:"#7a5a2a"},
   {fur:"#3b3533", ear:"bear",   cheek:"#a97a6a", wear:"#3a3a3a"},
 ];
-function drawGuest(c, g, x, y, s, mood, t, noWear){
+function drawGuest(c, g, x, y, s, mood, t, noWear, wearCol){
   const G = GUESTS[g];
   c.save(); c.translate(x, y);
-  if (!noWear){ c.fillStyle = G.wear; rr(c, -s*.62, s*.42, s*1.24, s*.8, s*.35); c.fill(); }
+  if (!noWear){ c.fillStyle = wearCol || G.wear; rr(c, -s*.62, s*.42, s*1.24, s*.8, s*.35); c.fill(); }
   c.fillStyle = G.fur;
   if (G.ear === "cat"){ c.beginPath(); c.moveTo(-s*.46,-s*.2); c.lineTo(-s*.36,-s*.62); c.lineTo(-s*.08,-s*.38); c.fill(); c.beginPath(); c.moveTo(s*.46,-s*.2); c.lineTo(s*.36,-s*.62); c.lineTo(s*.08,-s*.38); c.fill(); }
   if (G.ear === "bear"){ c.beginPath(); c.arc(-s*.34,-s*.36,s*.15,0,7); c.arc(s*.34,-s*.36,s*.15,0,7); c.fill(); }
@@ -1788,6 +1845,7 @@ function endStage(){
   for (let r = rankBefore + 1; r <= rankAfter; r++) rankGift += rankReward(r);
   save.wallet += rankGift; claim("rank", rankAfter);
   save.stats.served += servedN; save.stats.bottles += bottlesOut; save.stats.maxCombo = Math.max(save.stats.maxCombo, maxCombo);
+  countDay();
   if (!missed && servedN > 0) save.stats.allHappy++;
   if (st > (save.stars[id]||0)) save.stars[id] = st;
   const prevBest = (stageRec(id) || {}).best || 0, newBest = money > prevBest && servedN > 0;
@@ -1836,7 +1894,7 @@ function endSpecial(){
     { const h = save.dailyHist || (save.dailyHist = {}), cur = h[S.key] || {best: 0, st: 0};
       cur.best = Math.max(cur.best, money); cur.st = Math.max(cur.st, st); h[S.key] = cur;
       Object.keys(h).sort().slice(0, -30).forEach(k => delete h[k]); }
-    shareTxt = `ご注文は満タンで\n日替わり特別営業 ${S.label}\n売上 ${yen(dd.best)} ${"★".repeat(st)}\nhttps://mizbas.github.io/gochumon-mantan/`;
+    shareTxt = `${pShop()}（店主 ${pName()}）\nご注文は満タンで\n日替わり特別営業 ${S.label}\n売上 ${yen(dd.best)} ${"★".repeat(st)}\nhttps://mizbas.github.io/gochumon-mantan/`;
   }
   const endless = S.mode === "endless", pf = profitOf();
   if (!endless){ save.wallet += pf.profit + branch + bonus; save.total += money; }
@@ -1844,6 +1902,7 @@ function endSpecial(){
   for (let r = rankBefore + 1; r <= rankAfter; r++) rankGift += rankReward(r);
   save.wallet += rankGift;
   save.stats.served += servedN; save.stats.bottles += bottlesOut; save.stats.maxCombo = Math.max(save.stats.maxCombo, maxCombo);
+  countDay();
   if (!endless) claim("day", save.dailyClears || 0);
   claim("rank", rankAfter);
   const newTr = checkTrophies(true); persist();
@@ -2028,6 +2087,7 @@ function showMap(){
     sp.appendChild(b);
   });
   bgm("map");
+  renderChip(); if (!save.profile.set && save.tutDone && !save.profile.asked){ save.profile.asked = true; persist(); setTimeout(() => openForm(true), 400); }
   drawHero(); checkTrophies(false); claim("rank", rankOf(save.total)); claim("day", save.dailyClears || 0);
   // しばらく引き継ぎコードを保存していなくて、進み具合が増えていたらお知らせ
   const days = save.backupT ? Math.floor((Date.now() - save.backupT)/864e5) : null, gain = save.total - (save.backupTotal||0);
@@ -2075,14 +2135,14 @@ function askImport(o){
   $("cfH").textContent = "読み込みますか？";
   $("cfP").innerHTML = `読み込むデータ：ランク${r}・財布 ${yen(o.wallet)}・★${Object.values(o.stars||{}).reduce((a,b)=>a+b,0)}<br><b>いまのデータは上書きされます。</b>`;
   $("cfYes").textContent = "読み込む";
-  cfAction = () => { save = loadSave(o); persist(); applyVolume(); renderSettings(); xmsg("読み込みました！"); showMap(); $("settings").classList.remove("hidden"); };
+  cfAction = () => { save = loadSave(o); ensureProfile(); persist(); applyVolume(); renderSettings(); xmsg("読み込みました！"); showMap(); $("settings").classList.remove("hidden"); };
   $("confirm").classList.remove("hidden");
 }
 $("xferLoad").onclick = () => { const o = importCode($("xferTxt").value); if (!o) return xmsg("コードが正しくありません。全部コピーできているか確かめてください", true); askImport(o); };
 $("xferPick").onclick = () => $("xferIn").click();
 $("xferIn").onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { e.target.value = ""; const o = importCode(t); if (!o) return xmsg("このファイルは引き継ぎデータではないようです", true); askImport(o); }); };
 $("wipeBtn").onclick = () => { const b = $("wipeBtn");
-  if (b.dataset.c){ const keep = {sound: save.sound, bgmVol: save.bgmVol, seVol: save.seVol}; save = Object.assign(fresh(), keep); persist(); delete b.dataset.c; b.textContent = "記録を消す"; showMap(); }
+  if (b.dataset.c){ const keep = {sound: save.sound, bgmVol: save.bgmVol, seVol: save.seVol}; save = Object.assign(fresh(), keep); ensureProfile(); persist(); delete b.dataset.c; b.textContent = "記録を消す"; showMap(); }
   else { b.dataset.c = "1"; b.textContent = "もう一度押すと財布も全部消えます"; setTimeout(() => { delete b.dataset.c; b.textContent = "記録を消す"; }, 3000); } };
 function drawHero(){
   const c = $("heroCv"), x = c.getContext("2d"); x.clearRect(0,0,520,320);
@@ -2108,6 +2168,80 @@ function drawHero(){
   drawVessel(x, sh, 290, 200 - sh.H/2, 0, [{c:2,v:4}], {cork:1});
 }
 
+/* ---------- プロフィール ---------- */
+const ACCS = [["none","なし",0],["bowtie","蝶ネクタイ",0],["ribbon","リボン",0],["glasses","めがね",0],["beret","ベレー帽",5],["tophat","シルクハット",10],["crown","王冠",20]];
+function countDay(){ const k = todayKey(); if (save.lastDay !== k){ save.lastDay = k; save.playDays = (save.playDays||0) + 1; } }
+function drawAvatar(c, p, x, y, s, t){
+  drawGuest(c, p.g, x, y, s, "happy", t || 0, false, COLORS[p.wear]);
+  c.save(); c.translate(x, y); c.lineCap = "round"; c.lineJoin = "round";
+  switch (p.acc){
+    case "bowtie": c.fillStyle = "#c0392b"; c.beginPath(); c.moveTo(0, s*.52); c.lineTo(-s*.2, s*.42); c.lineTo(-s*.2, s*.62); c.closePath(); c.moveTo(0, s*.52); c.lineTo(s*.2, s*.42); c.lineTo(s*.2, s*.62); c.closePath(); c.fill(); c.beginPath(); c.arc(0, s*.52, s*.05, 0, 7); c.fill(); break;
+    case "ribbon": c.fillStyle = "#f06aa8"; c.beginPath(); c.ellipse(s*.22, -s*.38, s*.14, s*.08, -.6, 0, 7); c.ellipse(s*.4, -s*.3, s*.14, s*.08, .6, 0, 7); c.fill(); c.beginPath(); c.arc(s*.31, -s*.34, s*.05, 0, 7); c.fill(); break;
+    case "glasses": c.strokeStyle = "#2a2420"; c.lineWidth = s*.045; c.beginPath(); c.arc(-s*.16, -s*.03, s*.12, 0, 7); c.moveTo(s*.28, -s*.03); c.arc(s*.16, -s*.03, s*.12, 0, 7); c.moveTo(-s*.04, -s*.05); c.lineTo(s*.04, -s*.05); c.stroke(); break;
+    case "beret": c.fillStyle = "#3a2a6a"; c.beginPath(); c.ellipse(-s*.05, -s*.4, s*.38, s*.14, -.15, 0, 7); c.fill(); c.beginPath(); c.arc(s*.1, -s*.53, s*.05, 0, 7); c.fill(); break;
+    case "tophat": c.fillStyle = "#1e1a16"; c.fillRect(-s*.24, -s*.95, s*.48, s*.5); c.beginPath(); c.ellipse(0, -s*.44, s*.42, s*.08, 0, 0, 7); c.fill(); c.fillStyle = "#c0392b"; c.fillRect(-s*.24, -s*.56, s*.48, s*.08); break;
+    case "crown": c.fillStyle = "#f3d27a"; c.beginPath(); c.moveTo(-s*.3, -s*.36); c.lineTo(-s*.3, -s*.66); c.lineTo(-s*.15, -s*.5); c.lineTo(0, -s*.72); c.lineTo(s*.15, -s*.5); c.lineTo(s*.3, -s*.66); c.lineTo(s*.3, -s*.36); c.closePath(); c.fill(); c.fillStyle = "#e63946"; c.beginPath(); c.arc(0, -s*.46, s*.05, 0, 7); c.fill(); break;
+  }
+  c.restore();
+}
+const pShop = () => (save.profile.shop || "名前のないお店"), pName = () => (save.profile.name || "店主");
+function renderChip(){
+  $("pChipShop").textContent = pShop(); $("pChipOwn").textContent = `店主 ${pName()}　${titleShown()}`;
+  const c = $("pChipCv"), x = c.getContext("2d"); x.clearRect(0, 0, 88, 88); x.save(); x.beginPath(); x.arc(44, 44, 44, 0, 7); x.clip(); drawAvatar(x, save.profile, 44, 52, 36, 600); x.restore();
+}
+function sanitize(t, max){ // 改行や見えない文字、URLっぽいものを除く（いずれオンラインにするときのため）
+  t = String(t || "").replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, "").replace(/\s+/g, " ").trim();
+  if (/https?:|www\.|\.(com|jp|net)|@/i.test(t)) return null;
+  return [...t].slice(0, max).join("");
+}
+function openProfile(){
+  audio(); const p = save.profile, r = rankOf(save.total);
+  $("pfShop").textContent = pShop(); $("pfOwn").textContent = `店主　${pName()}`; $("pfTtl").textContent = `ランク${r}　${titleShown()}`;
+  $("pfMsg").textContent = p.msg ? `「${p.msg}」` : ""; $("pfId").textContent = `店主ID ${p.id}`;
+  $("pfShop").style.color = COLORS[p.fav]; document.querySelector(".pcard").style.boxShadow = `inset 0 0 0 3px ${COLORS[p.fav]}`;
+  const c = $("pfCv"), x = c.getContext("2d"); x.clearRect(0, 0, 220, 220); x.save(); x.beginPath(); x.arc(110, 110, 110, 0, 7); x.clip(); drawAvatar(x, p, 110, 112, 100, 600); x.restore();
+  const stars = Object.values(save.stars).reduce((a,b) => a+b, 0), tro = Object.keys(save.trophies).length, d = new Date(p.since);
+  $("pfStats").innerHTML = [["開店日", `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`], ["営業した日数", `${save.playDays || 1}日`], ["累計売上", yen(save.total)], ["満足したお客さん", `${save.stats.served.toLocaleString()}人`],
+    ["★", `${stars} / ${STAGES.length*3}`], ["トロフィー", `${tro} / ${TROPHIES.length}`], ["エンドレス", save.endless.best ? `${yen(save.endless.best)}（Lv${save.endless.lv}）` : "まだなし"], ["最高連続", `${save.stats.maxCombo}連続`]]
+    .map(([a,b]) => `<div><small>${a}</small><b>${b}</b></div>`).join("");
+  $("pfCopied").textContent = ""; $("pfView").classList.remove("hidden"); $("pfForm").classList.add("hidden"); $("pfH").textContent = "プロフィール";
+  $("profile").classList.remove("hidden");
+}
+let draft = null;
+function openForm(first){
+  draft = Object.assign({}, save.profile);
+  $("pfShopIn").value = draft.shop; $("pfNameIn").value = draft.name; $("pfMsgIn").value = draft.msg; $("pfErr").textContent = "";
+  $("pfH").textContent = first ? "お店をひらこう" : "プロフィールを編集"; $("pfView").classList.add("hidden"); $("pfForm").classList.remove("hidden"); $("profile").classList.remove("hidden");
+  renderPick();
+}
+function renderPick(){
+  const r = rankOf(save.total);
+  const ava = $("pfAva"); ava.innerHTML = "";
+  GUESTS.forEach((_, g) => { const b = document.createElement("button"); b.className = draft.g === g ? "on" : ""; b.setAttribute("aria-label", `アバター${g+1}`);
+    const cv = document.createElement("canvas"); cv.width = 104; cv.height = 104; const x = cv.getContext("2d"); x.save(); x.beginPath(); x.arc(52, 52, 52, 0, 7); x.clip(); drawAvatar(x, Object.assign({}, draft, {g}), 52, 54, 50, 600); x.restore();
+    b.appendChild(cv); b.onclick = () => { draft.g = g; play("pick", {gain:.4}); renderPick(); }; ava.appendChild(b); });
+  const wr = $("pfWear"); wr.innerHTML = "";
+  COLORS.forEach((col, k) => { const b = document.createElement("button"); b.className = draft.wear === k ? "on" : ""; b.setAttribute("aria-label", CNAME[k]); b.innerHTML = `<span class="sw" style="background:${col}"></span>`; b.onclick = () => { draft.wear = k; play("pick", {gain:.4}); renderPick(); }; wr.appendChild(b); });
+  const ac = $("pfAcc"); ac.innerHTML = "";
+  ACCS.forEach(([id, name, rk]) => { const b = document.createElement("button"); b.className = "ac" + (draft.acc === id ? " on" : ""); b.disabled = r < rk; b.textContent = r < rk ? `🔒${name}（ランク${rk}）` : name; b.onclick = () => { draft.acc = id; play("pick", {gain:.4}); renderPick(); }; ac.appendChild(b); });
+  const fv = $("pfFav"); fv.innerHTML = "";
+  COLORS.forEach((col, k) => { const b = document.createElement("button"); b.className = draft.fav === k ? "on" : ""; b.setAttribute("aria-label", CNAME[k]); b.innerHTML = `<span class="sw" style="background:${col}"></span>`; b.onclick = () => { draft.fav = k; play("pick", {gain:.4}); renderPick(); }; fv.appendChild(b); });
+}
+$("pChip").onclick = () => { if (!save.profile.set) openForm(true); else openProfile(); };
+$("pfEdit").onclick = () => openForm(false);
+$("pfCancel").onclick = () => { if (!save.profile.set){ $("profile").classList.add("hidden"); return; } openProfile(); };
+$("pfSave").onclick = () => {
+  const shop = sanitize($("pfShopIn").value, 12), name = sanitize($("pfNameIn").value, 10), msg = sanitize($("pfMsgIn").value, 24);
+  if (shop === null || name === null || msg === null){ $("pfErr").textContent = "URLやメールアドレスは入れられません"; return; }
+  if (!shop){ $("pfErr").textContent = "お店の名前を入れてください"; return; }
+  if (!name){ $("pfErr").textContent = "店主の名前を入れてください"; return; }
+  Object.assign(save.profile, draft, {shop, name, msg, set: true}); persist(); play("pay", {gain:.5}); renderChip(); openProfile();
+};
+$("pfClose").onclick = () => $("profile").classList.add("hidden");
+$("pfCopy").onclick = () => { const p = save.profile, r = rankOf(save.total);
+  const t = `🍾 ${pShop()}\n店主：${pName()}（ランク${r}「${titleShown()}」）\n${p.msg ? "「" + p.msg + "」\n" : ""}累計売上 ${yen(save.total)}・★${Object.values(save.stars).reduce((a,b)=>a+b,0)}\nエンドレス最高 ${yen(save.endless.best||0)}（Lv${save.endless.lv||0}）\n#ご注文は満タンで https://mizbas.github.io/gochumon-mantan/`;
+  copyText(t).then(ok => $("pfCopied").textContent = ok ? "コピーしました！" : "コピーできませんでした"); };
+
 /* ---------- エンディング ---------- */
 let endRaf = 0;
 function showEnding(){
@@ -2116,7 +2250,7 @@ function showEnding(){
   const stars = Object.values(save.stars).reduce((a,b) => a+b, 0), r = rankOf(save.total);
   $("endRoll").innerHTML = `<h3>ご注文は満タンで</h3><p>全${STAGES.length}ステージ 制覇おめでとう！</p><p>夜のバーから始まったお店は、ホテルのカクテルバーまで。</p>
     <small>あなたのお店の記録</small><p>累計売上 ${yen(save.total)}</p><p>満足したお客さん ${save.stats.served.toLocaleString()}人</p><p>渡した満タン瓶 ${save.stats.bottles.toLocaleString()}本</p><p>★ ${stars} / ${STAGES.length*3}</p><p>ランク${r}「${titleShown()}」</p>
-    <small>企画・テストプレイ</small><p>店主さん（あなた）</p><small>制作</small><p>Claude</p><small>音楽</small><p>魔王魂</p><small>効果音</small><p>効果音ラボ</p>
+    <small>店主</small><p>${pName()}（${pShop()}）</p><small>企画・テストプレイ</small><p>あなた</p><small>制作</small><p>Claude</p><small>音楽</small><p>魔王魂</p><small>効果音</small><p>効果音ラボ</p>
     <small>ご来店のお客さん</small><p>ねこ・くま・うさぎ・いぬ　ほか常連のみなさん</p>
     <small>そして</small><p>遊んでくれたあなたと、友達のみんなへ</p><h3>ありがとうございました</h3>
     <p>お店はこれからも営業中。<br>エンドレス営業と日替わりでお待ちしています。</p>`;
@@ -2252,7 +2386,7 @@ function renderTitleSel(){
   const r = rankOf(save.total), own = TITLES.filter(([n]) => n <= r).map(t => t[1]).concat(save.titles || []), box = $("trSel"); box.innerHTML = "";
   [[null, `ランクの称号（自動）`]].concat(own.map(t => [t, t])).forEach(([v, label]) => {
     const b = document.createElement("button"); b.textContent = label; b.className = (save.titleSel || null) === v ? "on" : "";
-    b.onclick = () => { save.titleSel = v; persist(); play("pick"); $("trTitle").textContent = `ランク${r}　${titleShown()}`; $("titleV").textContent = titleShown(); renderTitleSel(); };
+    b.onclick = () => { save.titleSel = v; persist(); play("pick"); $("trTitle").textContent = `ランク${r}　${titleShown()}`; $("titleV").textContent = titleShown(); renderTitleSel(); renderChip(); };
     box.appendChild(b); });
   const rest = REWARDS.filter(x => x.give.title && !save.claimed[x.id]);
   if (rest.length){ const p = document.createElement("div"); p.className = "set-p"; p.style.cssText = "width:100%;text-align:center;margin:4px 0 0";
@@ -2307,7 +2441,7 @@ showMap();
 let updateReady = false;
 function applyUpdate(){
   if (!updateReady) return;
-  const busyNow = !$("play").classList.contains("hidden") || !$("intro").classList.contains("hidden") || !$("result").classList.contains("hidden") || !$("settings").classList.contains("hidden");
+  const busyNow = !$("play").classList.contains("hidden") || !$("intro").classList.contains("hidden") || !$("result").classList.contains("hidden") || !$("settings").classList.contains("hidden") || !$("profile").classList.contains("hidden");
   if (busyNow) return;
   try { sessionStorage.setItem("justUpdated", "1"); } catch(e){}
   location.reload();
