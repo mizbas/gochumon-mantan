@@ -189,6 +189,19 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
 .trophy:not(.got){opacity:.6}
 .close{margin-top:14px;width:100%;height:50px;border-radius:25px;background:#eadbc1;font-weight:900}
 
+#tutBox{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 6px);transform:translateX(-50%);width:min(380px,calc(100% - 16px));z-index:6;background:var(--paper);color:var(--ink);border-radius:18px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.45);border:3px solid var(--amber);font-size:14.5px;line-height:1.6;display:flex;gap:10px;align-items:center}
+#tutBox .tx{flex:1}
+#tutBox button{flex:none;height:40px;padding:0 16px;border-radius:20px;background:var(--rust);color:#fff;font-weight:900}
+#tutBox .skip{background:none;color:#8a7660;font-weight:700;padding:0 4px;font-size:12px;text-decoration:underline}
+#ending{position:fixed;inset:0;z-index:8;background:radial-gradient(circle at 50% 20%,#4a2a14,#140c08 70%);color:var(--paper);display:flex;flex-direction:column;align-items:center;overflow:hidden}
+#ending canvas{width:min(520px,100%);height:auto;margin-top:calc(env(safe-area-inset-top) + 20px)}
+#ending .roll{position:relative;flex:1;width:100%;overflow:hidden;mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent);-webkit-mask-image:linear-gradient(transparent,#000 12%,#000 88%,transparent)}
+#ending .roll div{position:absolute;left:0;right:0;text-align:center;animation:roll 34s linear forwards;padding:0 20px}
+#ending h3{font-family:var(--hand);font-weight:400;color:var(--amber);font-size:30px;margin:26px 0 6px}
+#ending p{margin:4px 0;font-size:15px;color:#e9dcc4}
+#ending small{display:block;color:#bba895;font-size:12px;margin-top:18px}
+#ending button{margin:12px 0 calc(env(safe-area-inset-bottom) + 18px);height:52px;padding:0 40px;border-radius:26px;background:var(--amber);color:var(--ink);font-weight:900;font-size:16px}
+@keyframes roll{from{transform:translateY(60vh)}to{transform:translateY(-100%)}}
 #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 14px);transform:translate(-50%,-140%);z-index:9;background:var(--paper);color:var(--ink);
   border-radius:18px;padding:10px 16px;box-shadow:0 6px 0 #b89a72,0 12px 30px rgba(0,0,0,.45);display:flex;gap:10px;align-items:center;transition:transform .35s cubic-bezier(.2,1.4,.4,1);max-width:calc(100% - 32px)}
 #toast.show{transform:translate(-50%,0)}
@@ -240,7 +253,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
       <div class="left"><b id="leftV">8</b><span id="leftL">人まち</span></div>
     </div>
     <div class="bars"><div class="fill" id="moneyBar"></div><div class="mark" id="m1"></div><div class="mark s" id="m2"></div><div class="mark s" id="m3"></div></div>
-    <div class="row2"><button class="buyb hidden" id="sandBtn">⏳ 全員 +10秒</button><span class="hint" id="hintV"></span><button class="buyb" id="buyBtn">空き瓶 +1</button></div>
+    <div class="row2"><button class="buyb hidden" id="sandBtn">⏳ 全員 +10秒</button><span class="hint" id="hintV"></span><button class="buyb" id="undoBtn">↶ 戻す</button><button class="buyb" id="buyBtn">空き瓶 +1</button></div>
   </div>
   <div id="stage"><canvas id="cv"></canvas></div>
 </section>
@@ -328,6 +341,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
     <h2 id="setH">設定</h2>
     <div class="set-row"><span>音</span><button class="tog on" id="sndTog">オン</button></div>
     <div class="set-row"><span>BGM</span><input type="range" id="bgmVol" min="0" max="100" step="5"><output id="bgmOut">60</output></div>
+    <div class="set-row"><span style="width:auto">見分けやすいモード<br><small style="font-weight:400;color:#7d6c5d">色に記号を重ねて表示</small></span><button class="tog" id="cbTog">オフ</button></div>
     <div class="set-row"><span>効果音</span><input type="range" id="seVol" min="0" max="100" step="5"><output id="seOut">100</output></div>
     <div class="set-h">データの引き継ぎ</div>
     <div id="protV"></div>
@@ -337,8 +351,18 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
     <div class="set-btns"><button class="m" id="xferLoad">コードで読み込む</button><button id="xferPick">ファイルから読み込む</button></div>
     <input type="file" id="xferIn" accept=".txt,text/plain" hidden>
     <div id="xferMsg" role="status" aria-live="polite"></div>
+    <div class="set-h">もう一度見る</div>
+    <div class="set-btns"><button id="tutAgain">チュートリアル</button><button id="endAgain">エンディング</button></div>
     <button class="close" id="setClose">閉じる</button>
   </div>
+</div>
+
+<div id="tutBox" class="hidden" role="status" aria-live="polite"><div class="tx" id="tutTx"></div><button id="tutNext">次へ</button><button class="skip" id="tutSkip">とばす</button></div>
+
+<div id="ending" class="hidden" role="dialog" aria-modal="true" aria-label="エンディング">
+  <canvas id="endCv" width="520" height="300"></canvas>
+  <div class="roll"><div id="endRoll"></div></div>
+  <button id="endClose">お店にもどる</button>
 </div>
 
 <div id="toast" role="status" aria-live="polite"><div class="ic">🏆</div><div><small id="toastS">トロフィー獲得</small><b id="toastB"></b></div></div>
@@ -359,10 +383,12 @@ const CAP = 4;
 const WORLDS = [
   {w:1, name:"夜のバー",       note:""},
   {w:2, name:"昼下がりのカフェ", note:"瓶の下のほうの色が「？」で隠れています。上の色を注ぎ出すと見えます。"},
-  {w:3, name:"夏祭りの屋台",   note:"「急ぎ」のお客さんが来ます。待てる時間は短いけれど、代金は1.6倍。"},
+  {w:3, name:"夏祭りの屋台",   note:"「急ぎ」のお客さんが来ます。待てる時間は短いけれど、代金は1.4倍。"},
   {w:4, name:"雪山のロッジ",   note:"凍った瓶があります。氷が溶けるまでは注ぐことも注がれることもできません。氷の数字は、満タン瓶を渡すたびと、15秒たつごとに1つ減ります。"},
+  {w:6, name:"ホテルのカクテルバー", note:"棚の端に<b>カクテルグラス</b>があります。グラスにはどの色でも<b>1杯ずつ</b>注げます。カクテルの注文は、下から順に層の色が決まっています。注文どおりに重ねると自動でお出しして、高い代金がもらえます。順番を間違えたら、グラスを選んで流しへ。"},
   {w:5, name:"港町の酒場",     note:"仕入れは回数に限りがあります（残り回数は仕入れ台に表示）。「団体さん」は2色を2本ずつ、満タン瓶4本の大口注文で、待てる時間は長く、代金は2倍。"},
 ];
+WORLDS.sort((a, b) => a.w - b.w);
 const STAGES = [
   {w:1, colors:3, ord:[1,1], seats:2, guests:6,  pat:60, shelf:3, spare:2, goal:800},
   {w:1, colors:3, ord:[1,2], seats:2, guests:8,  pat:55, shelf:3, spare:2, goal:1600},
@@ -404,6 +430,14 @@ const STAGES = [
   {w:5, colors:7, ord:[1,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:4200, supply:36, vip:.25, ice:[2,4]},
   {w:5, colors:7, ord:[1,3], seats:3, guests:12, pat:64, shelf:7, spare:2, goal:4500, supply:38, vip:.25, rush:.25, hide:true},
   {w:5, colors:7, ord:[2,3], seats:3, guests:11, pat:72, shelf:7, spare:2, goal:4700, supply:36, vip:.3, ice:[3,5], hide:true},
+  {w:6, colors:5, ord:[1,2], seats:3, guests:9,  pat:62, shelf:5, spare:2, goal:2800, cocktail:.3,  cockLen:[3,3]},
+  {w:6, colors:5, ord:[1,2], seats:3, guests:10, pat:62, shelf:5, spare:2, goal:3200, cocktail:.35, cockLen:[3,3]},
+  {w:6, colors:6, ord:[1,2], seats:3, guests:10, pat:62, shelf:6, spare:2, goal:3900, cocktail:.35, cockLen:[3,4]},
+  {w:6, colors:6, ord:[1,3], seats:3, guests:11, pat:64, shelf:6, spare:2, goal:4300, cocktail:.4,  cockLen:[3,4]},
+  {w:6, colors:6, ord:[1,3], seats:3, guests:11, pat:64, shelf:6, spare:2, goal:4500, cocktail:.4,  cockLen:[3,4], hide:true},
+  {w:6, colors:7, ord:[1,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:4800, cocktail:.4,  cockLen:[4,4], rush:.2},
+  {w:6, colors:7, ord:[1,3], seats:3, guests:12, pat:66, shelf:7, spare:2, goal:5100, cocktail:.45, cockLen:[4,4], ice:[2,4]},
+  {w:6, colors:7, ord:[2,3], seats:3, guests:12, pat:72, shelf:7, spare:2, goal:5600, cocktail:.5,  cockLen:[4,4], hide:true, vip:.2},
 ];
 STAGES.forEach(st => { const n = STAGES.filter(x => x.w === st.w).indexOf(st) + 1; st.id = st.w + "-" + n; st.n = n; });
 const STORE_MAX = 3, RACK_COST = [200, 400], BUY_COST = [300, 600];
@@ -529,6 +563,7 @@ const TROPHIES = [
   {id:"w2",      ic:"☕", name:"カフェ制覇",          desc:"2-8 をクリアする",           ok: s => (s.stars["2-8"]||0) >= 1},
   {id:"w3",      ic:"🏮", name:"お祭り制覇",          desc:"3-8 をクリアする",           ok: s => (s.stars["3-8"]||0) >= 1},
   {id:"w4",      ic:"❄️", name:"ロッジ制覇",          desc:"4-8 をクリアする",           ok: s => (s.stars["4-8"]||0) >= 1},
+  {id:"w6",      ic:"🍸", name:"カクテル制覇",        desc:"6-8 をクリアする",           ok: s => (s.stars["6-8"]||0) >= 1},
   {id:"w5",      ic:"⚓", name:"港町制覇",            desc:"5-8 をクリアする",           ok: s => (s.stars["5-8"]||0) >= 1},
   {id:"s100",    ic:"🍾", name:"100本出荷",          desc:"満タンの瓶を累計100本渡す",  ok: s => s.stats.bottles >= 100},
   {id:"rich",    ic:"💰", name:"売上5万円",          desc:"累計売上 ¥50,000",           ok: s => s.total >= 50000},
@@ -547,10 +582,11 @@ const TROPHIES = [
 
 /* ---------- 保存 ---------- */
 const KEY = "tokutoku-fever-v1";
-const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, rec:{}, dailyHist:{}, claimed:{}, titles:[], titleSel:null, decor:{owned:[], ceil:null, wall:null, counter:null}, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
+const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, cb:false, tutDone:false, endingSeen:false, rec:{}, dailyHist:{}, claimed:{}, titles:[], titleSel:null, decor:{owned:[], ceil:null, wall:null, counter:null}, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
 let save = fresh();
 const loadSave = s => Object.assign(fresh(), s, {stats: Object.assign(fresh().stats, s.stats || {}), endless: Object.assign(fresh().endless, s.endless || {}), rec: s.rec || {}, dailyHist: s.dailyHist || {}, claimed: s.claimed || {}, titles: s.titles || [], decor: Object.assign(fresh().decor, s.decor || {})});
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.stats) save = loadSave(s); } catch(e){}
+if (!save.tutDone && (save.stars["1-1"] || 0) >= 1) save.tutDone = true; // 前から遊んでいる人はチュートリアル済み
 const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch(e){} };
 // 以前の「空き瓶を増やす」強化は、ステージ中に買う形に変えたので払い戻す
 if (save.upg.spare){ save.wallet += [0, 800, 3200][Math.min(2, save.upg.spare)]; delete save.upg.spare; persist(); }
@@ -595,7 +631,7 @@ function applyVolume(){
 /* ---------- BGM（魔王魂の曲。遊ぶ場所に入ったときに初めて読み込み、そのあとはスマホに保存される） ---------- */
 const BGM = {
   map: "maoudamashii_bgm_acoustic38.mp3", w1: "maoudamashii_bgm_acoustic15.mp3", w2: "maoudamashii_bgm_acoustic41.mp3",
-  w3: "maoudamashii_bgm_ethnic09.mp3", w4: "maoudamashii_bgm_acoustic54.mp3", w5: "maoudamashii_bgm_ethnic10.mp3",
+  w3: "maoudamashii_bgm_ethnic09.mp3", w4: "maoudamashii_bgm_acoustic54.mp3", w5: "maoudamashii_bgm_ethnic10.mp3", w6: "maoudamashii_bgm_acoustic08.mp3",
   endless: "maoudamashii_bgm_acoustic10.mp3", daily: "maoudamashii_bgm_ethnic14.mp3"
 };
 let bgmGain = null, bgmKey = null, bgmWant = null, bgmNode = null, bgmTok = 0; const BGMBUF = {};
@@ -731,6 +767,7 @@ function drawVessel(c, sh, x, y, a, layers0, o={}){
     if (isTop){ c.fillStyle = "rgba(255,255,255,.22)"; c.fillRect(minX-2, yTop, maxX-minX+4, Math.max(1.5, sh.w*.035)); }
     if (L.h && Math.abs(a) < .05){ c.fillStyle = "rgba(246,234,214,.6)"; c.font = `900 ${sh.w*.36}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
       for (let q=0;q<Math.round(L.v);q++){ const y0 = levelY(T, acc - (L.v - q)*sh.unit), y1 = levelY(T, acc - (L.v - q - 1)*sh.unit); c.fillText("?", x, (y0 + y1)/2); } }
+    if (save.cb && !L.h && Math.abs(a) < .05){ for (let q=0;q<Math.round(L.v);q++){ const y0 = levelY(T, acc - (L.v - q)*sh.unit), y1 = levelY(T, acc - (L.v - q - 1)*sh.unit); if (y0 - y1 > sh.w*.25) sym(c, L.c, x, (y0 + y1)/2, Math.min(sh.w*.17, (y0 - y1)*.32)); } }
     prevY = yTop;
   });
   if (layers.length){ // 立体感（左のつや・右の影）を全体に1回だけ
@@ -797,7 +834,33 @@ function drawGuest(c, g, x, y, s, mood, t, noWear){
 }
 function heart(c, x, y, r){ c.beginPath(); c.moveTo(x, y + r*.9); c.bezierCurveTo(x - r*1.6, y - r*.2, x - r*.6, y - r*1.3, x, y - r*.35); c.bezierCurveTo(x + r*.6, y - r*1.3, x + r*1.6, y - r*.2, x, y + r*.9); c.fill(); }
 // 吹き出しの小さな満タン瓶
-function miniBottle(c, x, y, h, col, got){
+// 色ごとの記号（見分けやすいモード）
+function sym(c, ci, x, y, r){
+  c.save(); c.translate(x, y); c.fillStyle = "rgba(255,255,255,.92)"; c.strokeStyle = "rgba(0,0,0,.45)"; c.lineWidth = Math.max(1, r*.22); c.lineJoin = "round"; c.beginPath();
+  switch (ci){
+    case 0: c.arc(0, 0, r*.8, 0, 7); break;                                                         // ● 赤
+    case 1: c.moveTo(0, -r*.9); c.lineTo(r*.9, r*.7); c.lineTo(-r*.9, r*.7); c.closePath(); break;    // ▲ 黄
+    case 2: c.rect(-r*.72, -r*.72, r*1.44, r*1.44); break;                                           // ■ 青
+    case 3: c.moveTo(0, -r); c.lineTo(r*.8, 0); c.lineTo(0, r); c.lineTo(-r*.8, 0); c.closePath(); break; // ◆ 緑
+    case 4: c.moveTo(0, r*.85); c.bezierCurveTo(-r*1.5, -r*.2, -r*.55, -r*1.2, 0, -r*.35); c.bezierCurveTo(r*.55, -r*1.2, r*1.5, -r*.2, 0, r*.85); break; // ♥ 桃
+    case 5: for (let i=0;i<10;i++){ const rr2 = i%2 ? r*.42 : r, a = -Math.PI/2 + i*Math.PI/5; c.lineTo(Math.cos(a)*rr2, Math.sin(a)*rr2); } c.closePath(); break; // ★ 紫
+    case 6: c.rect(-r*.28, -r*.85, r*.56, r*1.7); c.rect(-r*.85, -r*.28, r*1.7, r*.56); break;        // ✚ 橙
+    case 7: c.arc(0, 0, r*.8, 0, 7); c.moveTo(r*.42, 0); c.arc(0, 0, r*.42, 0, 7, true); break;      // ◎ 水
+  }
+  c.stroke(); c.fill("evenodd"); c.restore();
+}
+// カクテル（下から順に層の色）。x,y は下の中心
+function drawCock(c, x, y, h, pat, done){
+  const w = h*.52, n = pat.length, lh = h*.78/n;
+  c.save(); c.globalAlpha = done ? .35 : 1;
+  pat.forEach((ci, k) => { c.fillStyle = COLORS[ci]; c.fillRect(x - w/2, y - (k+1)*lh, w, lh + .5); if (save.cb) sym(c, ci, x, y - (k+.5)*lh, Math.min(w*.26, lh*.36)); });
+  c.strokeStyle = "rgba(60,40,30,.75)"; c.lineWidth = 1.5; c.strokeRect(x - w/2, y - n*lh, w, n*lh);
+  c.strokeStyle = "#c9962e"; c.lineWidth = 2; c.beginPath(); c.moveTo(x - w/2 - 2, y - n*lh); c.lineTo(x + w/2 + 2, y - n*lh); c.stroke();
+  c.fillStyle = "#f6e05a"; c.beginPath(); c.arc(x + w/2, y - n*lh, h*.11, Math.PI, 0); c.fill();
+  c.strokeStyle = "#2f7d32"; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x - w*.1, y - n*lh - h*.18); c.lineTo(x + w*.15, y - n*lh + lh*.4); c.stroke();
+  c.restore();
+}
+function miniBottle(c, x, y, h, col, got, ci){
   const w = h*.36;
   c.save(); c.translate(x, y);
   c.fillStyle = col; c.globalAlpha = got ? .35 : 1;
@@ -805,6 +868,7 @@ function miniBottle(c, x, y, h, col, got){
   c.fillRect(-w*.22, -h*.86, w*.44, h*.3);
   c.fillStyle = "#c79a62"; rr(c, -w*.3, -h, w*.6, h*.18, 2); c.fill();
   c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(-w*.32, -h*.55, w*.14, h*.45);
+  if (save.cb && ci != null) sym(c, ci, 0, -h*.32, w*.32);
   c.globalAlpha = 1;
   if (got){ c.strokeStyle = "#2f7d32"; c.lineWidth = Math.max(2, h*.1); c.lineCap = "round"; c.lineJoin = "round";
     c.beginPath(); c.moveTo(-w*.45, -h*.4); c.lineTo(-w*.05, -h*.12); c.lineTo(w*.6, -h*.75); c.stroke(); }
@@ -822,7 +886,7 @@ const RG = (a,b) => a + rnd()*(b-a);
 const pick = a => a[Math.floor(rnd()*a.length)];
 function mulberry(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const palette = () => [...Array(S.colors).keys()];
-const isFull = b => b.units.length === CAP && b.units.every(u => u.c === b.units[0].c && !u.h);
+const isFull = b => !b.glass && b.units.length === CAP && b.units.every(u => u.c === b.units[0].c && !u.h);
 const topRun = u => { if (!u.length) return 0; const c = u[u.length-1].c; let n = 0; for (let i=u.length-1;i>=0 && u[i].c===c && !u[i].h;i--) n++; return n; };
 let stored = [], bought = 0, supplyLeft = Infinity, iceTick = 15000;
 const shapeNow = () => bottleShape(save.bottle, lay ? lay.w : 50);
@@ -834,7 +898,7 @@ function wanted(){ // まだ渡していない注文の色（予約済みは除�
 }
 // 仕入れる瓶の中身：待っているお客さんの色を多めに。目利きの強化で色の種類が減る
 function stockUnits(){
-  const need = wanted(), pal = palette(), maxC = [4,3,2][Math.min(2, upg("refill"))], set = [];
+  const cg = cockGuest(), need = wanted().concat(cg ? cg.cock : []), pal = palette(), maxC = [4,3,2][Math.min(2, upg("refill"))], set = [];
   for (let k=0; k<30 && set.length < maxC; k++){ const c = need.length && rnd() < .65 ? pick(need) : pick(pal); if (!set.includes(c)) set.push(c); }
   if (set.length < 2) set.push(pal.find(c => !set.includes(c)));
   const u = [set[0], set[1]]; while (u.length < CAP) u.push(pick(set));
@@ -904,8 +968,11 @@ function startStage(i){
   sel = -1; pours = []; flights = []; busy = new Set(); lift = bottles.map(()=>0);
   money = 0; combo = 0; maxCombo = 0; servedN = 0; missed = 0; dumped = 0; bottlesOut = 0; guestsLeft = S.guests; expSupply = 0;
   floats = []; parts = []; shakeT = {}; waveT = {}; T = 0; botNext = 0; ended = false; running = true;
+  if (S.cocktail){ bottles.push({units: [], glass: true}); lift.push(0); }
   stock = []; stock.push(stockUnits(), stockUnits(), stockUnits()); stockT = -1e9; stored = []; bought = 0; storeCap = has("rack") ? 2 : 1; sandUsed = false; paused = false; pendingStore = -1; $("rackAsk").classList.add("hidden");
-  supplyLeft = S.supply || Infinity; iceTick = 15000;
+  supplyLeft = S.supply || Infinity; iceTick = 15000; undoSnap = null; undoLeft = UNDO_MAX;
+  tut = (i === 0 && !save.tutDone) ? {step: 0, t0: 0} : null; TUT.forEach(t => delete t.shown); $("tutBox").classList.add("hidden");
+  hhT = (S.mode === "daily" || (typeof i === "number" && i >= 8)) && rnd() < .75 ? RG(40000, 80000) : Infinity; hhOn = false;
   (S.ice || []).forEach((n, k) => { const b = S.iceSpare && k === 0 ? bottles[S.shelf] : bottles[k]; if (b) b.ice = n; });
   layout(); hud();
 }
@@ -955,7 +1022,63 @@ function newOrder(fixed){
   }
   return o;
 }
-function patienceFor(order){ return S.pat*1000 * (1 + .3*(order.length-1)) * (1 + .12*upg("pat")); }
+function patienceFor(order){ return S.pat*1000 * (1 + .3*(order.length-1)) * (1 + .12*upg("pat")) * (tut ? 3 : 1); }
+/* ---------- チュートリアル（1-1 の初回。指で次の一手を案内する） ---------- */
+let tut = null; // {step}
+function hintMove(){
+  const ok = i => !busy.has(i) && !bottles[i].ice && !bottles[i].glass && !bottles[i].corked;
+  const need = wanted(); if (!need.length) return null;
+  const topC = b => b.units.length ? b.units[b.units.length-1].c : -1, room = b => CAP - b.units.length;
+  for (const c of need){
+    if (bottles.some(b => b.corked && b.units[0].c === c)) continue;
+    const srcs = bottles.map((b,i) => i).filter(i => ok(i) && topC(bottles[i]) === c);
+    // 同じ色が多い瓶へ集める
+    const dsts = srcs.filter(i => room(bottles[i]) > 0).sort((a,b) => bottles[b].units.filter(u => u.c === c).length - bottles[a].units.filter(u => u.c === c).length);
+    for (const d of dsts) for (const s2 of srcs) if (s2 !== d && bottles[s2].units.filter(u=>u.c===c).length <= bottles[d].units.filter(u=>u.c===c).length) return {from: s2, to: d};
+    const empty = bottles.findIndex((b,i) => ok(i) && !b.units.length);
+    if (srcs.length && empty >= 0 && !bottles[srcs[0]].units.every(u => u.c === c)) return {from: srcs[0], to: empty};
+    // 下に埋まっている色を掘り出す
+    for (let i=0;i<bottles.length;i++){ const b = bottles[i]; if (!ok(i) || !b.units.length || topC(b) === c || !b.units.some(u => u.c === c)) continue;
+      const x = topC(b), d = bottles.findIndex((d2,j) => j !== i && ok(j) && room(d2) > 0 && (topC(d2) === x || !d2.units.length));
+      if (d >= 0) return {from: i, to: d}; }
+  }
+  if (emptyIdx() >= 0 && supplyLeft > 0) return {supply: true};
+  return null;
+}
+const TUT = [
+  {msg: "いらっしゃいませ！ 上の<b>吹き出し</b>が、お客さんの注文です。注文の色の瓶を<b>満タン</b>にして渡します。", next: true},
+  {msg: "<b>指のところの瓶</b>をタップして選びましょう。", pick: true},
+  {msg: "次に<b>注ぎ先の瓶</b>をタップ。同じ色の上か、空き瓶にだけ注げます。", pour: true},
+  {msg: "その調子！ 同じ色を<b>4杯</b>そろえると栓が閉まって満タン瓶になります。指の案内に沿って続けましょう。", loop: true},
+  {msg: "満タン！ 満タン瓶は、その色を頼んだお客さんに<b>自動で渡ります</b>（頼んだ人がいなければ「注文待ち」で棚に置いておきます）。注文の瓶を全部渡すと代金がもらえます。", next: true},
+  {msg: "空き瓶があるときは<b>「仕入れ」</b>をタップすると、上に見えている中身が空き瓶に入ります。仕入れ1回ごとに仕入れ代がかかります。", supply: true},
+  {msg: "これで基本はおしまい！ 困ったら瓶を選んで<b>流し</b>へ。間違えたら上の<b>「↶ 戻す」</b>で1手戻せます。<br>あとは自由に営業してみましょう！", next: true, last: true},
+];
+function tutShow(){
+  const st = TUT[tut.step]; $("tutTx").innerHTML = st.msg; $("tutNext").classList.toggle("hidden", !st.next); $("tutNext").textContent = st.last ? "はじめる" : "次へ";
+  $("tutBox").classList.remove("hidden"); paused = !!st.next;
+}
+function tutGo(step){ tut.step = step; if (step >= TUT.length){ tutEnd(); return; } tutShow(); }
+function tutEnd(){ tut = null; save.tutDone = true; persist(); $("tutBox").classList.add("hidden"); paused = false; lastTs = 0; }
+function tutTick(){
+  if (!tut) return; const st = TUT[tut.step];
+  if (tut.step === 0 && !st.shown){ if (seats.some(s => s.state === "wait")){ st.shown = true; tutShow(); } else { $("tutBox").classList.add("hidden"); } return; }
+  if (st.pick && sel >= 0) tutGo(2);
+  else if (st.pour && sel < 0 && pours.length) tutGo(3);
+  else if (st.pour && sel < 0 && !pours.length) tutGo(1);
+  else if (st.loop && bottles.some(b => b.corked)) tutGo(4);
+  else if (st.supply && (emptyIdx() < 0 || supplyLeft <= 0 || stockT > tut.t0)) tutGo(6);
+}
+function tutHand(){ // 指の位置
+  if (!tut || paused) return null; const st = TUT[tut.step];
+  if (st.supply) return lay.supply;
+  if (!(st.pick || st.pour || st.loop)) return null;
+  const h = hintMove(); if (!h) return null; if (h.supply) return lay.supply;
+  return lay.pos[sel >= 0 ? h.to : h.from];
+}
+$("tutNext").onclick = () => { audio(); play("pick", {gain:.4}); const st = TUT[tut.step]; if (st.last) return tutEnd(); if (tut.step === 4){ tut.t0 = T; } tutGo(tut.step === 0 ? 1 : tut.step + 1); lastTs = 0; };
+$("tutSkip").onclick = () => tutEnd();
+window.__hand = () => { const h = tutHand(); return h ? {x: h.x, y: h.y} : null; };
 function updateSeats(){
   seats.forEach((s, k) => {
     if (s.state === "empty" && guestsLeft > 0 && T >= s.next){
@@ -963,6 +1086,13 @@ function updateSeats(){
       s.order = newOrder(); s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order);
       s.rush = !!S.rush && rnd() < S.rush; if (s.rush) s.pat *= .6;
       s.vip = !s.rush && !!S.vip && rnd() < S.vip;
+      // 評論家（たまに来る。待てる時間が短いが代金2.5倍）・常連さん（気長に待ってくれて、チップ2倍）
+      const critP = S.mode === "endless" ? (elvl >= 6 ? .06 : 0) : (typeof stg === "number" && stg < 3) ? 0 : .06;
+      s.critic = !s.rush && !s.vip && rnd() < critP; if (s.critic) s.pat *= .85;
+      s.cock = null;
+      if (S.cocktail && !seats.some(x => x !== s && x.cock && (x.state === "in" || x.state === "wait")) && rnd() < S.cocktail){
+        s.rush = s.vip = s.critic = false; s.cock = genCock(); s.order = []; s.got = []; s.res = []; s.pat = S.pat*1000*(1.2 + .15*s.cock.length)*(1 + .12*upg("pat")); }
+      s.regular = !s.cock && !s.rush && !s.vip && !s.critic && !(typeof stg === "number" && stg < 1) && rnd() < .12; if (s.regular) s.pat *= 1.4;
       if (s.vip){ const two = newOrder(2); s.order = [two[0], two[0], two[1], two[1]]; s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order)*1.25; }
       play("door", {gain:.3}); hud();
     }
@@ -975,10 +1105,11 @@ function updateSeats(){
   if (!ended && guestsLeft === 0 && seats.every(s => s.state === "empty") && !flights.length) endStage();
 }
 function payGuest(k){
-  const s = seats[k], n = s.order.length, sp = lay.seatPos[k];
+  const s = seats[k], n = s.cock ? (s.cock.length >= 4 ? 3 : 2.4) : s.order.length, sp = lay.seatPos[k];
   const left = Math.max(0, 1 - (T - s.t0)/s.pat);
-  const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1);
-  const tip = base*(.3 + .1*upg("tip"))*(has("cat") ? 1.2 : 1)*Math.max(0, (left - .5)/.5);
+  const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1)*(s.critic ? 2.5 : 1)*(happyNow() ? 1.5 : 1);
+  const tip = base*(.3 + .1*upg("tip"))*(has("cat") ? 1.2 : 1)*(s.regular ? 2 : 1)*Math.max(0, (left - .5)/.5);
+  if (s.critic) floatText(sp.x, sp.y - 120, "評論家「すばらしい！」", "#d6b3ff", .9, 360);
   combo++; maxCombo = Math.max(maxCombo, combo);
   const bonus = base*Math.min(has("juke") ? 2 : 1, (combo-1)*.1);
   const total = Math.round((base + tip + bonus)/10)*10;
@@ -993,17 +1124,41 @@ function payGuest(k){
 }
 function leave(k, mood){
   const s = seats[k];
-  if (mood === "timeout"){ combo = 0; missed++; const sp = lay.seatPos[k]; floatText(sp.x, sp.y - 70, "もういいよ…", "#ef6b5b", .9); play("wrong", {gain:.25, rate:.85});
+  if (mood === "timeout"){ combo = 0; missed++; const sp = lay.seatPos[k]; floatText(sp.x, sp.y - 70, s.critic ? "評論家「辛口で書いておくよ」" : "もういいよ…", "#ef6b5b", .9); play("wrong", {gain:.25, rate:.85});
     if (S.mode === "endless"){ lives--; floatText(W/2, lay.counterY + 44, lives > 0 ? `ハート −1（のこり ${lives}）` : "ハートがなくなった…", "#ef6b5b", 1); }
     hud(); }
   s.state = "leave"; s.mood = mood === "timeout" ? "angry" : mood; s.t0 = T;
 }
 
 /* ---------- 操作 ---------- */
+// ひとつ戻す：直前の1手（注ぐ・仕入れ・流し）だけ戻せる。1ステージ3回まで。渡したり保管したりした後は戻せない
+let undoSnap = null, undoLeft = 3;
+// ハッピーアワー：ワールド2以降のステージで、途中に20秒だけ代金1.5倍
+let hhT = Infinity, hhOn = false; const HH_LEN = 20000;
+const happyNow = () => T >= hhT && T < hhT + HH_LEN;
+const UNDO_MAX = 3;
+function snap(){ undoSnap = {b: bottles.map(b => ({units: b.units.map(u => ({...u})), corked: b.corked, corkT: b.corkT, ice: b.ice})), stock: stock.map(a => a.slice()), supplyLeft, expSupply, money, dumped, n: bottles.length}; }
+function doUndo(){
+  if (!running || paused || !undoSnap || undoLeft <= 0 || pours.length || undoSnap.n !== bottles.length) return;
+  const u = undoSnap; undoSnap = null; undoLeft--;
+  u.b.forEach((o, i) => { const b = bottles[i]; b.units = o.units; b.corked = o.corked; if (o.corkT == null) delete b.corkT; else b.corkT = o.corkT; b.ice = o.ice; waveT[i] = T; });
+  stock = u.stock; supplyLeft = u.supplyLeft; expSupply = u.expSupply; money = u.money; dumped = u.dumped; sel = -1; busy = new Set();
+  play("pick", {gain:.5, rate:.8}); floatText(W/2, lay.counterY + 40, `ひとつ戻しました（あと${undoLeft}回）`, "#9ed8f0", .85); hud();
+}
+function tapGlass(i){
+  const b = bottles[i];
+  if (sel < 0){ if (!b.units.length){ shakeT[i] = T; floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "瓶を選んでから、ここをタップ", "#ffb3e6", .75); return; } sel = i; play("pick", {gain:.5}); return; }
+  if (sel === i){ sel = -1; play("pick", {gain:.35, rate:.9}); return; }
+  const a = bottles[sel]; if (!a.units.length || a.corked){ sel = -1; return; }
+  if (b.units.length >= (S.cockLen ? S.cockLen[1] : CAP)){ shakeT[i] = T; play("bad", {gain:.3}); return; }
+  snap(); startPour(sel, i, 1); sel = -1; hud();
+}
 function tapBottle(i){
   if (!running) return; audio();
   if (busy.has(i)) return;
   const b = bottles[i];
+  if (b.glass) return tapGlass(i);
+  if (sel >= 0 && bottles[sel] && bottles[sel].glass && sel !== i){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[sel].x, lay.pos[sel].y - lay.sh.H*.7, "グラスの中身は流しにだけ捨てられます", "#ffb3e6", .7); return; }
   if (b.ice){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `あと${b.ice}本渡すか、少し待つと溶ける`, "#9ed8f0", .75); return; }
   if (b.corked){ if (sel >= 0){ shakeT[i] = T; play("bad", {gain:.3}); return; } deliver(i); return; }
   if (sel < 0){
@@ -1014,17 +1169,40 @@ function tapBottle(i){
   const a = bottles[sel]; if (!a.units.length){ sel = -1; return; }
   const c = a.units[a.units.length-1].c;
   if (b.units.length >= CAP || (b.units.length && b.units[b.units.length-1].c !== c)){ shakeT[i] = T; play("bad", {gain:.3}); return; }
-  startPour(sel, i, Math.min(topRun(a.units), CAP - b.units.length)); sel = -1;
+  snap(); startPour(sel, i, Math.min(topRun(a.units), CAP - b.units.length)); sel = -1; hud();
 }
 function tapSink(){
   if (!running || sel < 0) return; audio();
-  const b = bottles[sel], n = topRun(b.units); b.units.splice(b.units.length - n, n);
+  snap(); const b = bottles[sel], n = b.glass ? b.units.length : topRun(b.units); b.units.splice(b.units.length - n, n);
   const cost = n*DUMP_COST; money = Math.max(0, money - cost); dumped += n;
   floatText(lay.sink.x, lay.sink.y - lay.sh.H*.3, `−${yen(cost)}`, "#ef6b5b", .8);
   revealTop(sel); play("sink", {gain:.5}); sel = -1; hud();
 }
 function revealTop(i){ const u = bottles[i].units; if (u.length && u[u.length-1].h){ u[u.length-1].h = false; u[u.length-1].rev = T; play("reveal", {gain:.45, delay:.35}); } }
-function emptyIdx(){ return bottles.findIndex((b,j) => !b.units.length && !busy.has(j) && !b.corked && !b.ice); }
+function emptyIdx(){ return bottles.findIndex((b,j) => !b.glass && !b.units.length && !busy.has(j) && !b.corked && !b.ice); }
+const glassIdx = () => bottles.findIndex(b => b.glass);
+const cockGuest = () => seats.find(x => x.cock && (x.state === "in" || x.state === "wait") && !x.res.some(Boolean));
+function cockState(){ // グラスの中身が、注文の下からの並びと合っているか
+  const gi = glassIdx(); if (gi < 0) return null; const g = cockGuest(), u = bottles[gi].units.map(x => x.c);
+  if (!g) return {gi, u, ok: !u.length, next: null};
+  const ok = u.every((c, j) => g.cock[j] === c) && u.length <= g.cock.length;
+  return {gi, u, g, ok, next: ok && u.length < g.cock.length ? g.cock[u.length] : null};
+}
+function genCock(){
+  const pal = palette(), len = Math.round(RG(S.cockLen[0] - .49, S.cockLen[1] + .49)), cs = [];
+  while (cs.length < Math.min(3, len - 1)){ const c = pick(pal); if (!cs.includes(c)) cs.push(c); }
+  let p; do { p = []; for (let k=0;k<len;k++) p.push(pick(cs)); } while (new Set(p).size < 2);
+  return p;
+}
+function checkCocktail(gi){
+  const st = cockState(); if (!st || !st.g) return;
+  if (st.u.length === st.g.cock.length && st.ok){
+    const k = seats.indexOf(st.g); st.g.res = [true]; undoSnap = null;
+    flights.push({cock: st.u.slice(), k, j: 0, from: {x: lay.pos[gi].x, y: lay.pos[gi].y}, t0: T + 200, dur: 560});
+    bottles[gi].units = []; waveT[gi] = T; play("kira", {gain:.6}); play("cork", {gain:.5, delay:.1});
+    floatText(lay.pos[gi].x, lay.pos[gi].y - lay.sh.H*.7, "カクテル完成！", "#ffb3e6", 1);
+  }
+}
 function thaw(){ bottles.forEach((b,i) => { if (b.ice){ b.ice--; if (!b.ice){ b.meltT = T; play("reveal", {gain:.5}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "溶けた！", "#9ed8f0", .85);
   for (let k=0;k<12;k++) parts.push({x: lay.pos[i].x + R(-lay.sh.w*.4, lay.sh.w*.4), y: lay.pos[i].y + R(-lay.sh.H*.3, lay.sh.H*.3), vx:R(-1.2,1.2), vy:R(-1.8,-.3), t0:T, life:R(500,900), r:R(1.5,3), ice:true}); } } }); }
 function tapSupply(){
@@ -1032,7 +1210,7 @@ function tapSupply(){
   if (supplyLeft <= 0){ shakeT.supply = T; play("bad", {gain:.3}); floatText(lay.supply.x, lay.supply.y - lay.sh.H*.7, "今日の仕入れはおしまい", "#ef6b5b", .75); return; }
   const i = emptyIdx();
   if (i < 0){ shakeT.supply = T; play("bad", {gain:.3}); floatText(lay.supply.x, lay.supply.y - lay.sh.H*.7, "空き瓶がありません", "#ef6b5b", .75); return; }
-  sel = -1;
+  sel = -1; snap();
   supplyLeft--; expSupply += SUPPLY_COST; floatText(lay.supply.x, lay.supply.y - lay.sh.H*.7, `仕入れ代 −${yen(SUPPLY_COST)}`, "#bba895", .7);
   bottles[i].units = stock.shift().map((c,j) => ({c, h: !!S.hide && j < CAP-1})); stock.push(stockUnits()); stockT = T;
   bottles[i].refillT = T; waveT[i] = T;
@@ -1045,6 +1223,7 @@ function findTarget(c){
   return bestK < 0 ? null : {k: bestK, j: bestJ};
 }
 function deliver(i){
+  undoSnap = null;
   const b = bottles[i], c = b.units[0].c, tg = findTarget(c);
   if (!tg){
     // 注文がない色は保管棚へ下げて、棚をあける
@@ -1082,7 +1261,7 @@ function closeRack(buy){
   const i = pendingStore; pendingStore = -1;
   if (buy && i >= 0 && bottles[i] && bottles[i].corked && stored.length < storeCap) deliver(i);
 }
-function tapRack(x){
+function tapRack(x){ undoSnap = null;
   if (!running || !stored.length) return; audio();
   let k = 0, bd = 1e9; stored.forEach((_, j) => { const d = Math.abs(rackSlot(j).x - x); if (d < bd){ bd = d; k = j; } });
   const c = stored[k], tg = findTarget(c);
@@ -1098,7 +1277,7 @@ function autoDeliver(){
     if (findTarget(b.units[0].c)){ if (sel === i) sel = -1; deliver(i); }
   });
   for (let k=stored.length-1;k>=0;k--){
-    const c = stored[k], tg = findTarget(c); if (!tg) continue;
+    const c = stored[k], tg = findTarget(c); if (!tg) continue; undoSnap = null;
     seats[tg.k].res[tg.j] = true; const p = rackSlot(k);
     flights.push({c, k: tg.k, j: tg.j, from: {x: p.x, y: p.y}, t0: T, dur: 520}); stored.splice(k, 1);
     bottlesOut++; thaw(); play("pick", {gain:.5, rate:1.2});
@@ -1108,12 +1287,14 @@ function buyBottle(){
   if (!running || bought >= BUY_COST.length) return; audio();
   const cost = BUY_COST[bought];
   if (save.wallet < cost){ play("bad", {gain:.3}); return; }
-  save.wallet -= cost; persist(); bought++;
+  save.wallet -= cost; persist(); bought++; undoSnap = null;
   bottles.push({units: [], spare:true}); lift.push(0); layout();
   play("pay", {gain:.6}); floatText(W/2, lay.counterY + 40, `空き瓶を追加（財布 −${yen(cost)}）`, "#f2b54a", .85); hud();
 }
 function landFlight(f){
-  const s = seats[f.k]; s.got[f.j] = true; s.res[f.j] = false;
+  const s = seats[f.k];
+  if (f.cock){ play("cheers", {gain:.6}); payGuest(f.k); return; }
+  s.got[f.j] = true; s.res[f.j] = false;
   play("cheers", {gain:.55});
   if (s.got.every(Boolean)) payGuest(f.k);
 }
@@ -1132,8 +1313,9 @@ function startPour(from, to, n){
 function tipTarget(p){ const sh = lay.sh, q = lay.pos[p.to]; return [q.x - p.dir*sh.nw*.15, q.y - sh.H/2 - sh.H*.16]; }
 function posForAngle(p, a){ const sh = lay.sh, [tx,ty] = tipTarget(p), tip = rot([[p.dir*sh.nw, sh.top]], a)[0]; return [tx - tip[0], ty - tip[1]]; }
 function finishPour(p){
-  busy.delete(p.from); busy.delete(p.to); waveT[p.to] = T;
+  busy.delete(p.from); busy.delete(p.to); waveT[p.to] = T; setTimeout(hud, 0);
   const d = bottles[p.to];
+  if (d.glass) checkCocktail(p.to);
   if (isFull(d)) cork(p.to);
 }
 function cork(i){ const b = bottles[i]; b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
@@ -1145,6 +1327,7 @@ function floatText(x, y, text, color, size=1, delay=0){ floats.push({x, y, text,
 function hud(){
   $("lvlV").textContent = S.mode === "endless" ? `∞ Lv${elvl}` : S.mode === "daily" ? "日替わり" : S.id;
   $("sandBtn").classList.toggle("hidden", !has("sand")); $("sandBtn").disabled = sandUsed;
+  $("undoBtn").disabled = !undoSnap || undoLeft <= 0; $("undoBtn").textContent = `↶ 戻す ${undoLeft}`;
   const bc = BUY_COST[bought];
   $("buyBtn").disabled = bought >= BUY_COST.length || save.wallet < (bc||1e9);
   $("buyBtn").innerHTML = bought >= BUY_COST.length ? "空き瓶の追加はここまで" : `空き瓶 +1 <b>財布から ${yen(bc)}</b>` + (save.wallet < bc ? "（足りません）" : "");
@@ -1158,7 +1341,7 @@ function hud(){
     return;
   }
   $("leftL").textContent = "人まち";
-  $("moneyG").textContent = `目標 ${yen(S.goal)}` + (money >= S.goal ? " 達成！" : "") + `・経費 ${yen(expSupply + rentOf(S))}` + (combo >= 2 ? `・${combo}連続` : "");
+  $("moneyG").textContent = `目標${yen(S.goal)}` + (money >= S.goal ? "✓" : "") + `・経費${yen(expSupply + rentOf(S))}` + (combo >= 2 ? `・${combo}連続` : "");
   const max = S.goal*2.2;
   $("moneyBar").style.width = Math.min(100, money/max*100) + "%";
   $("moneyBar").style.background = money >= S.goal ? "var(--good)" : "var(--amber)";
@@ -1191,8 +1374,10 @@ function frame(ts){
     if (T >= iceTick){ iceTick = T + 15000; if (bottles.some(b => b.ice)) thaw(); }
     autoDeliver();
     updateSeats();
+    if (happyNow() !== hhOn){ hhOn = !hhOn; if (hhOn){ play("bonus", {gain:.6}); floatText(W/2, lay.counterY - 30, "ハッピーアワー！ 代金1.5倍", "#ffd56b", 1.3); } }
     if (window.__bot) bot();
   }
+  if (running) tutTick();
   draw();
 }
 
@@ -1215,6 +1400,11 @@ function buildBg(){
   if (S.w === 4){ // 雪の窓
     const ww = Math.min(W*.5, 260), wx = W/2 - ww/2, wh = cy*.4; ctx.fillStyle = "rgba(170,200,230,.18)"; rr(ctx, wx, 14, ww, wh, 10); ctx.fill();
     ctx.strokeStyle = "rgba(220,235,250,.35)"; ctx.lineWidth = 3; rr(ctx, wx, 14, ww, wh, 10); ctx.stroke(); }
+  if (S.w === 6){ // 夜景の見える大きな窓
+    const ww = Math.min(W*.56, 300), wx = W/2 - ww/2, wh = cy*.42; ctx.fillStyle = "#0e1630"; rr(ctx, wx, 12, ww, wh, 8); ctx.fill();
+    for (let k=0;k<9;k++){ const bw2 = ww/9, bh2 = wh*(.3 + ((k*37)%50)/100); ctx.fillStyle = "#1c2748"; ctx.fillRect(wx + k*bw2, 12 + wh - bh2, bw2 - 2, bh2);
+      ctx.fillStyle = "rgba(255,214,120,.7)"; for (let j=0;j<6;j++) if ((k*7 + j*3) % 4 === 0) ctx.fillRect(wx + k*bw2 + 3 + (j%2)*(bw2/2 - 2), 12 + wh - bh2 + 5 + Math.floor(j/2)*8, 3, 4); }
+    ctx.strokeStyle = "#c9a45a"; ctx.lineWidth = 3; rr(ctx, wx, 12, ww, wh, 8); ctx.stroke(); }
   if (S.w === 5){ // 丸窓と海
     for (let i=0;i<2;i++){ const x = W*(.3 + .4*i), y = 14 + cy*.2, r = Math.min(cy*.17, 46);
       ctx.fillStyle = "#1f4f6e"; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
@@ -1416,19 +1606,29 @@ function draw(){
     if (s.state === "wait"){ const left = 1 - (T - s.t0)/s.pat; mood = left > .6 ? "happy" : left > .3 ? "ok" : left > .15 ? "worried" : "angry"; }
     if (s.state === "leave") mood = s.mood;
     ctx.save(); ctx.globalAlpha = alpha; ctx.beginPath(); ctx.rect(0, 0, W, cy); ctx.clip();
-    drawGuest(ctx, s.g, p.x, headY + dy, size, mood, T + k*700); ctx.restore();
+    drawGuest(ctx, s.g, p.x, headY + dy, size, mood, T + k*700);
+    if (s.critic){ const hx = p.x, hy = headY + dy; ctx.fillStyle = "#2a2440"; ctx.beginPath(); ctx.ellipse(hx - size*.05, hy - size*.4, size*.36, size*.13, -.15, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(hx + size*.1, hy - size*.52, size*.05, 0, 7); ctx.fill();
+      ctx.strokeStyle = "#e0b54a"; ctx.lineWidth = Math.max(1.5, size*.04); ctx.beginPath(); ctx.arc(hx + size*.16, hy - size*.03, size*.1, 0, 7); ctx.moveTo(hx + size*.26, hy); ctx.lineTo(hx + size*.32, hy + size*.25); ctx.stroke(); }
+    if (s.regular){ ctx.fillStyle = "#ef6b8a"; heart(ctx, p.x + size*.42, headY + dy + size*.28, size*.09); }
+    ctx.restore();
     if (s.state === "leave" && s.mood === "love"){ ctx.fillStyle = "#ef6b8a"; ctx.globalAlpha = alpha; heart(ctx, p.x + size*.5, headY - size*.6 - (T-s.t0)*.03, size*.12); ctx.globalAlpha = 1; }
     if (s.state === "wait" || s.state === "in"){
-      const n = s.order.length, bh = Math.min(lay.seatW*.42, 62), cell = Math.min(bh*.62, (lay.seatW*1.05 - 18)/n), bw = Math.max(bh*1.15, n*cell + 18), bx = p.x - bw/2, by = Math.max(4, headY - size*.72 - bh - 8);
+      const n = s.cock ? 1.4 : s.order.length, bh = Math.min(lay.seatW*.42, 62), cell = Math.min(bh*.62, (lay.seatW*1.05 - 18)/n), bw = Math.max(bh*1.15, n*cell + 18), bx = p.x - bw/2, by = Math.max(4, headY - size*.72 - bh - 8);
       ctx.globalAlpha = alpha;
       ctx.fillStyle = "#f6ead6"; rr(ctx, bx, by, bw, bh, 14); ctx.fill();
       if (s.rush){ ctx.strokeStyle = "#d9473a"; ctx.lineWidth = 3; rr(ctx, bx, by, bw, bh, 14); ctx.stroke();
         ctx.fillStyle = "#d9473a"; rr(ctx, bx + bw - 34, by - 9, 36, 18, 9); ctx.fill(); ctx.fillStyle = "#fff"; ctx.font = `900 11px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("急ぎ", bx + bw - 16, by); }
+      const tag = (txt, col, fg) => { ctx.font = `900 11px "Zen Kaku Gothic New",sans-serif`; const tw = ctx.measureText(txt).width + 14; ctx.strokeStyle = col; ctx.lineWidth = 3; rr(ctx, bx, by, bw, bh, 14); ctx.stroke();
+        ctx.fillStyle = col; rr(ctx, bx + bw - tw + 2, by - 9, tw, 18, 9); ctx.fill(); ctx.fillStyle = fg; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(txt, bx + bw - tw/2 + 2, by); };
+      if (s.critic) tag("評論家", "#8e5cc4", "#fff");
+      if (s.cock) tag("カクテル", "#d6418f", "#fff");
+      if (s.regular) tag("常連さん", "#3f8f4a", "#fff");
       if (s.vip){ ctx.strokeStyle = "#e0a020"; ctx.lineWidth = 3; rr(ctx, bx, by, bw, bh, 14); ctx.stroke();
         ctx.fillStyle = "#e0a020"; rr(ctx, bx + bw - 40, by - 9, 42, 18, 9); ctx.fill(); ctx.fillStyle = "#2a1a0c"; ctx.font = `900 11px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("団体", bx + bw - 19, by); }
       ctx.fillStyle = "#f6ead6";
       ctx.beginPath(); ctx.moveTo(p.x - 7, by + bh - 1); ctx.lineTo(p.x, by + bh + 8); ctx.lineTo(p.x + 7, by + bh - 1); ctx.fill();
-      s.order.forEach((c, j) => miniBottle(ctx, p.x + (j - (n-1)/2)*cell, by + bh - 14, bh*.62, COLORS[c], s.got[j]));
+      if (s.cock) drawCock(ctx, p.x, by + bh - 13, bh*.66, s.cock, false);
+      else s.order.forEach((c, j) => miniBottle(ctx, p.x + (j - (n-1)/2)*cell, by + bh - 14, bh*.62, COLORS[c], s.got[j], c));
       const left = s.state === "wait" ? Math.max(0, 1 - (T - s.t0)/s.pat) : 1;
       ctx.fillStyle = "rgba(42,26,12,.15)"; rr(ctx, bx + 8, by + bh - 10, bw - 16, 5, 2.5); ctx.fill();
       ctx.fillStyle = left > .5 ? "#4caf50" : left > .25 ? "#e0a020" : "#d9473a"; rr(ctx, bx + 8, by + bh - 10, (bw - 16)*left, 5, 2.5); ctx.fill();
@@ -1438,6 +1638,9 @@ function draw(){
   drawFlowers(ctx, cy, upg("tip"));
   if (has("cat")) drawCat(ctx, cy);
   { const d = decorOn("counter"); if (d){ const sz = Math.min(40, lay.seatW*.3); drawDecor(ctx, d, sz*.85, cy + 1, sz, T); } }
+  if (happyNow()){ const left = Math.ceil((hhT + HH_LEN - T)/1000), bw = Math.min(W - 24, 260), bx = W/2 - bw/2, by = cy + 30;
+    ctx.globalAlpha = .92; ctx.fillStyle = "#3a1f0c"; rr(ctx, bx, by, bw, 26, 13); ctx.fill(); ctx.strokeStyle = `hsl(${(T*.2)%360},90%,65%)`; ctx.lineWidth = 2; rr(ctx, bx, by, bw, 26, 13); ctx.stroke();
+    ctx.fillStyle = "#ffd56b"; ctx.font = `900 13px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`🍻 ハッピーアワー 代金1.5倍　あと${left}秒`, W/2, by + 13); ctx.globalAlpha = 1; }
   // 流し
   const sk = lay.sink, sw = sh.w*1.25, on = sel >= 0;
   ctx.fillStyle = on ? "#6d7b80" : "#4d575b"; rr(ctx, sk.x - sw/2, sk.y + sh.H*.18, sw, sh.H*.28, 8); ctx.fill();
@@ -1504,6 +1707,15 @@ function draw(){
       if (b.ice){ ctx.fillStyle = "#e9f7fd"; ctx.beginPath(); ctx.arc(x, y, sh.w*.34, 0, 7); ctx.fill();
         ctx.fillStyle = "#2f6f8f"; ctx.font = `900 ${sh.w*.4}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.ice, x, y + 1); }
       ctx.restore(); }
+    if (b.glass){ const st = cockState();
+      ctx.strokeStyle = `rgba(255,170,220,${.5 + .3*Math.sin(T/300)})`; ctx.lineWidth = 2.5; rr(ctx, x - sh.w*.62, y - sh.H*.58, sh.w*1.24, sh.H*1.14, sh.w*.3); ctx.stroke();
+      ctx.fillStyle = "#f6e05a"; ctx.beginPath(); ctx.arc(x + sh.nw*.9, y - sh.H/2 + sh.H*.02, sh.w*.2, Math.PI*.9, Math.PI*2.1); ctx.fill();
+      ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      const ly = p.y + sh.H/2 + sh.w*.28;
+      if (st && st.u.length && !st.ok){ ctx.fillStyle = Math.sin(T/160) > 0 ? "#ef6b5b" : "#ffb3e6"; ctx.fillText("✗ 流しへ", p.x, ly); }
+      else if (st && st.next != null){ ctx.fillStyle = "#ffb3e6"; ctx.fillText("次：" + CNAME[st.next], p.x, ly); ctx.fillStyle = COLORS[st.next]; ctx.beginPath(); ctx.arc(p.x, ly + sh.w*.5, sh.w*.13, 0, 7); ctx.fill(); if (save.cb) sym(ctx, st.next, p.x, ly + sh.w*.5, sh.w*.09); }
+      else { ctx.fillStyle = "#d9a6c4"; ctx.fillText("カクテル", p.x, ly); }
+      return; }
     if (b.corked && !wantedNow().includes(b.units[0].c)){ ctx.fillStyle = "#bba895"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
       ctx.fillText("注文待ち", p.x, p.y - sh.H/2 - sh.w*.3); }
     else if (!b.units.length && !b.ice){ ctx.fillStyle = "#7d6c5d"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("空き瓶", p.x, p.y + sh.H/2 + sh.w*.28); }
@@ -1538,13 +1750,16 @@ function draw(){
     const tx = sp.x, ty = cy - size*.3, x = f.from.x + (tx - f.from.x)*e, arc = Math.min(f.from.y, ty) - sh.H*.5;
     const y = (1-e)*(1-e)*f.from.y + 2*(1-e)*e*arc + e*e*ty, s = 1 - .45*e;
     ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.rotate(Math.sin(e*Math.PI)*.25);
-    drawVessel(ctx, sh, 0, 0, 0, [{c:f.c, v:CAP}], {cork:1}); ctx.restore();
+    if (f.cock) drawCock(ctx, 0, sh.H*.3, sh.H*.75, f.cock, false); else drawVessel(ctx, sh, 0, 0, 0, [{c:f.c, v:CAP}], {cork:1}); ctx.restore();
     if (a >= 1){ landFlight(f); return false; }
     return true;
   });
   parts = parts.filter(s => T - s.t0 < s.life);
   parts.forEach(s => { const a = (T - s.t0)/s.life; if (a < 0) return; const x = s.x + s.vx*a*50, y = s.y + s.vy*a*50 + a*a*30; ctx.globalAlpha = 1 - a;
     if (s.heart){ ctx.fillStyle = "#ef6b8a"; heart(ctx, x, y, s.r*2.2); } else if (s.ice){ ctx.fillStyle = "#d8f2fc"; ctx.fillRect(x - s.r, y - s.r, s.r*2, s.r*2); } else { ctx.fillStyle = "#ffe6a8"; ctx.beginPath(); ctx.arc(x, y, s.r, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; });
+  { const hp = tutHand(); if (hp){ const bob = Math.sin(performance.now()/220)*6, r = sh.w*.75 + Math.sin(performance.now()/300)*4;
+      ctx.strokeStyle = "rgba(255,214,107,.9)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(hp.x, hp.y, r, 0, 7); ctx.stroke();
+      ctx.font = `${Math.round(sh.w*.9)}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("👆", hp.x + sh.w*.2, hp.y + sh.H*.15 + bob); } }
   floats = floats.filter(f => T - f.t0 < 1400);
   floats.forEach(f => { const a = (T - f.t0)/1400; if (a < 0) return; ctx.globalAlpha = a < .8 ? 1 : (1 - a)/.2;
     ctx.font = `900 ${16*f.size}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -1596,8 +1811,9 @@ function endStage(){
   if (newTr.length) earned += `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>`;
   $("resEarned").innerHTML = earned + `</div>`;
   $("resStars").classList.remove("hidden");
-  const canNext = (save.stars[id]||0) >= 1 && stg < STAGES.length-1;
-  $("nextBtn").classList.remove("hidden"); $("nextBtn").disabled = !canNext; $("nextBtn").textContent = stg < STAGES.length-1 ? `${STAGES[stg+1].id} へ` : "全ステージクリア";
+  const last = stg === STAGES.length-1, endingNow = last && clear && !save.endingSeen;
+  const canNext = ((save.stars[id]||0) >= 1 && stg < STAGES.length-1) || (last && clear);
+  $("nextBtn").classList.remove("hidden"); $("nextBtn").disabled = !canNext; $("nextBtn").textContent = stg < STAGES.length-1 ? `${STAGES[stg+1].id} へ` : endingNow ? "エンディングへ" : "エンディングを見る";
   setTimeout(() => {
     $("result").classList.remove("hidden");
     if (clear){ play("fanfare", {gain:.6}); play("clap", {gain:.45, delay:.3}); } else play("wrong", {gain:.3});
@@ -1663,6 +1879,7 @@ function copyText(t, ta){
 }
 $("retryBtn").onclick = () => { $("result").classList.add("hidden"); showIntro(stg); };
 $("nextBtn").onclick = () => {
+  if (stg === STAGES.length-1){ $("result").classList.add("hidden"); showEnding(); return; }
   if (typeof stg === "string"){ if (stg === "daily") copyText(resShare).then(ok => { $("nextBtn").textContent = ok ? "コピーしました" : "コピーできませんでした"; setTimeout(() => $("nextBtn").textContent = "記録をコピー", 1800); }); return; }
   $("result").classList.add("hidden"); showIntro(stg+1); };
 $("resMap").onclick = () => { $("result").classList.add("hidden"); showMap(); };
@@ -1746,6 +1963,7 @@ function showIntro(i){
 $("openBtn").onclick = () => { audio(); $("intro").classList.add("hidden"); $("play").classList.remove("hidden"); startStage(stg); };
 $("introBack").onclick = () => { $("intro").classList.add("hidden"); showMap(); };
 $("buyBtn").onclick = () => { if (!paused) buyBottle(); };
+$("undoBtn").onclick = () => { audio(); doUndo(); };
 $("sandBtn").onclick = () => {
   if (paused || !running || sandUsed || !has("sand")) return;
   sandUsed = true; seats.forEach(s => { if (s.state === "wait") s.t0 = Math.min(T, s.t0 + 10000); });
@@ -1755,18 +1973,20 @@ $("rackNo").onclick = () => closeRack(false);
 // メニューボタン：一時停止して、再開するかマップに戻るかを選ぶ
 function pauseGame(){
   if (!running || !$("pauseOv").classList.contains("hidden")) return;
+  $("tutBox").classList.add("hidden");
   paused = true; sel = -1;
   $("pauseP").innerHTML = `時間は止まっています。<br>いまの売上 <b>${yen(money)}</b>` + (S.mode === "endless" ? "" : `（目標 ${yen(S.goal)}）`) + `<br><small>マップに戻ると、このステージの売上は入りません</small>`;
   $("pauseOv").classList.remove("hidden"); play("pick", {gain:.4});
 }
 function resumeGame(){
   $("pauseOv").classList.add("hidden");
+  if (tut && TUT[tut.step].shown !== false && tut.step > 0) { tutShow(); if (TUT[tut.step].next){ return; } }
   if ($("rackAsk").classList.contains("hidden")) paused = false;
   lastTs = 0; play("pick", {gain:.4, rate:1.1});
 }
 $("homeBtn").onclick = () => { audio(); pauseGame(); };
 $("pauseGo").onclick = resumeGame;
-$("pauseTop").onclick = () => { $("pauseOv").classList.add("hidden"); running = false; paused = false; $("rackAsk").classList.add("hidden"); showMap(); };
+$("pauseTop").onclick = () => { if (tut){ tut = null; $("tutBox").classList.add("hidden"); } $("pauseOv").classList.add("hidden"); running = false; paused = false; $("rackAsk").classList.add("hidden"); showMap(); };
 // アプリを裏に回したら自動で一時停止
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && running && !$("play").classList.contains("hidden")) pauseGame(); });
 function showMap(){
@@ -1817,6 +2037,7 @@ function showMap(){
 }
 /* ---------- 設定・データの引き継ぎ ---------- */
 function renderSettings(){
+  $("cbTog").textContent = save.cb ? "オン" : "オフ"; $("cbTog").classList.toggle("on", !!save.cb);
   $("sndTog").textContent = save.sound ? "オン" : "オフ"; $("sndTog").classList.toggle("on", save.sound);
   $("bgmVol").value = Math.round(save.bgmVol*100); $("bgmOut").textContent = $("bgmVol").value;
   $("seVol").value = Math.round(save.seVol*100); $("seOut").textContent = $("seVol").value;
@@ -1829,6 +2050,7 @@ const markBackup = () => { save.backupT = Date.now(); save.backupTotal = save.to
 $("bkupBtn").onclick = () => $("setBtn").onclick();
 $("setBtn").onclick = () => { audio(); renderSettings(); $("xferMsg").textContent = ""; $("settings").classList.remove("hidden"); };
 $("setClose").onclick = () => $("settings").classList.add("hidden");
+$("cbTog").onclick = () => { save.cb = !save.cb; persist(); renderSettings(); play("pick"); };
 $("sndTog").onclick = () => { audio(); save.sound = !save.sound; persist(); applyVolume(); renderSettings(); play("pick"); };
 $("bgmVol").oninput = e => { save.bgmVol = e.target.value/100; $("bgmOut").textContent = e.target.value; applyVolume(); };
 $("seVol").oninput = e => { save.seVol = e.target.value/100; $("seOut").textContent = e.target.value; applyVolume(); };
@@ -1865,13 +2087,62 @@ $("wipeBtn").onclick = () => { const b = $("wipeBtn");
 function drawHero(){
   const c = $("heroCv"), x = c.getContext("2d"); x.clearRect(0,0,520,320);
   const rm = ROOMS.find(r => r.id === save.room) || ROOMS[0];
-  x.save(); x.beginPath(); x.rect(0, 0, 520, 202); x.clip();
-  drawGuest(x, 0, 130, 136, 96, "happy", 500); drawGuest(x, 2, 390, 142, 90, "ok", 900); x.restore();
-  x.fillStyle = rm.counter; x.fillRect(0, 200, 520, 24); x.fillStyle = rm.ctop; x.fillRect(0, 200, 520, 5);
+  // ステージの描き方をそのまま使う（一時的に画面の大きさと内装を差し替える）
+  const keep = {W, lay, room}; W = 520; room = rm; lay = {seatW: 220};
+  try {
+    const g = x.createLinearGradient(0, 0, 0, 200); g.addColorStop(0, rm.wall[1]); g.addColorStop(1, rm.wall[2]); x.globalAlpha = .55; x.fillStyle = g; rr(x, 0, 0, 520, 224, 24); x.fill(); x.globalAlpha = 1;
+    drawFine(x, upg("price"), 200);
+    if (has("branch")) drawBranchSign(x, 200);
+    if (has("juke")) drawJuke(x, 200);
+    { const d = decorOn("ceil"); if (d) drawDecor(x, d, 0, 0, 520, 1500); }
+    { const d = decorOn("wall"); if (d) drawDecor(x, d, 260, 10, 44, 1500); }
+    x.save(); x.beginPath(); x.rect(0, 0, 520, 202); x.clip();
+    drawChair(x, 130, 136, 96, 200, upg("pat")); drawChair(x, 390, 142, 90, 200, upg("pat"));
+    drawGuest(x, 0, 130, 136, 96, "happy", 500); drawGuest(x, 2, 390, 142, 90, "ok", 900); x.restore();
+    x.fillStyle = rm.counter; x.fillRect(0, 200, 520, 24); x.fillStyle = rm.ctop; x.fillRect(0, 200, 520, 5);
+    if (has("cat")) drawCat(x, 200);
+    { const d = decorOn("counter"); if (d) drawDecor(x, d, 36, 201, 40, 1500); }
+  } finally { W = keep.W; lay = keep.lay; room = keep.room; }
   const sh = bottleShape(save.bottle, 46);
   drawVessel(x, sh, 230, 200 - sh.H/2, 0, [{c:0,v:4}], {cork:1});
   drawVessel(x, sh, 290, 200 - sh.H/2, 0, [{c:2,v:4}], {cork:1});
 }
+
+/* ---------- エンディング ---------- */
+let endRaf = 0;
+function showEnding(){
+  save.endingSeen = true; persist();
+  ["map","play","result","intro"].forEach(id => $(id).classList.add("hidden")); $("ending").classList.remove("hidden");
+  const stars = Object.values(save.stars).reduce((a,b) => a+b, 0), r = rankOf(save.total);
+  $("endRoll").innerHTML = `<h3>ご注文は満タンで</h3><p>全${STAGES.length}ステージ 制覇おめでとう！</p><p>夜のバーから始まったお店は、ホテルのカクテルバーまで。</p>
+    <small>あなたのお店の記録</small><p>累計売上 ${yen(save.total)}</p><p>満足したお客さん ${save.stats.served.toLocaleString()}人</p><p>渡した満タン瓶 ${save.stats.bottles.toLocaleString()}本</p><p>★ ${stars} / ${STAGES.length*3}</p><p>ランク${r}「${titleShown()}」</p>
+    <small>企画・テストプレイ</small><p>店主さん（あなた）</p><small>制作</small><p>Claude</p><small>音楽</small><p>魔王魂</p><small>効果音</small><p>効果音ラボ</p>
+    <small>ご来店のお客さん</small><p>ねこ・くま・うさぎ・いぬ　ほか常連のみなさん</p>
+    <small>そして</small><p>遊んでくれたあなたと、友達のみんなへ</p><h3>ありがとうございました</h3>
+    <p>お店はこれからも営業中。<br>エンドレス営業と日替わりでお待ちしています。</p>`;
+  const el = $("endRoll"); el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+  play("fanfare", {gain:.6}); play("clap", {gain:.5, delay:.4}); bgm("map");
+  const c = $("endCv"), x = c.getContext("2d"), rm = ROOMS.find(q => q.id === save.room) || ROOMS[0], conf = [];
+  for (let i=0;i<70;i++) conf.push({x: Math.random()*520, y: -Math.random()*300, v: 40 + Math.random()*60, r: 2 + Math.random()*3, c: COLORS[i % 8], w: Math.random()*6});
+  const t0 = performance.now();
+  cancelAnimationFrame(endRaf);
+  const loop = now => {
+    const t = now - t0; x.clearRect(0, 0, 520, 300);
+    x.fillStyle = rm.wall[1]; rr(x, 0, 0, 520, 300, 22); x.fill();
+    x.fillStyle = rm.counter; x.fillRect(0, 230, 520, 26); x.fillStyle = rm.ctop; x.fillRect(0, 230, 520, 5); x.fillStyle = rm.under; x.fillRect(0, 256, 520, 44);
+    x.save(); x.beginPath(); x.rect(0, 0, 520, 232); x.clip();
+    for (let g=0; g<6; g++){ const gx = 50 + g*84, jump = Math.abs(Math.sin(t/300 + g*.9))*14; drawGuest(x, g, gx, 168 - jump, 62, g % 2 ? "love" : "happy", t + g*500); }
+    x.restore();
+    const sh = bottleShape(save.bottle, 16); for (let k=0;k<7;k++) drawVessel(x, sh, 8 + k*84, 230 - sh.H/2, 0, [{c:k, v:4}], {cork:1});
+    conf.forEach(p => { const yy = (p.y + p.v*t/1000) % 330 - 20, xx = p.x + Math.sin(t/400 + p.w)*10; x.fillStyle = p.c; x.fillRect(xx, yy, p.r*2, p.r); });
+    x.fillStyle = "#f6c945"; x.font = `400 34px ${getComputedStyle(document.body).getPropertyValue("--hand") || "sans-serif"}`; x.textAlign = "center"; x.fillText("全ステージ制覇！", 260, 52);
+    if (!$("ending").classList.contains("hidden")) endRaf = requestAnimationFrame(loop);
+  };
+  endRaf = requestAnimationFrame(loop);
+}
+$("endClose").onclick = () => { $("ending").classList.add("hidden"); cancelAnimationFrame(endRaf); showMap(); };
+$("tutAgain").onclick = () => { save.tutDone = false; persist(); $("settings").classList.add("hidden"); showIntro(0); };
+$("endAgain").onclick = () => { if (!save.endingSeen && !(save.stars[STAGES[STAGES.length-1].id] >= 1)){ xmsg("最後のステージをクリアすると見られます", true); return; } $("settings").classList.add("hidden"); showEnding(); };
 
 /* ---------- ショップ ---------- */
 let shopTab = "upg";
@@ -1992,7 +2263,11 @@ $("trClose").onclick = () => $("trophies").classList.add("hidden");
 /* ---------- テスト用の自動プレイ（通常は動かない） ---------- */
 function bot(){
   if (T < botNext) return; botNext = T + (window.__botDelay || 700);
-  const free = i => !busy.has(i) && !bottles[i].ice;
+  const free = i => !busy.has(i) && !bottles[i].ice && !bottles[i].glass;
+  { const st = cockState(); if (st && st.g && !busy.has(st.gi)){
+      if (!st.ok){ sel = -1; tapBottle(st.gi); tapSink(); return; }
+      if (st.next != null){ const src = bottles.findIndex((b,i) => free(i) && !b.corked && b.units.length && b.units[b.units.length-1].c === st.next && !b.units[b.units.length-1].h);
+        if (src >= 0){ sel = -1; tapBottle(src); tapBottle(st.gi); return; } } } }
   const need = []; seats.forEach(s => { if (s.state === "wait" || s.state === "in") s.order.forEach((c,j) => { if (!s.got[j] && !s.res[j]) need.push({c, left: s.pat - (T - s.t0)}); }); });
   if (!need.length) return;
   // 1. 渡せる満タン瓶（保管棚も）
