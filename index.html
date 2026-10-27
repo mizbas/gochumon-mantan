@@ -400,7 +400,10 @@ const STORE_MAX = 3, RACK_COST = [200, 400], BUY_COST = [300, 600];
 let storeCap = 1, paused = false, pendingStore = -1, sandUsed = false;
 const storeMax = () => has("rack") ? 4 : STORE_MAX;
 const RACK_COST_ALL = [200, 400, 800];
-const PRICE = 150, DUMP_COST = 10;
+const PRICE = 150, DUMP_COST = 10, SUPPLY_COST = 60;
+// 1回の営業の家賃・光熱費（目標の15%くらい）
+const rentOf = st => st.mode === "endless" ? 300 : Math.round(st.goal*.15/50)*50;
+let expSupply = 0;
 const UPG = [
   {id:"pat",    name:"くつろげる椅子",   desc:"お客さんの待てる時間 +12%。椅子がどんどん豪華に",        max:6, cost:[400, 1000, 2000, 4000, 7000, 12000]},
   {id:"price",  name:"上等なお酒",       desc:"1本あたりの値段 +10%。壁の棚に高いお酒が並ぶ",              max:8, cost:[500, 1200, 2500, 4500, 8000, 14000, 22000, 35000]},
@@ -819,7 +822,7 @@ function startStage(i){
   bottles.forEach(b => { if (isFull(b)){ const x = b.units[0]; b.units[0] = b.units[3]; b.units[3] = x; b.units[1] = {c: (b.units[1].c + 1) % S.colors}; } });
   seats = []; for (let k=0;k<S.seats;k++) seats.push({state:"empty", next: 500 + k*1800, order:[], got:[], res:[], g:0, t0:0});
   sel = -1; pours = []; flights = []; busy = new Set(); lift = bottles.map(()=>0);
-  money = 0; combo = 0; maxCombo = 0; servedN = 0; missed = 0; dumped = 0; bottlesOut = 0; guestsLeft = S.guests;
+  money = 0; combo = 0; maxCombo = 0; servedN = 0; missed = 0; dumped = 0; bottlesOut = 0; guestsLeft = S.guests; expSupply = 0;
   floats = []; parts = []; shakeT = {}; waveT = {}; T = 0; botNext = 0; ended = false; running = true;
   stock = []; stock.push(stockUnits(), stockUnits(), stockUnits()); stockT = -1e9; stored = []; bought = 0; storeCap = has("rack") ? 2 : 1; sandUsed = false; paused = false; pendingStore = -1; $("rackAsk").classList.add("hidden");
   supplyLeft = S.supply || Infinity; iceTick = 15000;
@@ -950,7 +953,7 @@ function tapSupply(){
   const i = emptyIdx();
   if (i < 0){ shakeT.supply = T; play("bad", {gain:.3}); floatText(lay.supply.x, lay.supply.y - lay.sh.H*.7, "空き瓶がありません", "#ef6b5b", .75); return; }
   sel = -1;
-  supplyLeft--;
+  supplyLeft--; expSupply += SUPPLY_COST; floatText(lay.supply.x, lay.supply.y - lay.sh.H*.7, `仕入れ代 −${yen(SUPPLY_COST)}`, "#bba895", .7);
   bottles[i].units = stock.shift().map((c,j) => ({c, h: !!S.hide && j < CAP-1})); stock.push(stockUnits()); stockT = T;
   bottles[i].refillT = T; waveT[i] = T;
   pourSound(.45, 0, 1); play("pick", {gain:.4, rate:.95});
@@ -1068,14 +1071,14 @@ function hud(){
   $("moneyV").textContent = yen(money);
   if (S.mode === "endless"){
     const best = save.endless.best || 0, max = Math.max(3000, best*1.15, money*1.05);
-    $("moneyG").textContent = "♥".repeat(Math.max(0, lives)) + "♡".repeat(Math.max(0, 3 - lives)) + (best ? `　ベスト ${yen(best)}` : "") + (combo >= 2 ? `　${combo}連続中` : "");
+    $("moneyG").textContent = "♥".repeat(Math.max(0, lives)) + "♡".repeat(Math.max(0, 3 - lives)) + (best ? ` ベスト ${yen(best)}` : "") + `・経費 ${yen(expSupply + rentOf(S))}` + (combo >= 2 ? `・${combo}連続` : "");
     $("moneyBar").style.width = Math.min(100, money/max*100) + "%"; $("moneyBar").style.background = best && money > best ? "var(--good)" : "var(--amber)";
     $("m1").style.left = (best ? best/max*100 : -10) + "%"; $("m2").style.left = "-10%"; $("m3").style.left = "-10%";
     $("leftV").textContent = servedN; $("leftL").textContent = "人目";
     return;
   }
   $("leftL").textContent = "人まち";
-  $("moneyG").textContent = `目標 ${yen(S.goal)}` + (money >= S.goal ? "　達成！" : "") + (combo >= 2 ? `　${combo}連続中` : "");
+  $("moneyG").textContent = `目標 ${yen(S.goal)}` + (money >= S.goal ? " 達成！" : "") + `・経費 ${yen(expSupply + rentOf(S))}` + (combo >= 2 ? `・${combo}連続` : "");
   const max = S.goal*1.7;
   $("moneyBar").style.width = Math.min(100, money/max*100) + "%";
   $("moneyBar").style.background = money >= S.goal ? "var(--good)" : "var(--amber)";
@@ -1403,13 +1406,19 @@ requestAnimationFrame(frame);
 /* ---------- 閉店 ---------- */
 function starsFor(i, m){ const g = STAGES[i].goal; return m >= g*1.5 ? 3 : m >= g*1.25 ? 2 : m >= g ? 1 : 0; }
 function titleOf(total){ return [0, titleOfRank(rankOf(total))]; }
+function profitOf(){ const rent = rentOf(S), exp = expSupply + rent; return {rent, exp, profit: Math.max(0, money - exp)}; }
+function profitHTML(pf){
+  return `<div class="earned" style="text-align:left">売上 <b>${yen(money)}</b><br>− 仕入れ代 ${yen(expSupply)}（${expSupply/SUPPLY_COST}回）<br>− 家賃・光熱費 ${yen(pf.rent)}<br>` +
+    `＝ 利益 <b>${yen(pf.profit)}</b> を財布に入れました` + (money < pf.exp ? "（赤字の分は店長がかぶりました）" : "") + `（財布 ${yen(save.wallet)}）`;
+}
 function endStage(){
   if (S.mode) return endSpecial();
   ended = true; running = false; sel = -1;
   const id = S.id, clear = money >= S.goal, st = starsFor(stg, money);
   const rankBefore = rankOf(save.total);
   const branch = has("branch") ? Math.round(money*.1/10)*10 : 0;
-  save.wallet += money + branch; save.total += money;
+  const pf = profitOf();
+  save.wallet += pf.profit + branch; save.total += money;
   const rankAfter = rankOf(save.total); let rankGift = 0;
   for (let r = rankBefore + 1; r <= rankAfter; r++) rankGift += rankReward(r);
   save.wallet += rankGift;
@@ -1430,7 +1439,7 @@ function endStage(){
   $("resStars").innerHTML = [0,1,2].map(k => `<span class="${k < st ? "on" : ""}">★</span>`).join("");
   $("resList").innerHTML = [["満足したお客さん", `${servedN}人`], ["渡した満タン瓶", `${bottlesOut}本`], ["最高連続", `${maxCombo}連続`], ["帰ってしまったお客さん", `${missed}人`], ["流しに捨てた量", `${dumped}杯ぶん`]]
     .map(([a,b]) => `<li><span>${a}</span><b>${b}</b></li>`).join("");
-  let earned = `<div class="earned">売上 <b>${yen(money)}</b> を財布に入れました（財布 ${yen(save.wallet)}）`;
+  let earned = profitHTML(pf);
   if (branch) earned += `<br>二号店の評判ボーナス <b>+${yen(branch)}</b>`;
   if (rankAfter > rankBefore){ earned += `<br>ランクアップ！ <b>ランク${rankAfter}</b>（ごほうび +${yen(rankGift)}）`; setTimeout(() => { toastQ.push({ic:"⬆️", name:`ランク${rankAfter}になりました`, sub:"ランクアップ"}); runToast(); }, 900); }
   if (titleAfter !== titleBefore) earned += `<br>称号が <b>${titleAfter}</b> になりました！`;
@@ -1457,13 +1466,14 @@ function endSpecial(){
     clear = money >= S.goal; st = money >= S.goal*1.5 ? 3 : money >= S.goal*1.25 ? 2 : clear ? 1 : 0;
     const dd = save.daily; if (dd.key !== S.key){ for (const k in dd) delete dd[k]; dd.key = S.key; dd.best = 0; dd.bonus = false; }
     newBest = money > (dd.best||0); if (newBest) dd.best = money;
-    if (clear && !dd.bonus){ dd.bonus = true; bonus = money; save.dailyClears = (save.dailyClears||0) + 1; }
+    if (clear && !dd.bonus){ dd.bonus = true; bonus = Math.round(money*.5/10)*10; save.dailyClears = (save.dailyClears||0) + 1; }
     { const h = save.dailyHist || (save.dailyHist = {}), cur = h[S.key] || {best: 0, st: 0};
       cur.best = Math.max(cur.best, money); cur.st = Math.max(cur.st, st); h[S.key] = cur;
       Object.keys(h).sort().slice(0, -30).forEach(k => delete h[k]); }
     shareTxt = `ご注文は満タンで\n日替わり特別営業 ${S.label}\n売上 ${yen(dd.best)} ${"★".repeat(st)}\nhttps://mizbas.github.io/gochumon-mantan/`;
   }
-  save.wallet += money + branch + bonus; save.total += money;
+  const pf = profitOf();
+  save.wallet += pf.profit + branch + bonus; save.total += money;
   const rankAfter = rankOf(save.total); let rankGift = 0;
   for (let r = rankBefore + 1; r <= rankAfter; r++) rankGift += rankReward(r);
   save.wallet += rankGift;
@@ -1477,7 +1487,7 @@ function endSpecial(){
   $("resStars").innerHTML = [0,1,2].map(k => `<span class="${k < st ? "on" : ""}">★</span>`).join("");
   $("resList").innerHTML = [["満足したお客さん", `${servedN}人`], ["渡した満タン瓶", `${bottlesOut}本`], ["最高連続", `${maxCombo}連続`], ["帰ってしまったお客さん", `${missed}人`]]
     .map(([a,b]) => `<li><span>${a}</span><b>${b}</b></li>`).join("");
-  let earned = `<div class="earned">売上 <b>${yen(money)}</b> を財布に入れました（財布 ${yen(save.wallet)}）`;
+  let earned = profitHTML(pf);
   if (bonus) earned += `<br>今日はじめての目標達成！ 日替わりボーナス <b>+${yen(bonus)}</b>`;
   else if (!endless && save.daily.bonus) earned += `<br>今日の日替わりボーナスは受け取り済みです`;
   if (branch) earned += `<br>二号店の評判ボーナス <b>+${yen(branch)}</b>`;
@@ -1536,7 +1546,7 @@ function showIntro(i){
     $("introGoal").textContent = `ハート3つ・ベスト ${save.endless.best ? yen(save.endless.best) : "まだなし"}（最高レベル${save.endless.lv || 0}）`;
     $("introRules").innerHTML = `・お客さんが途切れずにやってきます。<b>帰らせるとハートが1つ減り</b>、全部なくなったら閉店です<br>
       ・5人満足させるごとにレベルアップ。色が増えたり、急ぎのお客さんや？の色、団体さんが出てきます<br>
-      ・5レベルごとにハートが1つ回復します（最大3つ）<br>・売上はいつもどおり財布とランクに入ります`;
+      ・5レベルごとにハートが1つ回復します（最大3つ）<br>・売上から経費（仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}）を引いた利益が財布に入ります`;
     const e = save.endless, runs = e.runs || [];
     $("introRec").innerHTML = recBox("エンドレスの記録",
       e.best ? [["ベスト売上", yen(e.best), 1], ["最高レベル", `レベル${e.lv||0}`], ["最多のお客さん", `${e.served||0}人`], ["最高連続", `${e.combo||0}連続`], ["挑戦した回数", `${e.plays||0}回`]]
@@ -1549,7 +1559,7 @@ function showIntro(i){
     $("introGoal").textContent = `目標 ${yen(S.goal)}・お客さん ${S.guests}人・${WORLDS[S.w-1].name}`;
     $("introRules").innerHTML = `今日のお題：<b>${S.colors}色・${S.gm.map(g => names[g]).join("＋")}</b><br>
       ・最初の棚とお客さんの流れは<b>今日遊ぶ人みんな同じ</b>です。友達と売上を比べてみよう<br>
-      ・その日はじめて目標を達成すると、<b>売上と同じ額の日替わりボーナス</b>がもらえます${dd.bonus ? "（今日は受け取り済み）" : ""}<br>
+      ・その日はじめて目標を達成すると、<b>売上の半分の日替わりボーナス</b>がもらえます${dd.bonus ? "（今日は受け取り済み）" : ""}<br>
       ・何回でも挑戦できます<br>・日付が変わるとお題が変わります`;
     const hist = Object.entries(save.dailyHist || {}).sort((a,b) => a[0] < b[0] ? 1 : -1).slice(0, 7);
     $("introRec").innerHTML = recBox("日替わりの記録（最近7日）", hist.map(([k, h]) => [`${+k.slice(5,7)}/${+k.slice(8)}${k === S.key ? "（今日）" : ""}`, `${yen(h.best)} ${"★".repeat(h.st||0) || "—"}`, k === S.key]), "まだ記録はありません") +
@@ -1566,9 +1576,10 @@ function showIntro(i){
     ・「仕入れ」をタップすると、上に見えている瓶の中身が空き瓶に入ります（空き瓶が必要）<br>
     ・棚をあけたいときは、待機中の満タン瓶をタップすると「保管棚」へ下げられます（最初は1本。いっぱいのときは財布のお金で増やせます。注文が来たら自動で渡ります）<br>
     ・空き瓶が足りないときは、プレイ中に財布のお金で空き瓶を追加できます（1ステージ2本まで）<br>
-    ・こまったら瓶を選んで「流し」へ（1杯 ${yen(DUMP_COST)}）` :
+    ・こまったら瓶を選んで「流し」へ（1杯 ${yen(DUMP_COST)}）<br>
+    ・財布に入るのは<b>利益</b>です。売上から、仕入れ代（1回 ${yen(SUPPLY_COST)}）と家賃・光熱費（${yen(rentOf(S))}）を引いた分です` :
     (S.n === 1 && WORLDS[S.w-1].note ? `<b>新しいお店：</b>${WORLDS[S.w-1].note}<br><br>` : "") +
-    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・凍った瓶" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*1.25)}、★3 は ${yen(S.goal*1.5)} 以上`;
+    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・凍った瓶" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*1.25)}、★3 は ${yen(S.goal*1.5)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
   const r = stageRec(S.id), stn = save.stars[S.id] || 0;
   $("introRec").innerHTML = recBox(`${S.id} の記録`, r ? [["ベスト売上", yen(r.best) + (r.bestT ? `（${md(r.bestT)}）` : ""), 1], ["星", "★".repeat(stn) + "☆".repeat(3-stn)]]
       .concat(r.plays ? [["最高連続", `${r.combo||0}連続`], ["最多のお客さん", `${r.served||0}人`], ["全員満足", `${r.perfect||0}回`], ["遊んだ回数", `${r.plays}回（クリア ${r.clears||0}回）`]] : []) : [], "まだ記録はありません");
@@ -1848,7 +1859,7 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
 }
 try { if (sessionStorage.getItem("justUpdated")){ sessionStorage.removeItem("justUpdated");
   setTimeout(() => { toastQ.push({ic:"✨", name:"最新版に更新しました", sub:"お知らせ"}); runToast(); }, 600); } } catch(e){}
-window.__g = { get stored(){ return stored; }, get stats(){ return {money, servedN, missed, dumped, maxCombo, bottlesOut, elvl, lives}; }, exportCode, importCode, dailyDef, get bgm(){ return [bgmKey, !!bgmNode, bgmNode ? [bgmNode.loopStart, bgmNode.loopEnd, bgmNode.buffer.duration] : null]; }, set speed(v){ SPEED = v; }, showIntro, get ended(){ return ended; }, get save(){ return save; }, drawVessel, bottleShape };
+window.__g = { get stored(){ return stored; }, get stats(){ return {money, servedN, missed, dumped, maxCombo, bottlesOut, elvl, lives, sup: expSupply/SUPPLY_COST}; }, exportCode, importCode, dailyDef, get bgm(){ return [bgmKey, !!bgmNode, bgmNode ? [bgmNode.loopStart, bgmNode.loopEnd, bgmNode.buffer.duration] : null]; }, set speed(v){ SPEED = v; }, showIntro, get ended(){ return ended; }, get save(){ return save; }, drawVessel, bottleShape };
 })();
 </script>
 </body>
