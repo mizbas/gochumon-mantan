@@ -175,7 +175,7 @@ function showIntro(i){
     $("intro").classList.remove("hidden"); return;
   }
   if (S.mode === "daily"){
-    const dd = save.daily.key === S.key ? save.daily : {}, names = {hide:"？の色", rush:"急ぎのお客さん", ice:"凍った瓶", supply:"仕入れ制限と団体さん", reserve:"予約", lock:"カギつき瓶", dark:"停電"};
+    const dd = save.daily.key === S.key ? save.daily : {}, names = {hide:"？の色", rush:"急ぎのお客さん", ice:"寒波（瓶が凍る）", supply:"仕入れ制限と団体さん", reserve:"予約", lock:"カギつき瓶", dark:"停電"};
     $("introH").textContent = `日替わり特別営業　${S.label}`;
     $("introGoal").textContent = `目標 ${yen(S.goal)}・お客さん ${S.guests}人・${WORLDS[S.w-1].name}`;
     $("introRules").innerHTML = `今日のお題：<b>${S.colors}色・${S.gm.map(g => names[g]).join("＋")}</b><br>
@@ -200,7 +200,7 @@ function showIntro(i){
     ・こまったら瓶を選んで「流し」へ（1杯 ${yen(DUMP_COST)}）<br>
     ・財布に入るのは<b>利益</b>です。売上から、仕入れ代（1回 ${yen(SUPPLY_COST)}）と家賃・光熱費（${yen(rentOf(S))}）を引いた分です` :
     (S.n === 1 && WORLDS[S.w-1].note ? `<b>新しいお店：</b>${WORLDS[S.w-1].note}<br><br>` : "") +
-    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・凍った瓶" : ""}${S.reserve ? "・予約" : ""}${S.lock ? "・カギつき瓶" : ""}${S.dark ? "・停電" : ""}${S.cocktail ? "・カクテル" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*STAR2)}、★3 は ${yen(S.goal*STAR3)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
+    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・寒波（瓶が凍る）" : ""}${S.reserve ? "・予約" : ""}${S.lock ? "・カギつき瓶" : ""}${S.dark ? "・停電" : ""}${S.cocktail ? "・カクテル" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*STAR2)}、★3 は ${yen(S.goal*STAR3)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
   const r = stageRec(S.id), stn = save.stars[S.id] || 0;
   $("introRec").innerHTML = recBox(`${S.id} の記録`, r ? [["ベスト売上", yen(r.best) + (r.bestT ? `（${md(r.bestT)}）` : ""), 1], ["星", "★".repeat(stn) + "☆".repeat(3-stn)]]
       .concat(r.plays ? [["最高連続", `${r.combo||0}連続`], ["最多のお客さん", `${r.served||0}人`], ["全員満足", `${r.perfect||0}回`], ["遊んだ回数", `${r.plays}回（クリア ${r.clears||0}回）`]] : []) : [], "まだ記録はありません");
@@ -523,7 +523,7 @@ const GTYPE = {
 };
 const GIMMICK = [
   ["？の色", "瓶の下のほうの色が隠れています。上を注ぎ出すと見えます"],
-  ["凍った瓶", "満タン瓶を渡すか、15秒ごとに氷が1つ減ります。寒波で途中でも凍ります（3秒前に予告）"],
+  ["凍った瓶", "寒波で瓶が1本凍ります（3秒前に予告）。満タン瓶を渡すか、10秒で溶けます。仕込みでは15秒ごとに1つ減ります"],
   ["仕入れ制限", "仕入れ台を使える回数に限りがあります"],
   ["カクテルグラス", "どの色でも1杯ずつ注げます。間違えたらグラスを選んで流しへ"],
   ["予約ボード", "次に来る2人の注文が先に出ます"],

@@ -237,15 +237,15 @@ function startStage(i){
   floats = []; parts = []; shakeT = {}; waveT = {}; T = 0; botNext = 0; ended = false; running = true;
   if (S.cocktail){ bottles.push({units: [], glass: true}); lift.push(0); }
   stock = []; stock.push(stockUnits(), stockUnits(), stockUnits()); stockT = -1e9; stored = []; bought = 0; storeCap = has("rack") ? 2 : 1; sandUsed = false; paused = false; pendingStore = -1; $("rackAsk").classList.add("hidden");
-  supplyLeft = S.supply || Infinity; iceTick = 15000; undoSnap = null; undoLeft = UNDO_MAX;
+  supplyLeft = S.supply || Infinity; iceTick = 10000; undoSnap = null; undoLeft = UNDO_MAX;
   tut = (i === 0 && !save.tutDone) ? {step: 0, t0: 0} : null; TUT.forEach(t => delete t.shown); $("tutBox").classList.add("hidden");
-  freezeWarn = null; freezeT = S.ice ? 20000 + freezeGap()*.5 : Infinity;
+  freezeWarn = null; freezeT = S.ice ? 18000 : Infinity;
   hhT = (S.mode === "daily" || (typeof i === "number" && i >= 8)) && rnd() < .75 ? RG(40000, 80000) : Infinity; hhOn = false;
   if (S.lock){ const cand = bottles.map((b, i) => i).filter(i => !bottles[i].spare && !bottles[i].glass && bottles[i].units.length); for (let k=0; k<S.lock && cand.length; k++){ const j = cand.splice(Math.floor(rnd()*cand.length), 1)[0]; bottles[j].lock = Math.floor(rnd()*S.colors); bottles[j].lockT0 = 0; } }
   lockWarn = null; lockT = S.relock ? 30000 : Infinity;
   resQ = []; if (S.reserve){ resQ.push(newOrder(), newOrder()); }
   darkT = S.dark ? 22000 : Infinity; S._dw = 0;
-  (S.ice || []).forEach((n, k) => { const b = S.iceSpare && k === 0 ? bottles[S.shelf] : bottles[k]; if (b) b.ice = n; });
+  // 最初から凍っている瓶はなし（待ち時間が長くなるため）。凍るのは予告つきの寒波だけ
   layout(); hud();
 }
 
@@ -724,7 +724,7 @@ function frame(ts){
   if ($("play").classList.contains("hidden") || !lay) return;
   if (running && !paused){
     T += dt*SPEED;
-    if (T >= iceTick){ iceTick = T + 15000; if (bottles.some(b => b.ice)) thaw(); }
+    if (T >= iceTick){ iceTick = T + (S.mode === "prep" ? 15000 : 10000); if (bottles.some(b => b.ice)) thaw(); }
     coldWave(); lockWave();
     if (S.dark && T >= darkT + DARK_LEN){ darkT = T + 26000; }
     if (S.dark && darkSoon() && !S._dw){ S._dw = 1; floatText(W/2, lay.counterY + 40, "停電しそう…", "#9eb8f0", 1); }
