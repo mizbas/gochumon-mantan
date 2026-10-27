@@ -93,6 +93,9 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
 #xferMsg.ng{color:#c0392b}
 .tog{height:40px;padding:0 16px;border-radius:20px;background:#eadbc1;font-weight:800;margin-left:auto}
 .tog.on{background:var(--rust);color:#fff}
+.bkup{display:flex;align-items:center;gap:10px;border-radius:16px;background:#3a2a1c;border:1.5px dashed var(--amber);padding:10px 14px;color:var(--paper);font-size:13px;text-align:left;line-height:1.45}
+.bkup b{color:var(--amber)}
+#protV{font-size:12.5px;text-align:left;margin:2px 0 6px;font-weight:700}
 
 /* ---- プレイ ---- */
 #play{padding-left:0;padding-right:0;gap:6px}
@@ -193,6 +196,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
       <div class="sub">注文どおりの色を満タンの瓶にして、お客さんに渡そう</div>
     </div>
     <button class="go" id="contBtn">1-1 をはじめる</button>
+    <button class="bkup hidden" id="bkupBtn"></button>
     <div class="specials" id="specials"></div>
     <div id="worlds" style="display:flex;flex-direction:column;gap:14px"></div>
     <div class="menu-row">
@@ -298,6 +302,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
     <div class="set-row"><span>BGM</span><input type="range" id="bgmVol" min="0" max="100" step="5"><output id="bgmOut">60</output></div>
     <div class="set-row"><span>効果音</span><input type="range" id="seVol" min="0" max="100" step="5"><output id="seOut">100</output></div>
     <div class="set-h">データの引き継ぎ</div>
+    <div id="protV"></div>
     <p class="set-p">遊んだ記録はこのスマホの中だけにあります。機種変更や、ブラウザのデータを消す前に「引き継ぎコード」を保存しておくと、別のスマホでも続きから遊べます。iPhoneはホーム画面に追加して遊ぶと記録が消えにくくなります。</p>
     <div class="set-btns"><button class="m" id="xferCopy">コードをコピー</button><button id="xferFile">ファイルに保存</button></div>
     <textarea id="xferTxt" placeholder="ここに引き継ぎコードを貼り付け" spellcheck="false" autocomplete="off"></textarea>
@@ -447,7 +452,7 @@ const TROPHIES = [
 
 /* ---------- 保存 ---------- */
 const KEY = "tokutoku-fever-v1";
-const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
+const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
 let save = fresh();
 const loadSave = s => Object.assign(fresh(), s, {stats: Object.assign(fresh().stats, s.stats || {}), endless: Object.assign(fresh().endless, s.endless || {})});
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.stats) save = loadSave(s); } catch(e){}
@@ -464,11 +469,17 @@ function audio(){
   if (ac){ if (ac.state === "suspended") ac.resume(); return; }
   try{
     ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.connect(ac.destination);
-    bgmGain = ac.createGain(); bgmGain.connect(ac.destination); applyVolume();
+    bgmGain = ac.createGain(); bgmGain.connect(ac.destination); applyVolume(); protect();
     const s = ac.createBufferSource(); s.buffer = ac.createBuffer(1,1,22050); s.connect(master); s.start(0);
     for (const k in SND){ const done = b => { BUF[k] = b; }; const p = ac.decodeAudioData(b64(SND[k]), done, ()=>{}); if (p && p.then) p.then(done).catch(()=>{}); }
     if (bgmWant) { const k = bgmWant; bgmWant = null; bgm(k); }
   }catch(e){ ac = null; }
+}
+// ブラウザに「この記録を勝手に消さないで」と頼む（容量の都合などで自動削除されるのを防ぐ）
+let protectedOK = null;
+function protect(){
+  if (!navigator.storage || !navigator.storage.persist) { protectedOK = false; return; }
+  navigator.storage.persisted().then(p => p ? true : navigator.storage.persist()).then(p => { protectedOK = !!p; }).catch(() => { protectedOK = false; });
 }
 function applyVolume(){
   if (!ac) return; const t = ac.currentTime;
@@ -1450,13 +1461,24 @@ function showMap(){
   });
   bgm("map");
   drawHero(); checkTrophies(false);
+  // しばらく引き継ぎコードを保存していなくて、進み具合が増えていたらお知らせ
+  const days = save.backupT ? Math.floor((Date.now() - save.backupT)/864e5) : null, gain = save.total - (save.backupTotal||0);
+  const need = save.total >= 3000 && gain >= Math.max(3000, save.total*.1) && (days === null || days >= 7);
+  $("bkupBtn").classList.toggle("hidden", !need);
+  if (need) $("bkupBtn").innerHTML = `💾<span>${days === null ? "まだ引き継ぎコードを保存していません。" : `前回のバックアップから<b>${days}日</b>たちました。`}機種変更などに備えて、<b>ここをタップ</b>して保存しておくと安心です</span>`;
 }
 /* ---------- 設定・データの引き継ぎ ---------- */
 function renderSettings(){
   $("sndTog").textContent = save.sound ? "オン" : "オフ"; $("sndTog").classList.toggle("on", save.sound);
   $("bgmVol").value = Math.round(save.bgmVol*100); $("bgmOut").textContent = $("bgmVol").value;
   $("seVol").value = Math.round(save.seVol*100); $("seOut").textContent = $("seVol").value;
+  const p = $("protV"), last = save.backupT ? new Date(save.backupT) : null;
+  p.innerHTML = (protectedOK ? "🛡️ 記録の保護：オン（ブラウザが勝手に消さない設定です）" : "⚠️ 記録の保護：オフ（ホーム画面に追加して遊ぶと守られやすくなります）") +
+    `<br>💾 前回のバックアップ：${last ? `${last.getMonth()+1}月${last.getDate()}日` : "まだありません"}`;
+  p.style.color = protectedOK ? "#2f7d32" : "#a0522d";
 }
+const markBackup = () => { save.backupT = Date.now(); save.backupTotal = save.total; persist(); renderSettings(); $("bkupBtn").classList.add("hidden"); };
+$("bkupBtn").onclick = () => $("setBtn").onclick();
 $("setBtn").onclick = () => { audio(); renderSettings(); $("xferMsg").textContent = ""; $("settings").classList.remove("hidden"); };
 $("setClose").onclick = () => $("settings").classList.add("hidden");
 $("sndTog").onclick = () => { audio(); save.sound = !save.sound; persist(); applyVolume(); renderSettings(); play("pick"); };
@@ -1474,10 +1496,10 @@ function importCode(txt){
 }
 const xmsg = (m, ng) => { $("xferMsg").textContent = m; $("xferMsg").classList.toggle("ng", !!ng); };
 $("xferCopy").onclick = () => { const c = exportCode(); $("xferTxt").value = c;
-  copyText(c, $("xferTxt")).then(ok => xmsg(ok ? "引き継ぎコードをコピーしました。メモなどに貼って保存してください" : "下の枠のコードを長押しでコピーしてください", !ok)); };
+  copyText(c, $("xferTxt")).then(ok => { if (ok) markBackup(); xmsg(ok ? "引き継ぎコードをコピーしました。メモなどに貼って保存してください" : "下の枠のコードを長押しでコピーしてください", !ok); }); };
 $("xferFile").onclick = () => { const c = exportCode(), t = todayJST(), a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([c], {type:"text/plain"})); a.download = `gochumon-mantan-${t.y}${String(t.m).padStart(2,"0")}${String(t.d).padStart(2,"0")}.txt`;
-  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); xmsg("ファイルに保存しました"); };
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); markBackup(); xmsg("ファイルに保存しました"); };
 function askImport(o){
   const r = rankOf(o.total || 0);
   $("cfH").textContent = "読み込みますか？";
