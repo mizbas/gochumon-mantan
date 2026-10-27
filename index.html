@@ -441,6 +441,9 @@ const WORLDS = [
   {w:3, name:"夏祭りの屋台",   note:"「急ぎ」のお客さんが来ます。待てる時間は短いけれど、代金は1.4倍。"},
   {w:4, name:"雪山のロッジ",   note:"凍った瓶があります。氷が溶けるまでは注ぐことも注がれることもできません。ときどき<b>寒波</b>が来て、ほかの瓶も凍ります（3秒前に「凍りそう！」と出るので、中身を注ぎ出して逃がすこともできます）。氷の数字は、満タン瓶を渡すたびと、15秒たつごとに1つ減ります。"},
   {w:6, name:"ホテルのカクテルバー", note:"棚の端に<b>カクテルグラス</b>があります。グラスにはどの色でも<b>1杯ずつ</b>注げます。カクテルの注文は、下から順に層の色が決まっています。注文どおりに重ねると自動でお出しして、高い代金がもらえます。順番を間違えたら、グラスを選んで流しへ。"},
+  {w:7, name:"屋上のビアガーデン", note:"<b>予約制</b>のお店です。上の<b>予約ボード</b>に、次に来る2人の注文が先に出ます。先回りして満タン瓶を用意しておき、お客さんが来てすぐ出せると<b>予約ボーナス</b>（代金1.3倍）。"},
+  {w:8, name:"からくり時計のバー", note:"<b>カギのかかった瓶</b>があります。カギと同じ色の満タン瓶をお客さんに渡すと開きます（30秒たっても開きます）。ときどき別の瓶にもカギがかかります（3秒前に予告）。開くまでは注ぐことも注がれることもできません。"},
+  {w:9, name:"月夜の灯台カフェ", note:"ときどき<b>停電</b>します。暗い間は瓶の色が見えません。<b>灯台の光</b>が当たった瓶だけ色が見えます。停電の前に色を覚えておこう。後半はこれまでのお店のしかけが勢ぞろいします。"},
   {w:5, name:"港町の酒場",     note:"仕入れは回数に限りがあります（残り回数は仕入れ台に表示）。「団体さん」は2色を2本ずつ、満タン瓶4本の大口注文で、待てる時間は長く、代金は2倍。"},
 ];
 WORLDS.sort((a, b) => a.w - b.w);
@@ -493,6 +496,30 @@ const STAGES = [
   {w:6, colors:7, ord:[1,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:4800, cocktail:.4,  cockLen:[4,4], rush:.2},
   {w:6, colors:7, ord:[1,3], seats:3, guests:12, pat:66, shelf:7, spare:2, goal:5100, cocktail:.45, cockLen:[4,4], ice:[1,2]},
   {w:6, colors:7, ord:[2,3], seats:3, guests:12, pat:72, shelf:7, spare:2, goal:5600, cocktail:.5,  cockLen:[4,4], hide:true, vip:.2},
+  {w:7, colors:6, ord:[1,2], seats:3, guests:10, pat:60, shelf:6, spare:2, goal:4000, reserve:true},
+  {w:7, colors:6, ord:[1,2], seats:3, guests:11, pat:58, shelf:6, spare:2, goal:4300, reserve:true},
+  {w:7, colors:6, ord:[1,3], seats:3, guests:11, pat:60, shelf:6, spare:2, goal:4600, reserve:true},
+  {w:7, colors:7, ord:[1,3], seats:3, guests:11, pat:60, shelf:7, spare:2, goal:4900, reserve:true},
+  {w:7, colors:7, ord:[1,3], seats:3, guests:12, pat:60, shelf:7, spare:2, goal:5200, reserve:true, rush:.25},
+  {w:7, colors:7, ord:[1,3], seats:3, guests:12, pat:62, shelf:7, spare:2, goal:5400, reserve:true, hide:true},
+  {w:7, colors:7, ord:[2,3], seats:3, guests:12, pat:66, shelf:7, spare:2, goal:5700, reserve:true, rush:.3},
+  {w:7, colors:8, ord:[2,3], seats:3, guests:12, pat:70, shelf:8, spare:2, goal:6000, reserve:true, hide:true},
+  {w:8, colors:6, ord:[1,2], seats:3, guests:10, pat:62, shelf:6, spare:2, goal:4200, lock:1},
+  {w:8, colors:6, ord:[1,2], seats:3, guests:11, pat:62, shelf:6, spare:2, goal:4500, lock:1, relock:true},
+  {w:8, colors:6, ord:[1,3], seats:3, guests:11, pat:64, shelf:6, spare:2, goal:4800, lock:2},
+  {w:8, colors:7, ord:[1,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:5000, lock:1, relock:true},
+  {w:8, colors:7, ord:[1,3], seats:3, guests:12, pat:64, shelf:7, spare:2, goal:5300, lock:2, relock:true, hide:true},
+  {w:8, colors:7, ord:[1,3], seats:3, guests:12, pat:64, shelf:7, spare:2, goal:5500, lock:1, relock:true, rush:.25},
+  {w:8, colors:7, ord:[2,3], seats:3, guests:12, pat:68, shelf:7, spare:2, goal:5800, lock:2, relock:true, ice:[1]},
+  {w:8, colors:8, ord:[2,3], seats:3, guests:12, pat:72, shelf:8, spare:2, goal:6200, lock:2, relock:true, hide:true},
+  {w:9, colors:6, ord:[1,2], seats:3, guests:10, pat:62, shelf:6, spare:2, goal:4400, dark:true},
+  {w:9, colors:6, ord:[1,3], seats:3, guests:11, pat:62, shelf:6, spare:2, goal:4700, dark:true},
+  {w:9, colors:7, ord:[1,3], seats:3, guests:11, pat:64, shelf:7, spare:2, goal:5000, dark:true, hide:true},
+  {w:9, colors:7, ord:[1,3], seats:3, guests:12, pat:64, shelf:7, spare:2, goal:5300, dark:true, reserve:true},
+  {w:9, colors:7, ord:[1,3], seats:3, guests:12, pat:64, shelf:7, spare:2, goal:5500, dark:true, lock:1, relock:true},
+  {w:9, colors:7, ord:[1,3], seats:3, guests:12, pat:66, shelf:7, spare:2, goal:5700, dark:true, ice:[1,2], rush:.25},
+  {w:9, colors:7, ord:[1,3], seats:3, guests:12, pat:68, shelf:7, spare:2, goal:6000, dark:true, cocktail:.35, cockLen:[3,4], reserve:true},
+  {w:9, colors:8, ord:[2,3], seats:3, guests:12, pat:74, shelf:8, spare:2, goal:6500, dark:true, lock:1, relock:true, hide:true, reserve:true, vip:.2},
 ];
 STAGES.forEach(st => { const n = STAGES.filter(x => x.w === st.w).indexOf(st) + 1; st.id = st.w + "-" + n; st.n = n; });
 const STORE_MAX = 3, RACK_COST = [200, 400], BUY_COST = [300, 600];
@@ -632,6 +659,9 @@ const TROPHIES = [
   {id:"w2",      ic:"☕", name:"カフェ制覇",          desc:"2-8 をクリアする",           ok: s => (s.stars["2-8"]||0) >= 1},
   {id:"w3",      ic:"🏮", name:"お祭り制覇",          desc:"3-8 をクリアする",           ok: s => (s.stars["3-8"]||0) >= 1},
   {id:"w4",      ic:"❄️", name:"ロッジ制覇",          desc:"4-8 をクリアする",           ok: s => (s.stars["4-8"]||0) >= 1},
+  {id:"w7",      ic:"🍺", name:"ビアガーデン制覇",    desc:"7-8 をクリアする",           ok: s => (s.stars["7-8"]||0) >= 1},
+  {id:"w8",      ic:"🔑", name:"からくり制覇",        desc:"8-8 をクリアする",           ok: s => (s.stars["8-8"]||0) >= 1},
+  {id:"w9",      ic:"🌙", name:"灯台制覇",            desc:"9-8 をクリアする（全ステージ制覇）", ok: s => (s.stars["9-8"]||0) >= 1},
   {id:"w6",      ic:"🍸", name:"カクテル制覇",        desc:"6-8 をクリアする",           ok: s => (s.stars["6-8"]||0) >= 1},
   {id:"w5",      ic:"⚓", name:"港町制覇",            desc:"5-8 をクリアする",           ok: s => (s.stars["5-8"]||0) >= 1},
   {id:"s100",    ic:"🍾", name:"100本出荷",          desc:"満タンの瓶を累計100本渡す",  ok: s => s.stats.bottles >= 100},
@@ -706,7 +736,7 @@ function applyVolume(){
 /* ---------- BGM（魔王魂の曲。遊ぶ場所に入ったときに初めて読み込み、そのあとはスマホに保存される） ---------- */
 const BGM = {
   map: "maoudamashii_bgm_acoustic38.mp3", w1: "maoudamashii_bgm_acoustic15.mp3", w2: "maoudamashii_bgm_acoustic41.mp3",
-  w3: "maoudamashii_bgm_ethnic09.mp3", w4: "maoudamashii_bgm_acoustic54.mp3", w5: "maoudamashii_bgm_ethnic10.mp3", w6: "maoudamashii_bgm_acoustic08.mp3",
+  w3: "maoudamashii_bgm_ethnic09.mp3", w4: "maoudamashii_bgm_acoustic54.mp3", w5: "maoudamashii_bgm_ethnic10.mp3", w6: "maoudamashii_bgm_acoustic08.mp3", w7: "maoudamashii_bgm_acoustic34.mp3", w8: "maoudamashii_bgm_acoustic44.mp3", w9: "maoudamashii_bgm_acoustic52.mp3",
   endless: "maoudamashii_bgm_acoustic10.mp3", daily: "maoudamashii_bgm_ethnic14.mp3"
 };
 let bgmGain = null, bgmKey = null, bgmWant = null, bgmNode = null, bgmTok = 0; const BGMBUF = {};
@@ -833,7 +863,7 @@ function drawVessel(c, sh, x, y, a, layers0, o={}){
   let acc = 0, prevY = T.ys[0] + 2;
   layers.forEach((L, i) => {
     acc += L.v * sh.unit; const yTop = levelY(T, acc), isTop = i === layers.length-1;
-    let col = L.h ? "#4a4440" : COLORS[L.c];
+    let col = L.h || o.dark ? "#4a4440" : COLORS[L.c];
     if (L.rev != null && o.t != null){ const k = Math.min(1, (o.t - L.rev)/320); if (k < 1){ const A = [74,68,64], B = hex(COLORS[L.c]); col = "#" + A.map((v,j) => Math.round(v + (B[j]-v)*k).toString(16).padStart(2,"0")).join(""); } }
     c.fillStyle = col; c.beginPath();
     if (isTop && o.wave){ const A = o.wave, k = 2*Math.PI/(sh.w*1.1); c.moveTo(minX-2, prevY); for (let px = minX-2; px <= maxX+2; px += 3) c.lineTo(px, yTop + Math.sin(px*k + (o.t||0)/90)*A); c.lineTo(maxX+2, prevY); }
@@ -842,7 +872,7 @@ function drawVessel(c, sh, x, y, a, layers0, o={}){
     if (isTop){ c.fillStyle = "rgba(255,255,255,.22)"; c.fillRect(minX-2, yTop, maxX-minX+4, Math.max(1.5, sh.w*.035)); }
     if (L.h && Math.abs(a) < .05){ c.fillStyle = "rgba(246,234,214,.6)"; c.font = `900 ${sh.w*.36}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
       for (let q=0;q<Math.round(L.v);q++){ const y0 = levelY(T, acc - (L.v - q)*sh.unit), y1 = levelY(T, acc - (L.v - q - 1)*sh.unit); c.fillText("?", x, (y0 + y1)/2); } }
-    if (save.cb && !L.h && Math.abs(a) < .05){ for (let q=0;q<Math.round(L.v);q++){ const y0 = levelY(T, acc - (L.v - q)*sh.unit), y1 = levelY(T, acc - (L.v - q - 1)*sh.unit); if (y0 - y1 > sh.w*.25) sym(c, L.c, x, (y0 + y1)/2, Math.min(sh.w*.17, (y0 - y1)*.32)); } }
+    if (save.cb && !L.h && !o.dark && Math.abs(a) < .05){ for (let q=0;q<Math.round(L.v);q++){ const y0 = levelY(T, acc - (L.v - q)*sh.unit), y1 = levelY(T, acc - (L.v - q - 1)*sh.unit); if (y0 - y1 > sh.w*.25) sym(c, L.c, x, (y0 + y1)/2, Math.min(sh.w*.17, (y0 - y1)*.32)); } }
     prevY = yTop;
   });
   if (layers.length){ // 立体感（左のつや・右の影）を全体に1回だけ
@@ -1006,6 +1036,12 @@ function stockUnits(){
 }
 let stock = [], stockT = 0;
 let lives = 3, elvl = 1, runStart = 0;
+let resQ = [];           // 予約：次に来るお客さんの注文
+let darkT = Infinity;    // 停電
+const DARK_LEN = 7000, DARK_WARN = 1800;
+const darkNow = () => !!S && !!S.dark && T >= darkT && T < darkT + DARK_LEN;
+const darkSoon = () => !!S && !!S.dark && T >= darkT - DARK_WARN && T < darkT;
+let lockT = Infinity, lockWarn = null;
 
 /* ---------- 特別営業（エンドレス・日替わり） ---------- */
 function todayJST(){ const d = new Date(Date.now() + 9*3600e3); return {y: d.getUTCFullYear(), m: d.getUTCMonth()+1, d: d.getUTCDate()}; }
@@ -1013,12 +1049,15 @@ function todayKey(){ const t = todayJST(); return `${t.y}-${String(t.m).padStart
 function dailyDef(){
   const t = todayJST(), seed = t.y*10000 + t.m*100 + t.d, r = mulberry(seed*7919 + 17);
   const w = 1 + Math.floor(r()*5), colors = 5 + Math.floor(r()*3);
-  const pool = ["hide","rush","ice","supply"], gm = [];
+  const pool = ["hide","rush","ice","supply","reserve","lock","dark"], gm = [];
   while (gm.length < 2){ const g = pool[Math.floor(r()*pool.length)]; if (!gm.includes(g)) gm.push(g); }
   const d = {id:"日替わり", mode:"daily", w, n:0, colors, ord:[1,3], seats:3, guests:12, pat:60, shelf:colors, spare:2, seed, key: todayKey(), label:`${t.m}月${t.d}日`, gm};
   if (gm.includes("hide")){ d.hide = true; d.pat += 4; }
   if (gm.includes("rush")) d.rush = .3;
   if (gm.includes("ice")){ d.ice = colors >= 7 ? [2,3] : [1,2]; d.pat += 2; }
+  if (gm.includes("reserve")) d.reserve = true;
+  if (gm.includes("lock")){ d.lock = 1; d.relock = true; d.pat += 2; }
+  if (gm.includes("dark")){ d.dark = true; d.pat += 2; }
   if (gm.includes("supply")){ d.supply = 34 + (colors-5)*2; d.vip = .2; d.pat += 4; }
   d.goal = Math.round((4500 + 250*(colors-5) - (d.hide ? 300 : 0) - (d.supply ? 200 : 0) - (d.ice ? 200 : 0))/100)*100;
   return d;
@@ -1071,6 +1110,10 @@ function startStage(i){
   tut = (i === 0 && !save.tutDone) ? {step: 0, t0: 0} : null; TUT.forEach(t => delete t.shown); $("tutBox").classList.add("hidden");
   freezeWarn = null; freezeT = S.ice ? 20000 + freezeGap()*.5 : Infinity;
   hhT = (S.mode === "daily" || (typeof i === "number" && i >= 8)) && rnd() < .75 ? RG(40000, 80000) : Infinity; hhOn = false;
+  if (S.lock){ const cand = bottles.map((b, i) => i).filter(i => !bottles[i].spare && !bottles[i].glass && bottles[i].units.length); for (let k=0; k<S.lock && cand.length; k++){ const j = cand.splice(Math.floor(rnd()*cand.length), 1)[0]; bottles[j].lock = Math.floor(rnd()*S.colors); bottles[j].lockT0 = 0; } }
+  lockWarn = null; lockT = S.relock ? 30000 : Infinity;
+  resQ = []; if (S.reserve){ resQ.push(newOrder(), newOrder()); }
+  darkT = S.dark ? 22000 : Infinity; S._dw = 0;
   (S.ice || []).forEach((n, k) => { const b = S.iceSpare && k === 0 ? bottles[S.shelf] : bottles[k]; if (b) b.ice = n; });
   layout(); hud();
 }
@@ -1124,7 +1167,7 @@ function patienceFor(order){ return S.pat*1000 * (1 + .3*(order.length-1)) * (1 
 /* ---------- チュートリアル（1-1 の初回。指で次の一手を案内する） ---------- */
 let tut = null; // {step}
 function hintMove(){
-  const ok = i => !busy.has(i) && !bottles[i].ice && !bottles[i].glass && !bottles[i].corked;
+  const ok = i => !busy.has(i) && !bottles[i].ice && bottles[i].lock == null && !bottles[i].glass && !bottles[i].corked;
   const need = wanted(); if (!need.length) return null;
   const topC = b => b.units.length ? b.units[b.units.length-1].c : -1, room = b => CAP - b.units.length;
   for (const c of need){
@@ -1181,7 +1224,8 @@ function updateSeats(){
   seats.forEach((s, k) => {
     if (s.state === "empty" && guestsLeft > 0 && T >= s.next){
       guestsLeft--; s.state = "in"; s.t0 = T; s.g = Math.floor(rnd()*GUESTS.length);
-      s.order = newOrder(); s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order);
+      s.order = S.reserve && resQ.length ? resQ.shift() : newOrder(); s.resv = !!S.reserve;
+      if (S.reserve){ while (resQ.length < 2) resQ.push(newOrder()); } s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order);
       s.rush = !!S.rush && rnd() < S.rush; if (s.rush) s.pat *= .6;
       s.vip = !s.rush && !!S.vip && rnd() < S.vip;
       // 評論家（たまに来る。待てる時間が短いが代金2.5倍）・常連さん（気長に待ってくれて、チップ2倍）
@@ -1206,11 +1250,13 @@ function payGuest(k){
   const s = seats[k], n = s.cock ? (s.cock.length >= 4 ? 3 : 2.4) : s.order.length, sp = lay.seatPos[k];
   const left = Math.max(0, 1 - (T - s.t0)/s.pat);
   const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1)*(s.critic ? 2.5 : 1)*(happyNow() ? 1.5 : 1);
+  const resvOK = s.resv && left > .6;
+  if (resvOK){ floatText(sp.x, sp.y - 140, "予約どおり！ ×1.3", "#ffd56b", .9, 480); }
   const tip = base*(.3 + .1*upg("tip"))*(has("cat") ? 1.2 : 1)*(s.regular ? 2 : 1)*Math.max(0, (left - .5)/.5);
   if (s.critic) floatText(sp.x, sp.y - 120, "評論家「すばらしい！」", "#d6b3ff", .9, 360);
   combo++; maxCombo = Math.max(maxCombo, combo);
   const bonus = base*Math.min(has("juke") ? 2 : 1, (combo-1)*.1);
-  const total = Math.round((base + tip + bonus)/10)*10;
+  const total = Math.round((base + tip + bonus)*(resvOK ? 1.3 : 1)/10)*10;
   money += total; servedN++; if (S.mode === "endless"){ endlessStep(); claim("emon", money); }
   floatText(sp.x, sp.y - 40, `+${yen(total)}`, "#f2b54a", 1.3);
   if (tip >= 10) floatText(sp.x, sp.y - 68, `はやい！ チップ ${yen(Math.round(tip/10)*10)}`, "#7fd17a", .8, 120);
@@ -1235,7 +1281,7 @@ let undoSnap = null, undoLeft = 3;
 let freezeT = Infinity, freezeWarn = null;
 const FREEZE_WARN = 3000;
 const freezeGap = () => S.w === 4 && S.n ? 30000 - (S.n - 1)*1000 : 26000;
-function freezeOK(i){ const b = bottles[i]; return b && !b.glass && !b.ice && !b.corked && !busy.has(i) && sel !== i; }
+function freezeOK(i){ const b = bottles[i]; return b && !b.glass && !b.ice && b.lock == null && !b.corked && !busy.has(i) && sel !== i; }
 function coldWave(){
   if (!S.ice || !lay) return;
   // 詰まないように：凍っている瓶が1本でもあるうちは寒波は来ない。凍らせるのは「今の注文に関係のない色」の瓶を優先
@@ -1284,6 +1330,7 @@ function tapBottle(i){
   const b = bottles[i];
   if (b.glass) return tapGlass(i);
   if (sel >= 0 && bottles[sel] && bottles[sel].glass && sel !== i){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[sel].x, lay.pos[sel].y - lay.sh.H*.7, "グラスの中身は流しにだけ捨てられます", "#ffb3e6", .7); return; }
+  if (b.lock != null){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `🔒${CNAME[b.lock]}の満タン瓶を渡すと開く`, "#f3d27a", .75); return; }
   if (b.ice){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `あと${b.ice}本渡すか、少し待つと溶ける`, "#9ed8f0", .75); return; }
   if (b.corked){ if (sel >= 0){ shakeT[i] = T; play("bad", {gain:.3}); return; } deliver(i); return; }
   if (sel < 0){
@@ -1304,7 +1351,26 @@ function tapSink(){
   revealTop(sel); play("sink", {gain:.5}); sel = -1; hud();
 }
 function revealTop(i){ const u = bottles[i].units; if (u.length && u[u.length-1].h){ u[u.length-1].h = false; u[u.length-1].rev = T; play("reveal", {gain:.45, delay:.35}); } }
-function emptyIdx(){ return bottles.findIndex((b,j) => !b.glass && !b.units.length && !busy.has(j) && !b.corked && !b.ice); }
+function emptyIdx(){ return bottles.findIndex((b,j) => !b.glass && !b.units.length && !busy.has(j) && !b.corked && !b.ice && b.lock == null); }
+function unlockColor(c){ bottles.forEach((b, i) => { if (b.lock === c){ b.lock = null; b.unlockT = T; play("reveal", {gain:.6}); play("kira", {gain:.4, delay:.15}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "カギが開いた！", "#f3d27a", .9);
+  for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x, y: lay.pos[i].y, vx:R(-1.5,1.5), vy:R(-2,-.4), t0:T, life:R(500,900), r:R(1.5,3)}); } }); }
+function lockPick(){ // カギの色：今いる注文の色を優先（開けやすく）
+  const need = wantedNow(); return need.length && Math.random() < .7 ? need[Math.floor(Math.random()*need.length)] : Math.floor(Math.random()*S.colors); }
+const LOCK_LEN = 30000;
+function lockWave(){
+  if (!lay) return;
+  bottles.forEach((b, i) => { if (b.lock != null && T - (b.lockT0||0) >= LOCK_LEN) unlockColor(b.lock); });
+  if (!S.relock) return;
+  if (!lockWarn && T >= lockT - 3000){
+    if (bottles.some(b => b.lock != null) || emptyIdx() < 0){ lockT = T + 8000; return; }
+    const cand = bottles.map((b, i) => i).filter(i => { const b = bottles[i]; return !b.glass && !b.ice && b.lock == null && !b.corked && !busy.has(i) && sel !== i && b.units.length; });
+    if (!cand.length){ lockT = T + 8000; return; }
+    lockWarn = {i: cand[Math.floor(Math.random()*cand.length)], c: lockPick(), t0: T}; floatText(W/2, lay.counterY + 40, "からくりが動き出した！", "#f3d27a", 1); play("cork", {gain:.4, rate:.7});
+  }
+  if (lockWarn && T - lockWarn.t0 >= 3000){ const {i, c} = lockWarn; lockWarn = null; const b = bottles[i];
+    if (b && b.lock == null && !b.ice && !b.corked && !busy.has(i) && sel !== i){ b.lock = c; b.lockT0 = T; undoSnap = null; play("cork", {gain:.7, rate:.6}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "カギがかかった", "#f3d27a", .85); }
+    lockT = T + 34000; }
+}
 const glassIdx = () => bottles.findIndex(b => b.glass);
 const cockGuest = () => seats.find(x => x.cock && (x.state === "in" || x.state === "wait") && !x.res.some(Boolean));
 function cockState(){ // グラスの中身が、注文の下からの並びと合っているか
@@ -1418,6 +1484,7 @@ function buyBottle(){
 }
 function landFlight(f){
   const s = seats[f.k];
+  if (!f.cock && S.lock) unlockColor(f.c);
   if (f.cock){ play("cheers", {gain:.6}); payGuest(f.k); return; }
   s.got[f.j] = true; s.res[f.j] = false;
   play("cheers", {gain:.55});
@@ -1497,7 +1564,11 @@ function frame(ts){
   if (running && !paused){
     T += dt*SPEED;
     if (T >= iceTick){ iceTick = T + 15000; if (bottles.some(b => b.ice)) thaw(); }
-    coldWave();
+    coldWave(); lockWave();
+    if (S.dark && T >= darkT + DARK_LEN){ darkT = T + 26000; }
+    if (S.dark && darkSoon() && !S._dw){ S._dw = 1; floatText(W/2, lay.counterY + 40, "停電しそう…", "#9eb8f0", 1); }
+    if (S.dark && darkNow() && S._dw === 1){ S._dw = 2; play("wrong", {gain:.2, rate:.6}); }
+    if (S.dark && !darkNow() && !darkSoon() && S._dw === 2){ S._dw = 0; play("reveal", {gain:.4}); }
     autoDeliver();
     updateSeats();
     if (happyNow() !== hhOn){ hhOn = !hhOn; if (hhOn){ play("bonus", {gain:.6}); floatText(W/2, lay.counterY - 30, "ハッピーアワー！ 代金1.5倍", "#ffd56b", 1.3); } }
@@ -1526,6 +1597,22 @@ function buildBg(){
   if (S.w === 4){ // 雪の窓
     const ww = Math.min(W*.5, 260), wx = W/2 - ww/2, wh = cy*.4; ctx.fillStyle = "rgba(170,200,230,.18)"; rr(ctx, wx, 14, ww, wh, 10); ctx.fill();
     ctx.strokeStyle = "rgba(220,235,250,.35)"; ctx.lineWidth = 3; rr(ctx, wx, 14, ww, wh, 10); ctx.stroke(); }
+  if (S.w === 7){ // 屋上：夜空と電球
+    const sky = ctx.createLinearGradient(0, 0, 0, cy*.62); sky.addColorStop(0, "#0d1530"); sky.addColorStop(1, "rgba(13,21,48,0)"); ctx.fillStyle = sky; ctx.fillRect(0, 0, W, cy*.62);
+    ctx.fillStyle = "rgba(255,255,255,.8)"; for (let i=0;i<40;i++){ ctx.beginPath(); ctx.arc((i*73)%W, (i*29)%(cy*.4), (i%3)*.5 + .5, 0, 7); ctx.fill(); }
+    ctx.strokeStyle = "rgba(0,0,0,.5)"; ctx.lineWidth = 1.2; ctx.beginPath(); ctx.moveTo(0, cy*.08); ctx.quadraticCurveTo(W/2, cy*.2, W, cy*.08); ctx.stroke();
+    for (let i=0;i<12;i++){ const t = (i+.5)/12, x = t*W, y = cy*.08 + cy*.24*t*(1-t) + 4; ctx.fillStyle = "rgba(255,214,120,.9)"; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,214,120,.18)"; ctx.beginPath(); ctx.arc(x, y, 10, 0, 7); ctx.fill(); }
+    ctx.fillStyle = "#3a2a1c"; for (let k=0;k<W;k+=18) ctx.fillRect(k, cy - 34, 4, 34); ctx.fillRect(0, cy - 34, W, 4); }
+  if (S.w === 8){ // からくり時計と歯車
+    const r = Math.min(cy*.2, 54), x0 = W/2, y0 = cy*.26; ctx.fillStyle = "#5a3a1a"; ctx.beginPath(); ctx.arc(x0, y0, r + 6, 0, 7); ctx.fill(); ctx.fillStyle = "#f3e6c4"; ctx.beginPath(); ctx.arc(x0, y0, r, 0, 7); ctx.fill();
+    ctx.fillStyle = "#5a3a1a"; for (let k=0;k<12;k++){ const a = k/12*Math.PI*2; ctx.beginPath(); ctx.arc(x0 + Math.cos(a)*r*.82, y0 + Math.sin(a)*r*.82, k%3 ? 1.5 : 3, 0, 7); ctx.fill(); }
+    const gear = (gx, gy, gr, n) => { ctx.fillStyle = "rgba(201,150,46,.35)"; ctx.beginPath(); for (let k=0;k<n*2;k++){ const a = k/(n*2)*Math.PI*2, rr2 = k%2 ? gr : gr*.78; ctx.lineTo(gx + Math.cos(a)*rr2, gy + Math.sin(a)*rr2); } ctx.closePath(); ctx.fill(); ctx.fillStyle = room.wall[1]; ctx.beginPath(); ctx.arc(gx, gy, gr*.3, 0, 7); ctx.fill(); };
+    gear(W*.12, cy*.62, 30, 10); gear(W*.88, cy*.18, 26, 9); gear(W*.82, cy*.62, 18, 8); }
+  if (S.w === 9){ // 月と海と灯台
+    ctx.fillStyle = "#14203f"; ctx.fillRect(0, 0, W, cy*.6); ctx.fillStyle = "#1d3a5f"; ctx.fillRect(0, cy*.42, W, cy*.18);
+    ctx.fillStyle = "#f6eecb"; ctx.beginPath(); ctx.arc(W*.8, cy*.14, Math.min(22, cy*.08), 0, 7); ctx.fill(); ctx.fillStyle = "#14203f"; ctx.beginPath(); ctx.arc(W*.8 + 7, cy*.14 - 4, Math.min(20, cy*.075), 0, 7); ctx.fill();
+    ctx.fillStyle = "#e9e2d0"; ctx.beginPath(); ctx.moveTo(W*.12, cy*.44); ctx.lineTo(W*.15, cy*.16); ctx.lineTo(W*.19, cy*.16); ctx.lineTo(W*.22, cy*.44); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#c0392b"; ctx.fillRect(W*.135, cy*.26, W*.07, cy*.04); ctx.fillStyle = "#f6d36b"; ctx.fillRect(W*.155, cy*.11, W*.03, cy*.05); }
   if (S.w === 6){ // 夜景の見える大きな窓
     const ww = Math.min(W*.56, 300), wx = W/2 - ww/2, wh = cy*.42; ctx.fillStyle = "#0e1630"; rr(ctx, wx, 12, ww, wh, 8); ctx.fill();
     for (let k=0;k<9;k++){ const bw2 = ww/9, bh2 = wh*(.3 + ((k*37)%50)/100); ctx.fillStyle = "#1c2748"; ctx.fillRect(wx + k*bw2, 12 + wh - bh2, bw2 - 2, bh2);
@@ -1549,6 +1636,9 @@ function buildBg(){
   if (has("branch")) drawBranchSign(ctx, cy);
   return bg;
 }
+// 灯台の光：左右にゆっくり往復する
+const beamX = () => W/2 + Math.sin((T - darkT)/1100)*W*.42;
+const litAt = x => Math.abs(x - beamX()) < (lay ? lay.slot*.7 : 40);
 /* ---------- ショップで買ったものの見た目 ---------- */
 function drawChair(c, x, headY, size, cy, lv){
   const top = headY - size*(lv >= 5 ? .42 : lv >= 3 ? .3 : .2), w = size*(lv >= 5 ? 1.6 : lv >= 3 ? 1.5 : 1.4), h = cy - top;
@@ -1717,6 +1807,7 @@ function draw(){
   if (S.w === 4){ const ww = Math.min(W*.5, 260), wx = W/2 - ww/2, wh = cy*.4;
     ctx.fillStyle = "rgba(255,255,255,.75)"; for (let i=0;i<26;i++){ const sx = wx + ((i*53) % ww), sy = 14 + ((i*37 + T*.02*(1 + i%3)) % wh); ctx.beginPath(); ctx.arc(sx, sy, 1.2 + i%2, 0, 7); ctx.fill(); }
   }
+  if (S.w === 9 || S.dark){ /* 灯台の光は下で */ }
   if (has("juke")) drawJuke(ctx, cy);
   { const d = decorOn("ceil"); if (d) drawDecor(ctx, d, 0, 0, W, T); }
   { const d = decorOn("wall"); if (d) drawDecor(ctx, d, W/2, cy*.06, Math.min(48, cy*.22), T); }
@@ -1767,6 +1858,12 @@ function draw(){
   if (happyNow()){ const left = Math.ceil((hhT + HH_LEN - T)/1000), bw = Math.min(W - 24, 260), bx = W/2 - bw/2, by = cy + 30;
     ctx.globalAlpha = .92; ctx.fillStyle = "#3a1f0c"; rr(ctx, bx, by, bw, 26, 13); ctx.fill(); ctx.strokeStyle = `hsl(${(T*.2)%360},90%,65%)`; ctx.lineWidth = 2; rr(ctx, bx, by, bw, 26, 13); ctx.stroke();
     ctx.fillStyle = "#ffd56b"; ctx.font = `900 13px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`🍻 ハッピーアワー 代金1.5倍　あと${left}秒`, W/2, by + 13); ctx.globalAlpha = 1; }
+  if (S.reserve && resQ.length){ // 予約ボード
+    const bw = Math.min(W - 24, 230), bh = 34, bx = W/2 - bw/2, by = 6;
+    ctx.fillStyle = "rgba(30,20,12,.88)"; rr(ctx, bx, by, bw, bh, 10); ctx.fill(); ctx.strokeStyle = "#c9962e"; ctx.lineWidth = 2; rr(ctx, bx, by, bw, bh, 10); ctx.stroke();
+    ctx.fillStyle = "#f3d27a"; ctx.font = `900 12px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("ご予約", bx + 10, by + bh/2);
+    const cell = 13; let x = bx + 60;
+    resQ.slice(0, 2).forEach((o, k) => { if (k){ ctx.fillStyle = "#bba895"; ctx.fillText("→", x - 4, by + bh/2); x += 12; } o.forEach(c => { miniBottle(ctx, x + cell/2, by + bh - 6, 24, COLORS[c], false, c); x += cell; }); x += 12; }); }
   // 流し
   const sk = lay.sink, sw = sh.w*1.25, on = sel >= 0;
   ctx.fillStyle = on ? "#6d7b80" : "#4d575b"; rr(ctx, sk.x - sw/2, sk.y + sh.H*.18, sw, sh.H*.28, 8); ctx.fill();
@@ -1784,7 +1881,7 @@ function draw(){
     if (upg("refill")){ const mx = sx - cw*.32, my = cy0 + ch*.5, mr = Math.max(5, sh.w*.14); ctx.strokeStyle = upg("refill") >= 2 ? "#e0b54a" : "#d8d2c4"; ctx.lineWidth = Math.max(2, mr*.35);
       ctx.beginPath(); ctx.arc(mx, my, mr, 0, 7); ctx.moveTo(mx + mr*.7, my + mr*.7); ctx.lineTo(mx + mr*1.6, my + mr*1.6); ctx.stroke(); ctx.fillStyle = "rgba(180,220,240,.35)"; ctx.beginPath(); ctx.arc(mx, my, mr*.8, 0, 7); ctx.fill(); }
     const mini = bottleShape(save.bottle, sh.w*.72), slide = Math.min(1, (T - stockT)/350), off = (1 - ease(slide))*sh.w*.9;
-    drawVessel(ctx, mini, sx - sh.w*.12 + off, cy0 - mini.H/2 + 2, 0, stock[0].map((c,j) => ({c, v:1, h: !!S.hide && j < CAP-1})), {alpha: hasEmpty && supplyLeft > 0 ? 1 : .45});
+    drawVessel(ctx, mini, sx - sh.w*.12 + off, cy0 - mini.H/2 + 2, 0, stock[0].map((c,j) => ({c, v:1, h: !!S.hide && j < CAP-1})), {alpha: hasEmpty && supplyLeft > 0 ? 1 : .45, dark: darkNow() && !litAt(sx)});
     const tiny = bottleShape(save.bottle, sh.w*.42);
     drawVessel(ctx, tiny, sx + sh.w*.52 + off*.5, cy0 - tiny.H/2 + 2, 0, stock[1].map((c,j) => ({c, v:1, h: !!S.hide && j < CAP-1})), {alpha: .55});
     if (has("ledger") && stock[2]) drawVessel(ctx, tiny, sx + sh.w*.86 + off*.3, cy0 - tiny.H/2 + 2, 0, stock[2].map((c,j) => ({c, v:1, h: !!S.hide && j < CAP-1})), {alpha: .4});
@@ -1821,7 +1918,18 @@ function draw(){
     let corkK = null, glow = false;
     if (b.corked){ corkK = Math.min(1, Math.max(0, (T - b.corkT)/320)); corkK = 1 - Math.pow(1 - corkK, 3);
       const need = wantedNow().includes(b.units[0].c); glow = need && Math.sin(T/180) > 0; }
-    drawVessel(ctx, sh, x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow});
+    drawVessel(ctx, sh, x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow, dark: darkNow() && !litAt(x)});
+    if (b.lock != null || (lockWarn && lockWarn.i === i) || (b.unlockT != null && T - b.unlockT < 500)){ // カギ
+      const warn = b.lock == null && lockWarn && lockWarn.i === i, opening = b.lock == null && !warn, k = opening ? 1 - (T - b.unlockT)/500 : 1, c = warn ? lockWarn.c : b.lock;
+      ctx.save(); ctx.globalAlpha = warn ? .45 + .4*Math.abs(Math.sin(T/120)) : k;
+      ctx.strokeStyle = "#8a7a5a"; ctx.lineWidth = Math.max(2, sh.w*.07); ctx.setLineDash([sh.w*.12, sh.w*.06]); ctx.beginPath(); ctx.moveTo(x - sh.w*.62, y - sh.H*.3); ctx.lineTo(x + sh.w*.62, y + sh.H*.1); ctx.moveTo(x + sh.w*.62, y - sh.H*.3); ctx.lineTo(x - sh.w*.62, y + sh.H*.1); ctx.stroke(); ctx.setLineDash([]);
+      const ly = y - sh.H*.1 - (opening ? (1-k)*sh.H*.3 : 0), lw = sh.w*.62;
+      ctx.strokeStyle = "#c9962e"; ctx.lineWidth = sh.w*.08; ctx.beginPath(); ctx.arc(x, ly - lw*.35, lw*.32, Math.PI, 0); ctx.stroke();
+      ctx.fillStyle = "#e0b54a"; rr(ctx, x - lw/2, ly - lw*.35, lw, lw*.8, lw*.15); ctx.fill(); ctx.fillStyle = COLORS[c]; ctx.beginPath(); ctx.arc(x, ly + lw*.05, lw*.22, 0, 7); ctx.fill();
+      if (save.cb) sym(ctx, c, x, ly + lw*.05, lw*.14);
+      if (b.lock != null){ ctx.fillStyle = "#f3d27a"; ctx.font = `900 ${Math.max(10, sh.w*.24)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText(`あと${Math.max(0, Math.ceil((LOCK_LEN - (T - (b.lockT0||0)))/1000))}秒`, x, ly + lw*.5); }
+      if (warn){ ctx.fillStyle = "#f3d27a"; ctx.font = `900 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(`🔒まもなく ${Math.ceil((3000 - (T - lockWarn.t0))/1000)}`, p.x, p.y - sh.H/2 - sh.w*.3); }
+      ctx.restore(); }
     if (freezeWarn && freezeWarn.i === i){ const k = Math.min(1, (T - freezeWarn.t0)/FREEZE_WARN);
       ctx.save(); ctx.globalAlpha = .15 + .45*k; ctx.fillStyle = "rgba(190,230,250,.8)"; rr(ctx, x - sh.w*.62, y - sh.H*.56, sh.w*1.24, sh.H*1.1, sh.w*.3); ctx.fill(); ctx.globalAlpha = 1;
       ctx.strokeStyle = `rgba(235,250,255,${.4 + .5*Math.abs(Math.sin(T/120))})`; ctx.lineWidth = 2; ctx.setLineDash([4,4]); rr(ctx, x - sh.w*.62, y - sh.H*.56, sh.w*1.24, sh.H*1.1, sh.w*.3); ctx.stroke(); ctx.setLineDash([]);
@@ -1872,7 +1980,7 @@ function draw(){
         ctx.beginPath(); ctx.moveTo(gx, gy - r*2); ctx.lineTo(gx + r*.6, gy); ctx.lineTo(gx, gy + r*2); ctx.lineTo(gx - r*.6, gy); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(gx - r*2, gy); ctx.lineTo(gx, gy + r*.6); ctx.lineTo(gx + r*2, gy); ctx.lineTo(gx, gy - r*.6); ctx.closePath(); ctx.fill(); }
         ctx.strokeStyle = "#e0b54a"; ctx.lineWidth = Math.max(2, sh.w*.06); ctx.beginPath(); ctx.arc(tx, ty, sh.w*.09, 0, 7); ctx.stroke(); }
     }
-    drawVessel(ctx, sh, x, y, a, layers, {t: T});
+    drawVessel(ctx, sh, x, y, a, layers, {t: T, dark: darkNow() && !litAt(x)});
     return true;
   });
   // お客さんへ飛んでいく瓶
@@ -1891,6 +1999,13 @@ function draw(){
   { const hp = tutHand(); if (hp){ const bob = Math.sin(performance.now()/220)*6, r = sh.w*.75 + Math.sin(performance.now()/300)*4;
       ctx.strokeStyle = "rgba(255,214,107,.9)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(hp.x, hp.y, r, 0, 7); ctx.stroke();
       ctx.font = `${Math.round(sh.w*.9)}px sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("👆", hp.x + sh.w*.2, hp.y + sh.H*.15 + bob); } }
+  if (S.dark && (darkNow() || darkSoon())){ // 停電：暗くして、灯台の光だけ明るく
+    const on = darkNow(), flick = darkSoon() ? (Math.sin(T/60) > .3 ? .35 : 0) : .55;
+    ctx.save(); ctx.fillStyle = `rgba(4,8,22,${flick})`; ctx.fillRect(0, cy + 18, W, H - cy - 18);
+    if (on){ const bx = beamX(), g = ctx.createLinearGradient(bx - lay.slot, 0, bx + lay.slot, 0); g.addColorStop(0, "rgba(255,240,180,0)"); g.addColorStop(.5, "rgba(255,240,180,.22)"); g.addColorStop(1, "rgba(255,240,180,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(W*.17, cy*.14); ctx.lineTo(bx - lay.slot*.8, H); ctx.lineTo(bx + lay.slot*.8, H); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = "#cfe0ff"; ctx.font = `900 13px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(`停電中… あと${Math.ceil((darkT + DARK_LEN - T)/1000)}秒`, W/2, cy + 40); }
+    ctx.restore(); }
   floats = floats.filter(f => T - f.t0 < 1400);
   floats.forEach(f => { const a = (T - f.t0)/1400; if (a < 0) return; ctx.globalAlpha = a < .8 ? 1 : (1 - a)/.2;
     ctx.font = `900 ${16*f.size}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -2062,7 +2177,7 @@ function showIntro(i){
     $("intro").classList.remove("hidden"); return;
   }
   if (S.mode === "daily"){
-    const dd = save.daily.key === S.key ? save.daily : {}, names = {hide:"？の色", rush:"急ぎのお客さん", ice:"凍った瓶", supply:"仕入れ制限と団体さん"};
+    const dd = save.daily.key === S.key ? save.daily : {}, names = {hide:"？の色", rush:"急ぎのお客さん", ice:"凍った瓶", supply:"仕入れ制限と団体さん", reserve:"予約", lock:"カギつき瓶", dark:"停電"};
     $("introH").textContent = `日替わり特別営業　${S.label}`;
     $("introGoal").textContent = `目標 ${yen(S.goal)}・お客さん ${S.guests}人・${WORLDS[S.w-1].name}`;
     $("introRules").innerHTML = `今日のお題：<b>${S.colors}色・${S.gm.map(g => names[g]).join("＋")}</b><br>
@@ -2087,7 +2202,7 @@ function showIntro(i){
     ・こまったら瓶を選んで「流し」へ（1杯 ${yen(DUMP_COST)}）<br>
     ・財布に入るのは<b>利益</b>です。売上から、仕入れ代（1回 ${yen(SUPPLY_COST)}）と家賃・光熱費（${yen(rentOf(S))}）を引いた分です` :
     (S.n === 1 && WORLDS[S.w-1].note ? `<b>新しいお店：</b>${WORLDS[S.w-1].note}<br><br>` : "") +
-    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・凍った瓶" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*STAR2)}、★3 は ${yen(S.goal*STAR3)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
+    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・凍った瓶" : ""}${S.reserve ? "・予約" : ""}${S.lock ? "・カギつき瓶" : ""}${S.dark ? "・停電" : ""}${S.cocktail ? "・カクテル" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*STAR2)}、★3 は ${yen(S.goal*STAR3)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
   const r = stageRec(S.id), stn = save.stars[S.id] || 0;
   $("introRec").innerHTML = recBox(`${S.id} の記録`, r ? [["ベスト売上", yen(r.best) + (r.bestT ? `（${md(r.bestT)}）` : ""), 1], ["星", "★".repeat(stn) + "☆".repeat(3-stn)]]
       .concat(r.plays ? [["最高連続", `${r.combo||0}連続`], ["最多のお客さん", `${r.served||0}人`], ["全員満足", `${r.perfect||0}回`], ["遊んだ回数", `${r.plays}回（クリア ${r.clears||0}回）`]] : []) : [], "まだ記録はありません");
@@ -2393,7 +2508,7 @@ function showEnding(){
   save.endingSeen = true; persist();
   ["map","play","result","intro"].forEach(id => $(id).classList.add("hidden")); $("ending").classList.remove("hidden");
   const stars = Object.values(save.stars).reduce((a,b) => a+b, 0), r = rankOf(save.total);
-  $("endRoll").innerHTML = `<h3>ご注文は満タンで</h3><p>全${STAGES.length}ステージ 制覇おめでとう！</p><p>夜のバーから始まったお店は、ホテルのカクテルバーまで。</p>
+  $("endRoll").innerHTML = `<h3>ご注文は満タンで</h3><p>全${STAGES.length}ステージ 制覇おめでとう！</p><p>夜のバーから始まったお店は、${WORLDS[WORLDS.length-1].name}まで。</p>
     <small>あなたのお店の記録</small><p>累計売上 ${yen(save.total)}</p><p>満足したお客さん ${save.stats.served.toLocaleString()}人</p><p>渡した満タン瓶 ${save.stats.bottles.toLocaleString()}本</p><p>★ ${stars} / ${STAGES.length*3}</p><p>ランク${r}「${titleShown()}」</p>
     <small>店主</small><p>${pName()}（${pShop()}）</p><small>企画・テストプレイ</small><p>あなた</p><small>制作</small><p>Claude</p><small>音楽</small><p>魔王魂</p><small>効果音</small><p>効果音ラボ</p>
     <small>ご来店のお客さん</small><p>ねこ・くま・うさぎ・いぬ　ほか常連のみなさん</p>
@@ -2562,7 +2677,7 @@ $("trClose").onclick = () => $("trophies").classList.add("hidden");
 /* ---------- テスト用の自動プレイ（通常は動かない） ---------- */
 function bot(){
   if (T < botNext) return; botNext = T + (window.__botDelay || 700);
-  const free = i => !busy.has(i) && !bottles[i].ice && !bottles[i].glass;
+  const free = i => !busy.has(i) && !bottles[i].ice && bottles[i].lock == null && !bottles[i].glass;
   { const st = cockState(); if (st && st.g && !busy.has(st.gi)){
       if (!st.ok){ sel = -1; tapBottle(st.gi); tapSink(); return; }
       if (st.next != null){ const src = bottles.findIndex((b,i) => free(i) && !b.corked && b.units.length && b.units[b.units.length-1].c === st.next && !b.units[b.units.length-1].h);
