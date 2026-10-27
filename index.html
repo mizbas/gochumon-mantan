@@ -392,9 +392,9 @@ const storeMax = () => has("rack") ? 4 : STORE_MAX;
 const RACK_COST_ALL = [200, 400, 800];
 const PRICE = 150, DUMP_COST = 10;
 const UPG = [
-  {id:"pat",    name:"くつろげる椅子",   desc:"お客さんの待てる時間 +12%",        max:6, cost:[400, 1000, 2000, 4000, 7000, 12000]},
-  {id:"price",  name:"上等なお酒",       desc:"1本あたりの値段 +10%",              max:8, cost:[500, 1200, 2500, 4500, 8000, 14000, 22000, 35000]},
-  {id:"tip",    name:"笑顔の接客",       desc:"早く出したときのチップ +10%",       max:5, cost:[400, 1000, 2500, 5000, 9000]},
+  {id:"pat",    name:"くつろげる椅子",   desc:"お客さんの待てる時間 +12%。椅子がどんどん豪華に",        max:6, cost:[400, 1000, 2000, 4000, 7000, 12000]},
+  {id:"price",  name:"上等なお酒",       desc:"1本あたりの値段 +10%。壁の棚に高いお酒が並ぶ",              max:8, cost:[500, 1200, 2500, 4500, 8000, 14000, 22000, 35000]},
+  {id:"tip",    name:"笑顔の接客",       desc:"早く出したときのチップ +10%。カウンターに花が増える",       max:5, cost:[400, 1000, 2500, 5000, 9000]},
   {id:"refill", name:"仕入れの目利き",   desc:"仕入れる瓶に入っている色の種類が少なくなる", max:2, cost:[700, 2000]},
 ];
 const BOTTLES = [
@@ -682,10 +682,10 @@ const GUESTS = [
   {fur:"#c7c2b8", ear:"dog",    cheek:"#e7b0a0", wear:"#7a5a2a"},
   {fur:"#3b3533", ear:"bear",   cheek:"#a97a6a", wear:"#3a3a3a"},
 ];
-function drawGuest(c, g, x, y, s, mood, t){
+function drawGuest(c, g, x, y, s, mood, t, noWear){
   const G = GUESTS[g];
   c.save(); c.translate(x, y);
-  c.fillStyle = G.wear; rr(c, -s*.62, s*.42, s*1.24, s*.8, s*.35); c.fill();
+  if (!noWear){ c.fillStyle = G.wear; rr(c, -s*.62, s*.42, s*1.24, s*.8, s*.35); c.fill(); }
   c.fillStyle = G.fur;
   if (G.ear === "cat"){ c.beginPath(); c.moveTo(-s*.46,-s*.2); c.lineTo(-s*.36,-s*.62); c.lineTo(-s*.08,-s*.38); c.fill(); c.beginPath(); c.moveTo(s*.46,-s*.2); c.lineTo(s*.36,-s*.62); c.lineTo(s*.08,-s*.38); c.fill(); }
   if (G.ear === "bear"){ c.beginPath(); c.arc(-s*.34,-s*.36,s*.15,0,7); c.arc(s*.34,-s*.36,s*.15,0,7); c.fill(); }
@@ -1136,8 +1136,103 @@ function buildBg(){
     ctx.fillStyle = room.shelf; rr(ctx, W/2 - s.half, s.y - 2, s.half*2, sh.w*.2, 4); ctx.fill(); ctx.fillStyle = room.stop; ctx.fillRect(W/2 - s.half + 4, s.y - 2, s.half*2 - 8, 2); });
   if (room.id === "space"){ ctx.fillStyle = "rgba(255,255,255,.8)"; for (let i=0;i<60;i++){ const x = (i*97) % W, y = (i*61) % Math.max(10, cy - 10); ctx.beginPath(); ctx.arc(x, y, (i%3)*.5 + .6, 0, 7); ctx.fill(); } }
   if (room.id === "palace"){ ctx.fillStyle = "rgba(243,215,122,.25)"; for (let i=0;i<4;i++){ const x = W*(.125 + .25*i); ctx.beginPath(); ctx.arc(x, 26, 14, 0, 7); ctx.fill(); ctx.fillRect(x - 1, 0, 2, 14); } }
-  if (has("cat")){ drawGuest(ctx, 0, W - 26, cy - 15, 26, "happy", 1000); ctx.fillStyle = room.counter; ctx.fillRect(W - 50, cy, 50, 18); ctx.fillStyle = room.ctop; ctx.fillRect(W - 50, cy, 50, 4); }
+  drawFine(ctx, upg("price"), cy);
+  if (has("branch")) drawBranchSign(ctx, cy);
   return bg;
+}
+/* ---------- ショップで買ったものの見た目 ---------- */
+function drawChair(c, x, headY, size, cy, lv){
+  const top = headY - size*(lv >= 5 ? .42 : lv >= 3 ? .3 : .2), w = size*(lv >= 5 ? 1.6 : lv >= 3 ? 1.5 : 1.4), h = cy - top;
+  if (lv === 0){ c.fillStyle = room.chair; rr(c, x - w/2, top, w, h, size*.3); c.fill(); return; }
+  if (lv <= 2){ // 木の椅子
+    c.fillStyle = "#6b4526"; rr(c, x - w/2, top, w, h, size*.22); c.fill();
+    c.fillStyle = "#8a5a33"; rr(c, x - w/2 + size*.12, top + size*.12, w - size*.24, h, size*.14); c.fill();
+    c.strokeStyle = "rgba(60,35,15,.55)"; c.lineWidth = Math.max(1.5, size*.05);
+    c.beginPath(); for (let k=1;k<4;k++){ const sx = x - w/2 + w*k/4; c.moveTo(sx, top + size*.2); c.lineTo(sx, cy); } c.stroke();
+    if (lv === 2){ c.fillStyle = "#c9553f"; rr(c, x - w/2 + size*.06, top + size*.04, w - size*.12, size*.18, size*.09); c.fill(); }
+    return; }
+  if (lv <= 4){ // 革張りのソファ
+    c.fillStyle = "#5e1f1c"; rr(c, x - w/2, top, w, h, size*.38); c.fill();
+    c.fillStyle = "#8c2f2a"; rr(c, x - w/2 + size*.08, top + size*.08, w - size*.16, h, size*.32); c.fill();
+    c.fillStyle = "rgba(30,8,6,.55)"; const rows = lv === 4 ? 3 : 2;
+    for (let r=0;r<rows;r++) for (let k=0;k<4;k++){ c.beginPath(); c.arc(x - w*.3 + k*w*.2 + (r%2)*w*.1, top + size*(.3 + r*.28), size*.04, 0, 7); c.fill(); }
+    if (lv === 4){ c.fillStyle = "#7a2622"; rr(c, x - w/2 - size*.18, cy - size*.42, size*.3, size*.42, size*.12); c.fill(); rr(c, x + w/2 - size*.12, cy - size*.42, size*.3, size*.42, size*.12); c.fill(); }
+    return; }
+  // ビロードの王様いす
+  c.fillStyle = "#3a1650"; c.beginPath(); c.moveTo(x - w/2, cy); c.lineTo(x - w/2, top + size*.35);
+  c.quadraticCurveTo(x - w/2, top, x - w*.18, top + size*.05); c.quadraticCurveTo(x, top - size*.14, x + w*.18, top + size*.05);
+  c.quadraticCurveTo(x + w/2, top, x + w/2, top + size*.35); c.lineTo(x + w/2, cy); c.closePath(); c.fill();
+  c.strokeStyle = "#e0b54a"; c.lineWidth = Math.max(2, size*.06); c.stroke();
+  c.fillStyle = "#5b2a7a"; rr(c, x - w/2 + size*.14, top + size*.16, w - size*.28, h, size*.3); c.fill();
+  c.fillStyle = "#e0b54a"; for (let k=0;k<5;k++){ c.beginPath(); c.arc(x - w*.32 + k*w*.16, top + size*.36, size*.035, 0, 7); c.fill(); }
+  c.fillStyle = "#4a1d66"; rr(c, x - w/2 - size*.2, cy - size*.46, size*.34, size*.46, size*.14); c.fill(); rr(c, x + w/2 - size*.14, cy - size*.46, size*.34, size*.46, size*.14); c.fill();
+  c.strokeStyle = "#e0b54a"; c.lineWidth = Math.max(1.5, size*.04); rr(c, x - w/2 - size*.2, cy - size*.46, size*.34, size*.46, size*.14); c.stroke(); rr(c, x + w/2 - size*.14, cy - size*.46, size*.34, size*.46, size*.14); c.stroke();
+  if (lv >= 6){ c.fillStyle = "#f3d27a"; [-1, 1].forEach(d => { c.beginPath(); c.arc(x + d*(w/2), top + size*.3, size*.1, 0, 7); c.fill(); c.beginPath(); c.arc(x + d*(w/2 + size*.03), cy - size*.5, size*.08, 0, 7); c.fill(); }); }
+}
+// 上等なお酒：壁の左上の棚に、レベルの数だけ高そうなお酒が並ぶ
+const FINE = [["#5b0f1f",1.0,"wine"],["#c9862b",.8,"whisky"],["#2f5d3a",1.05,"wine"],["#e8d38a",.9,"champ"],["#7a2f8f",.75,"liqueur"],["#b8451f",.85,"whisky"],["#16324f",1.0,"wine"],["#f3d27a",.95,"champ"]];
+function drawFine(c, lv, cy){
+  if (!lv) return;
+  const x0 = 10, wcol = Math.min(84, W*.22), rows = [cy*.26, cy*.46], per = 4, bw = wcol/per;
+  rows.forEach((ry, r) => {
+    if (lv <= r*per) return;
+    c.fillStyle = "rgba(0,0,0,.35)"; c.fillRect(x0, ry + 2, wcol, 4); c.fillStyle = room.shelf; c.fillRect(x0, ry - 2, wcol, 5); c.fillStyle = room.stop; c.fillRect(x0, ry - 2, wcol, 1.5);
+    for (let k=0;k<per;k++){ const i = r*per + k; if (i >= lv) break;
+      const [col, hk, kind] = FINE[i], bx = x0 + (k+.5)*bw, bh = Math.min(30, cy*.17)*hk, bwid = bw*.46;
+      c.fillStyle = col; rr(c, bx - bwid/2, ry - 2 - bh*.68, bwid, bh*.68, bwid*.3); c.fill();
+      c.fillRect(bx - bwid*.17, ry - 2 - bh, bwid*.34, bh*.36);
+      c.fillStyle = kind === "champ" ? "#e0b54a" : "#1b1b1b"; c.fillRect(bx - bwid*.2, ry - 2 - bh - 2, bwid*.4, 4);
+      c.fillStyle = "#f6ead6"; c.globalAlpha = .85; c.fillRect(bx - bwid*.34, ry - 2 - bh*.46, bwid*.68, bh*.2); c.globalAlpha = 1;
+      c.fillStyle = "rgba(255,255,255,.25)"; c.fillRect(bx - bwid*.32, ry - 2 - bh*.62, bwid*.12, bh*.5); }
+  });
+}
+// 二号店の看板：右上に吊り看板
+function drawBranchSign(c, cy){
+  const w = Math.min(78, W*.2), h = Math.min(30, cy*.13), x = W - 10 - w, y = cy*.07;
+  c.strokeStyle = "rgba(0,0,0,.5)"; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x + w*.2, 0); c.lineTo(x + w*.2, y); c.moveTo(x + w*.8, 0); c.lineTo(x + w*.8, y); c.stroke();
+  c.fillStyle = "#2a1a0c"; rr(c, x - 2, y - 2, w + 4, h + 4, 7); c.fill(); c.fillStyle = "#f3d27a"; rr(c, x, y, w, h, 6); c.fill();
+  c.fillStyle = "#5b2a12"; c.textAlign = "center"; c.textBaseline = "middle"; let fs = Math.round(h*.5);
+  do { c.font = `900 ${fs}px "Zen Kaku Gothic New",sans-serif`; fs--; } while (fs > 7 && c.measureText("二号店 営業中").width > w - 8);
+  c.fillText("二号店 営業中", x + w/2, y + h/2 + 1);
+}
+// ジュークボックス：右の壁。連続中は光って音符が出る
+function drawJuke(c, cy){
+  const w = Math.min(40, W*.1), h = Math.min(64, cy*.3), x = W - 14 - w, y = cy*(has("branch") ? .26 : .1) + 4, on = combo >= 2;
+  c.fillStyle = "#4a2a14"; rr(c, x, y, w, h, w*.5); c.fill();
+  c.fillStyle = "#7a4a22"; rr(c, x + w*.1, y + w*.1, w*.8, h - w*.2, w*.42); c.fill();
+  const hue = on ? (T*.12) % 360 : 30;
+  c.fillStyle = on ? `hsl(${hue},85%,62%)` : "#c99a4a"; rr(c, x + w*.22, y + w*.24, w*.56, h*.38, w*.28); c.fill();
+  c.fillStyle = "#2a1a0c"; for (let k=0;k<3;k++) c.fillRect(x + w*.26, y + h*.58 + k*h*.09, w*.48, h*.04);
+  if (on){ c.fillStyle = `hsl(${(hue+120)%360},85%,70%)`; c.font = `900 ${Math.round(w*.42)}px sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
+    for (let k=0;k<2;k++){ const ph = ((T/1400) + k*.5) % 1; c.globalAlpha = 1 - ph; c.fillText(k ? "♪" : "♫", x - w*.1 - ph*w*.4 + k*w*.2, y + h*.3 - ph*h*.5); } c.globalAlpha = 1; }
+}
+// 看板ねこ：カウンターの右端に座っている。しっぽが揺れる
+function drawCat(c, cy){
+  const s = Math.min(34, lay.seatW*.26), x = W - s*.9, y = cy;
+  c.save(); c.translate(x, y);
+  c.strokeStyle = "#c9803e"; c.lineWidth = s*.16; c.lineCap = "round"; const sw = Math.sin(T/420)*s*.35;
+  c.beginPath(); c.moveTo(-s*.35, -s*.1); c.quadraticCurveTo(-s*.95, -s*.2 + sw*.3, -s*.85 + sw*.4, -s*.75); c.stroke();
+  c.fillStyle = "#e8a25a"; c.beginPath(); c.ellipse(0, -s*.32, s*.42, s*.36, 0, 0, 7); c.fill();
+  c.fillStyle = "#f6ead6"; c.beginPath(); c.ellipse(0, -s*.18, s*.2, s*.18, 0, 0, 7); c.fill();
+  c.restore();
+  drawGuest(c, 0, x, y - s*.86, s*.74, Math.floor(T/2600) % 3 === 0 ? "ok" : "happy", T, true);
+  c.fillStyle = room.ctop; c.fillRect(x - s*.6, y, s*1.2, 3);
+}
+// 笑顔の接客：カウンターの花。レベルで花が増える
+function drawFlowers(c, cy, lv){
+  if (!lv || seats.length < 2) return;
+  const xs = []; for (let k=0;k<seats.length-1;k++) xs.push((lay.seatPos[k].x + lay.seatPos[k+1].x)/2);
+  const s = Math.min(16, lay.seatW*.12), cols = ["#f06aa8","#f6c945","#ffffff","#e63946","#9b5de5"];
+  xs.forEach((x, k) => {
+    const n = Math.ceil((lv - k)/xs.length) + (lv >= 5 ? 1 : 0); if (n <= 0) return;
+    c.strokeStyle = "#3f7d3a"; c.lineWidth = 1.5;
+    for (let f=0; f<n; f++){ const ang = (f - (n-1)/2)*.35, fx = x + Math.sin(ang)*s*1.1, fy = cy - s*1.1 - Math.cos(ang)*s*.9;
+      c.beginPath(); c.moveTo(x, cy - s*.5); c.lineTo(fx, fy); c.stroke();
+      c.fillStyle = cols[(f + k*2) % cols.length]; for (let p=0;p<5;p++){ const pa = p*1.2566 + T/3000; c.beginPath(); c.arc(fx + Math.cos(pa)*s*.18, fy + Math.sin(pa)*s*.18, s*.14, 0, 7); c.fill(); }
+      c.fillStyle = "#f3d27a"; c.beginPath(); c.arc(fx, fy, s*.1, 0, 7); c.fill(); }
+    c.fillStyle = lv >= 5 ? "#e0b54a" : "#7fb3c9"; rr(c, x - s*.32, cy - s*.62, s*.64, s*.64, s*.2); c.fill();
+    c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(x - s*.22, cy - s*.54, s*.1, s*.42);
+  });
 }
 function draw(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -1147,10 +1242,11 @@ function draw(){
   if (S.w === 4){ const ww = Math.min(W*.5, 260), wx = W/2 - ww/2, wh = cy*.4;
     ctx.fillStyle = "rgba(255,255,255,.75)"; for (let i=0;i<26;i++){ const sx = wx + ((i*53) % ww), sy = 14 + ((i*37 + T*.02*(1 + i%3)) % wh); ctx.beginPath(); ctx.arc(sx, sy, 1.2 + i%2, 0, 7); ctx.fill(); }
   }
+  if (has("juke")) drawJuke(ctx, cy);
   // お客さん
   seats.forEach((s, k) => {
     const p = lay.seatPos[k], size = Math.min(lay.seatW*.42, 64), headY = cy - size*.62;
-    ctx.fillStyle = room.chair; rr(ctx, p.x - size*.7, headY - size*.2, size*1.4, cy - headY + size*.2, size*.3); ctx.fill();
+    drawChair(ctx, p.x, headY, size, cy, upg("pat"));
     if (s.state === "empty") return;
     let dy = 0, alpha = 1;
     if (s.state === "in"){ const a = Math.min(1, (T - s.t0)/450); dy = (1 - ease(a))*size*1.2; alpha = a; }
@@ -1178,6 +1274,8 @@ function draw(){
       ctx.globalAlpha = 1;
     }
   });
+  drawFlowers(ctx, cy, upg("tip"));
+  if (has("cat")) drawCat(ctx, cy);
   // 流し
   const sk = lay.sink, sw = sh.w*1.25, on = sel >= 0;
   ctx.fillStyle = on ? "#6d7b80" : "#4d575b"; rr(ctx, sk.x - sw/2, sk.y + sh.H*.18, sw, sh.H*.28, 8); ctx.fill();
@@ -1192,6 +1290,8 @@ function draw(){
     const cy0 = su.y + sh.H/2 - ch;
     ctx.fillStyle = "#8a6038"; rr(ctx, sx - cw/2, cy0, cw, ch, 6); ctx.fill();
     ctx.strokeStyle = "rgba(60,35,15,.6)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(sx - cw/2 + 4, cy0 + ch*.5); ctx.lineTo(sx + cw/2 - 4, cy0 + ch*.5); ctx.moveTo(sx - cw/2 + 6, cy0 + 4); ctx.lineTo(sx + cw/2 - 6, cy0 + ch - 4); ctx.stroke();
+    if (upg("refill")){ const mx = sx - cw*.32, my = cy0 + ch*.5, mr = Math.max(5, sh.w*.14); ctx.strokeStyle = upg("refill") >= 2 ? "#e0b54a" : "#d8d2c4"; ctx.lineWidth = Math.max(2, mr*.35);
+      ctx.beginPath(); ctx.arc(mx, my, mr, 0, 7); ctx.moveTo(mx + mr*.7, my + mr*.7); ctx.lineTo(mx + mr*1.6, my + mr*1.6); ctx.stroke(); ctx.fillStyle = "rgba(180,220,240,.35)"; ctx.beginPath(); ctx.arc(mx, my, mr*.8, 0, 7); ctx.fill(); }
     const mini = bottleShape(save.bottle, sh.w*.72), slide = Math.min(1, (T - stockT)/350), off = (1 - ease(slide))*sh.w*.9;
     drawVessel(ctx, mini, sx - sh.w*.12 + off, cy0 - mini.H/2 + 2, 0, stock[0].map((c,j) => ({c, v:1, h: !!S.hide && j < CAP-1})), {alpha: hasEmpty && supplyLeft > 0 ? 1 : .45});
     const tiny = bottleShape(save.bottle, sh.w*.42);
@@ -1263,6 +1363,9 @@ function draw(){
       const sw = sh.w*.12*(stream < .15 ? stream/.15 : stream > .9 ? (1-stream)/.1 : 1), wob = Math.sin(T/40)*sh.w*.012, ex = tpos.x - p.dir*sh.nw*.15;
       ctx.fillStyle = COLORS[p.c]; ctx.beginPath(); ctx.moveTo(tx - sw/2, ty); ctx.quadraticCurveTo(tx - sw/2 + wob, (ty+surf)/2, ex - sw*.4, surf);
       ctx.lineTo(ex + sw*.4, surf); ctx.quadraticCurveTo(tx + sw/2 + wob, (ty+surf)/2, tx + sw/2, ty); ctx.closePath(); ctx.fill();
+      if (has("spout")){ ctx.fillStyle = "#ffe08a"; for (let k=0;k<4;k++){ const f = ((T/260) + k/4) % 1, gx = tx + (ex - tx)*f + Math.sin(T/90 + k*2)*sh.w*.1, gy = ty + (surf - ty)*f, r = sh.w*.05*(1 - Math.abs(f - .5));
+        ctx.beginPath(); ctx.moveTo(gx, gy - r*2); ctx.lineTo(gx + r*.6, gy); ctx.lineTo(gx, gy + r*2); ctx.lineTo(gx - r*.6, gy); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(gx - r*2, gy); ctx.lineTo(gx, gy + r*.6); ctx.lineTo(gx + r*2, gy); ctx.lineTo(gx, gy - r*.6); ctx.closePath(); ctx.fill(); }
+        ctx.strokeStyle = "#e0b54a"; ctx.lineWidth = Math.max(2, sh.w*.06); ctx.beginPath(); ctx.arc(tx, ty, sh.w*.09, 0, 7); ctx.stroke(); }
     }
     drawVessel(ctx, sh, x, y, a, layers, {t: T});
     return true;
