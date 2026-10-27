@@ -215,7 +215,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
 <section id="play" class="screen hidden">
   <div class="hud">
     <div class="row1">
-      <button class="ib" id="homeBtn" aria-label="お店を閉めてマップへ">
+      <button class="ib" id="homeBtn" aria-label="一時停止">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
       </button>
       <div class="lvl" id="lvlV">1-1</div>
@@ -292,6 +292,14 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
     <h2 id="cfH" style="font-size:26px">買いますか？</h2>
     <p class="rules" id="cfP" style="text-align:center"></p>
     <div class="btns"><button class="b-sub" id="cfNo">やめる</button><button class="b-main" id="cfYes">買う</button></div>
+  </div>
+</div>
+
+<div id="pauseOv" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="pauseH" style="z-index:7">
+  <div class="card">
+    <h2 id="pauseH">一時停止中</h2>
+    <p class="rules" id="pauseP" style="text-align:center">時間は止まっています。</p>
+    <div class="btns" style="flex-direction:column"><button class="b-main" id="pauseGo" style="flex:none">再開する</button><button class="b-sub" id="pauseTop" style="flex:none">お店を閉めてマップに戻る</button></div>
   </div>
 </div>
 
@@ -1421,7 +1429,23 @@ $("sandBtn").onclick = () => {
   play("kira", {gain:.6}); floatText(W/2, lay.counterY - 40, "待ち時間 +10秒", "#9ed8f0", 1); hud(); };
 $("rackBuy").onclick = () => closeRack(true);
 $("rackNo").onclick = () => closeRack(false);
-$("homeBtn").onclick = () => { running = false; paused = false; $("rackAsk").classList.add("hidden"); showMap(); };
+// メニューボタン：一時停止して、再開するかマップに戻るかを選ぶ
+function pauseGame(){
+  if (!running || !$("pauseOv").classList.contains("hidden")) return;
+  paused = true; sel = -1;
+  $("pauseP").innerHTML = `時間は止まっています。<br>いまの売上 <b>${yen(money)}</b>` + (S.mode === "endless" ? "" : `（目標 ${yen(S.goal)}）`) + `<br><small>マップに戻ると、このステージの売上は入りません</small>`;
+  $("pauseOv").classList.remove("hidden"); play("pick", {gain:.4});
+}
+function resumeGame(){
+  $("pauseOv").classList.add("hidden");
+  if ($("rackAsk").classList.contains("hidden")) paused = false;
+  lastTs = 0; play("pick", {gain:.4, rate:1.1});
+}
+$("homeBtn").onclick = () => { audio(); pauseGame(); };
+$("pauseGo").onclick = resumeGame;
+$("pauseTop").onclick = () => { $("pauseOv").classList.add("hidden"); running = false; paused = false; $("rackAsk").classList.add("hidden"); showMap(); };
+// アプリを裏に回したら自動で一時停止
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && running && !$("play").classList.contains("hidden")) pauseGame(); });
 function showMap(){
   running = false;
   ["play","intro","result","shop","trophies"].forEach(id => $(id).classList.add("hidden")); $("map").classList.remove("hidden");
