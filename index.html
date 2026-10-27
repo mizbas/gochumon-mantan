@@ -322,6 +322,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
       <button role="tab" id="tabBottle" aria-selected="false">瓶の形</button>
       <button role="tab" id="tabRoom" aria-selected="false">内装</button>
       <button role="tab" id="tabDecor" aria-selected="false">飾り</button>
+      <button role="tab" id="tabCos" aria-selected="false">店主</button>
     </div>
     <div class="items" id="shopItems"></div>
     <button class="close" id="shopClose">閉じる</button>
@@ -379,7 +380,9 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
       <label class="pf-l" for="pfMsgIn">ひとこと</label><input class="pf-in" id="pfMsgIn" maxlength="24" autocomplete="off" placeholder="例：今日も満タンでお待ちしてます"><div class="pf-n">24文字まで</div>
       <div class="pf-l">アバター</div><div class="pick" id="pfAva"></div>
       <div class="pf-l">服の色</div><div class="pick" id="pfWear"></div>
+      <div class="pf-l">服の柄</div><div class="pick" id="pfFit"></div>
       <div class="pf-l">小物</div><div class="pick" id="pfAcc"></div>
+      <p class="set-p" style="text-align:center">🔒のものは、ショップの「店主」タブで買ったり、エンドレス・日替わり・ランクのほうびでもらえます。タップすると手に入れ方が出ます。</p>
       <div class="pf-l">好きな色（プロフィールの飾りに使います）</div><div class="pick" id="pfFav"></div>
       <div id="pfErr" class="set-p" style="color:#c0392b;font-weight:700;min-height:18px;text-align:center"></div>
       <div class="set-btns"><button id="pfCancel">やめる</button><button class="m" id="pfSave">保存する</button></div>
@@ -563,6 +566,10 @@ const DECOR = [
 // 到達ほうび：それぞれ1回だけ。何度到達しても2回目はない
 const REWARDS = [
   {id:"el3",   k:"elv",  v:3,     give:{decor:"lights"}},
+  {id:"el4",   k:"elv",  v:4,     give:{cos:"fit:stripe"}},
+  {id:"el6",   k:"elv",  v:6,     give:{cos:"acc:star"}},
+  {id:"el8",   k:"elv",  v:8,     give:{cos:"ava:8"}},
+  {id:"el18",  k:"elv",  v:18,    give:{cos:"ava:13"}},
   {id:"el5",   k:"elv",  v:5,     give:{money:3000}},
   {id:"el7",   k:"elv",  v:7,     give:{decor:"darts"}},
   {id:"el10",  k:"elv",  v:10,    give:{decor:"clock", title:"眠らない店主"}},
@@ -572,6 +579,10 @@ const REWARDS = [
   {id:"el25",  k:"elv",  v:25,    give:{money:30000, title:"夜明けまで満タン"}},
   {id:"el30",  k:"elv",  v:30,    give:{money:50000, title:"満タンの神話"}},
   {id:"em5",   k:"emon", v:5000,  give:{decor:"plant"}},
+  {id:"em15",  k:"emon", v:15000, give:{cos:"acc:hearts"}},
+  {id:"em40",  k:"emon", v:40000, give:{cos:"ava:11"}},
+  {id:"em60",  k:"emon", v:60000, give:{cos:"fit:kimono"}},
+  {id:"em100", k:"emon", v:100000, give:{cos:"acc:halo"}},
   {id:"em10",  k:"emon", v:10000, give:{money:2000}},
   {id:"em20",  k:"emon", v:20000, give:{decor:"painting"}},
   {id:"em30",  k:"emon", v:30000, give:{money:8000}},
@@ -584,19 +595,25 @@ const REWARDS = [
   {id:"rk15",  k:"rank", v:15,    give:{decor:"lamp"}},
   {id:"rk20",  k:"rank", v:20,    give:{decor:"globe"}},
   {id:"rk30",  k:"rank", v:30,    give:{decor:"plaque", title:"満タンの伝説"}},
+  {id:"dy1",   k:"day",  v:1,     give:{cos:"ava:9"}},
   {id:"dy3",   k:"day",  v:3,     give:{title:"今日のおすすめ担当"}},
+  {id:"dy5",   k:"day",  v:5,     give:{cos:"acc:flower"}},
+  {id:"dy10",  k:"day",  v:10,    give:{cos:"ava:10"}},
+  {id:"dy20",  k:"day",  v:20,    give:{cos:"fit:happi"}},
   {id:"dy7",   k:"day",  v:7,     give:{decor:"calendar"}},
   {id:"dy14",  k:"day",  v:14,    give:{money:10000}},
   {id:"dy30",  k:"day",  v:30,    give:{title:"毎日が特別営業"}},
 ];
 const KNAME = {elv: v => `エンドレス レベル${v}`, emon: v => `エンドレス 売上${yen(v)}`, rank: v => `ランク${v}`, day: v => `日替わりの目標を${v}日達成`};
-const giveText = g => [g.decor && `インテリア「${DECOR.find(d => d.id === g.decor).name}」`, g.title && `称号「${g.title}」`, g.money && yen(g.money)].filter(Boolean).join("＋");
+const cosOfKey = k => { const [t, id] = k.split(":"); return cosFind(t, t === "ava" ? +id : id); };
+const giveText = g => [g.cos && `着せかえ「${cosName(cosOfKey(g.cos))}」`, g.decor && `インテリア「${DECOR.find(d => d.id === g.decor).name}」`, g.title && `称号「${g.title}」`, g.money && yen(g.money)].filter(Boolean).join("＋");
 function claim(k, val){
   const got = [];
   REWARDS.forEach(r => { if (r.k !== k || val < r.v || save.claimed[r.id]) return;
     save.claimed[r.id] = Date.now(); const g = r.give;
     if (g.money) save.wallet += g.money;
     if (g.decor && !save.decor.owned.includes(g.decor)) save.decor.owned.push(g.decor);
+    if (g.cos && !save.cos.includes(g.cos)) save.cos.push(g.cos);
     if (g.title && !save.titles.includes(g.title)) save.titles.push(g.title);
     got.push(r); toastQ.push({ic:"🎁", name: giveText(g), sub: `${KNAME[k](r.v)} のほうび`}); });
   if (got.length){ persist(); runToast(); }
@@ -629,19 +646,20 @@ const TROPHIES = [
   {id:"end10",   ic:"🌌", name:"眠らない店",         desc:"エンドレス営業でレベル10",    ok: s => (s.endless||{}).lv >= 10},
   {id:"end15",   ic:"🌠", name:"不夜城",             desc:"エンドレス営業でレベル15",    ok: s => (s.endless||{}).lv >= 15},
   {id:"daily1",  ic:"📅", name:"今日のおすすめ",     desc:"日替わり特別営業で目標達成",   ok: s => (s.dailyClears||0) >= 1},
+  {id:"cos10",   ic:"👕", name:"おしゃれ店主",       desc:"着せかえアイテムを10個そろえる", ok: s => COS.filter(c => c.src !== "free" && cosOwned(c)).length >= 10},
   {id:"daily7",  ic:"🗓️", name:"常連さん",           desc:"日替わりの目標を7日達成",      ok: s => (s.dailyClears||0) >= 7},
 ];
 
 /* ---------- 保存 ---------- */
 const KEY = "tokutoku-fever-v1";
-const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, cb:false, profile:null, playDays:0, lastDay:"", tutDone:false, endingSeen:false, rec:{}, dailyHist:{}, claimed:{}, titles:[], titleSel:null, decor:{owned:[], ceil:null, wall:null, counter:null}, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
+const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, cb:false, profile:null, cos:[], playDays:0, lastDay:"", tutDone:false, endingSeen:false, rec:{}, dailyHist:{}, claimed:{}, titles:[], titleSel:null, decor:{owned:[], ceil:null, wall:null, counter:null}, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
 let save = fresh();
-const loadSave = s => Object.assign(fresh(), s, {stats: Object.assign(fresh().stats, s.stats || {}), endless: Object.assign(fresh().endless, s.endless || {}), rec: s.rec || {}, dailyHist: s.dailyHist || {}, claimed: s.claimed || {}, titles: s.titles || [], decor: Object.assign(fresh().decor, s.decor || {})});
+const loadSave = s => Object.assign(fresh(), s, {stats: Object.assign(fresh().stats, s.stats || {}), endless: Object.assign(fresh().endless, s.endless || {}), rec: s.rec || {}, dailyHist: s.dailyHist || {}, claimed: s.claimed || {}, cos: s.cos || [], titles: s.titles || [], decor: Object.assign(fresh().decor, s.decor || {})});
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.stats) save = loadSave(s); } catch(e){}
 if (!save.tutDone && (save.stars["1-1"] || 0) >= 1) save.tutDone = true;
 // プロフィール（個人情報なし）。店主IDはランキングを作るときの目印として、この端末で1回だけ作る
 function newId(){ const a = new Uint8Array(6); (crypto.getRandomValues ? crypto.getRandomValues(a) : a.forEach((_, i) => a[i] = Math.random()*256)); const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; let t = ""; a.forEach(v => t += abc[v % 32]); return t.slice(0,3) + "-" + t.slice(3); }
-function ensureProfile(){ if (!save.profile) save.profile = {id: newId(), shop: "", name: "", msg: "", g: 0, wear: 0, acc: "none", fav: 2, since: Date.now(), set: false}; if (!save.profile.since) save.profile.since = Date.now();
+function ensureProfile(){ if (!save.profile) save.profile = {id: newId(), shop: "", name: "", msg: "", g: 0, wear: 0, acc: "none", fit: "plain", fav: 2, since: Date.now(), set: false}; if (!save.profile.since) save.profile.since = Date.now();
   const first = Math.min(...Object.values(save.trophies || {}).filter(v => typeof v === "number"), save.profile.since); save.profile.since = first; }
 ensureProfile(); // 前から遊んでいる人はチュートリアル済み
 const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch(e){} };
@@ -862,7 +880,16 @@ const GUESTS = [
   {fur:"#5f6b7a", ear:"cat",    cheek:"#c9a3b0", wear:"#5b3f6e"},
   {fur:"#c7c2b8", ear:"dog",    cheek:"#e7b0a0", wear:"#7a5a2a"},
   {fur:"#3b3533", ear:"bear",   cheek:"#a97a6a", wear:"#3a3a3a"},
+  {fur:"#e8873a", ear:"fox",     cheek:"#f3b8a0", wear:"#4a5a7a", name:"きつね"},
+  {fur:"#f4f1ea", ear:"panda",   cheek:"#f4b3c2", wear:"#2f6b4a", name:"パンダ"},
+  {fur:"#2c3440", ear:"penguin", cheek:"#f4b3c2", wear:"#3a6ee8", name:"ペンギン"},
+  {fur:"#e6b98a", ear:"hamster", cheek:"#f39aa8", wear:"#c9553f", name:"ハムスター"},
+  {fur:"#6fbf5a", ear:"frog",    cheek:"#f4b3c2", wear:"#e0a020", name:"かえる"},
+  {fur:"#f0a53a", ear:"tiger",   cheek:"#f3b8a0", wear:"#2a2a2a", name:"とら"},
+  {fur:"#f6eedd", ear:"sheep",   cheek:"#f4b3c2", wear:"#7a5aa0", name:"ひつじ"},
+  {fur:"#e9b44a", ear:"lion",    cheek:"#f3b8a0", wear:"#8a2f2a", name:"ライオン"},
 ];
+const GNAME = ["ねこ","くま","うさぎ","ねこ（グレー）","いぬ","くろくま"].concat(GUESTS.slice(6).map(g => g.name));
 function drawGuest(c, g, x, y, s, mood, t, noWear, wearCol){
   const G = GUESTS[g];
   c.save(); c.translate(x, y);
@@ -871,16 +898,29 @@ function drawGuest(c, g, x, y, s, mood, t, noWear, wearCol){
   if (G.ear === "cat"){ c.beginPath(); c.moveTo(-s*.46,-s*.2); c.lineTo(-s*.36,-s*.62); c.lineTo(-s*.08,-s*.38); c.fill(); c.beginPath(); c.moveTo(s*.46,-s*.2); c.lineTo(s*.36,-s*.62); c.lineTo(s*.08,-s*.38); c.fill(); }
   if (G.ear === "bear"){ c.beginPath(); c.arc(-s*.34,-s*.36,s*.15,0,7); c.arc(s*.34,-s*.36,s*.15,0,7); c.fill(); }
   if (G.ear === "rabbit"){ c.beginPath(); c.ellipse(-s*.17,-s*.68,s*.09,s*.3,-.1,0,7); c.ellipse(s*.17,-s*.68,s*.09,s*.3,.1,0,7); c.fill(); }
+  if (G.ear === "fox" || G.ear === "tiger"){ c.beginPath(); c.moveTo(-s*.48,-s*.16); c.lineTo(-s*.4,-s*.7); c.lineTo(-s*.06,-s*.38); c.fill(); c.beginPath(); c.moveTo(s*.48,-s*.16); c.lineTo(s*.4,-s*.7); c.lineTo(s*.06,-s*.38); c.fill();
+    if (G.ear === "fox"){ c.fillStyle = "#2a2420"; c.beginPath(); c.moveTo(-s*.43,-s*.52); c.lineTo(-s*.4,-s*.7); c.lineTo(-s*.31,-s*.56); c.fill(); c.beginPath(); c.moveTo(s*.43,-s*.52); c.lineTo(s*.4,-s*.7); c.lineTo(s*.31,-s*.56); c.fill(); c.fillStyle = G.fur; } }
+  if (G.ear === "panda"){ c.fillStyle = "#2a2420"; c.beginPath(); c.arc(-s*.34,-s*.36,s*.15,0,7); c.arc(s*.34,-s*.36,s*.15,0,7); c.fill(); c.fillStyle = G.fur; }
+  if (G.ear === "hamster"){ c.beginPath(); c.arc(-s*.33,-s*.33,s*.12,0,7); c.arc(s*.33,-s*.33,s*.12,0,7); c.fill(); c.fillStyle = "#f3b8b8"; c.beginPath(); c.arc(-s*.33,-s*.33,s*.06,0,7); c.arc(s*.33,-s*.33,s*.06,0,7); c.fill(); c.fillStyle = G.fur; }
+  if (G.ear === "frog"){ c.beginPath(); c.arc(-s*.22,-s*.38,s*.15,0,7); c.arc(s*.22,-s*.38,s*.15,0,7); c.fill(); c.fillStyle = "#fff"; c.beginPath(); c.arc(-s*.22,-s*.4,s*.09,0,7); c.arc(s*.22,-s*.4,s*.09,0,7); c.fill(); c.fillStyle = "#2a2420"; c.beginPath(); c.arc(-s*.22,-s*.4,s*.045,0,7); c.arc(s*.22,-s*.4,s*.045,0,7); c.fill(); c.fillStyle = G.fur; }
+  if (G.ear === "sheep"){ c.fillStyle = "#fffaf0"; for (let k=0;k<9;k++){ const a = Math.PI*(1.05 + k*.11); c.beginPath(); c.arc(Math.cos(a)*s*.46, Math.sin(a)*s*.42 - s*.04, s*.15, 0, 7); c.fill(); } c.fillStyle = "#c9b8a0"; c.beginPath(); c.ellipse(-s*.5, s*.0, s*.13, s*.07, .5, 0, 7); c.ellipse(s*.5, s*.0, s*.13, s*.07, -.5, 0, 7); c.fill(); c.fillStyle = G.fur; }
+  if (G.ear === "lion"){ c.fillStyle = "#b8642a"; for (let k=0;k<14;k++){ const a = k/14*Math.PI*2; c.beginPath(); c.arc(Math.cos(a)*s*.5, Math.sin(a)*s*.46, s*.17, 0, 7); c.fill(); } c.fillStyle = G.fur; c.beginPath(); c.arc(-s*.32,-s*.34,s*.1,0,7); c.arc(s*.32,-s*.34,s*.1,0,7); c.fill(); }
   if (G.ear === "dog"){ c.fillStyle = shade(G.fur,-.35); c.beginPath(); c.ellipse(-s*.43,-s*.05,s*.12,s*.24,.4,0,7); c.ellipse(s*.43,-s*.05,s*.12,s*.24,-.4,0,7); c.fill(); c.fillStyle = G.fur; }
   c.beginPath(); c.ellipse(0, 0, s*.48, s*.44, 0, 0, 7); c.fill();
+  if (G.ear === "panda"){ c.fillStyle = "#2a2420"; c.beginPath(); c.ellipse(-s*.17, -s*.02, s*.11, s*.13, -.4, 0, 7); c.ellipse(s*.17, -s*.02, s*.11, s*.13, .4, 0, 7); c.fill(); }
+  if (G.ear === "penguin"){ c.fillStyle = "#fffaf0"; c.beginPath(); c.ellipse(0, s*.08, s*.36, s*.3, 0, 0, 7); c.fill(); c.fillStyle = "#f0a020"; c.beginPath(); c.moveTo(-s*.07, s*.08); c.lineTo(s*.07, s*.08); c.lineTo(0, s*.18); c.closePath(); c.fill(); }
+  if (G.ear === "fox"){ c.fillStyle = "#fffaf0"; c.beginPath(); c.ellipse(0, s*.18, s*.26, s*.18, 0, 0, 7); c.fill(); }
+  if (G.ear === "tiger"){ c.strokeStyle = "#2a2420"; c.lineWidth = s*.05; c.lineCap = "round"; c.beginPath(); c.moveTo(0,-s*.42); c.lineTo(0,-s*.28); c.moveTo(-s*.12,-s*.4); c.lineTo(-s*.08,-s*.28); c.moveTo(s*.12,-s*.4); c.lineTo(s*.08,-s*.28); c.moveTo(-s*.48, s*.0); c.lineTo(-s*.34, s*.04); c.moveTo(s*.48, s*.0); c.lineTo(s*.34, s*.04); c.stroke(); }
+  if (G.ear === "hamster"){ c.fillStyle = "#fff4e6"; c.beginPath(); c.ellipse(0, s*.18, s*.3, s*.2, 0, 0, 7); c.fill(); }
   c.fillStyle = G.cheek; c.globalAlpha = .6; c.beginPath(); c.arc(-s*.27, s*.1, s*.07, 0, 7); c.arc(s*.27, s*.1, s*.07, 0, 7); c.fill(); c.globalAlpha = 1;
-  const ink = G.fur === "#3b3533" ? "#f6ead6" : "#2a2420";
+  const ink = G.fur === "#3b3533" || G.ear === "panda" ? "#f6ead6" : "#2a2420";
   c.fillStyle = ink; c.strokeStyle = ink; c.lineWidth = s*.045; c.lineCap = "round";
   const blink = (t % 3900) < 120;
   if (mood === "happy" || mood === "love"){ c.beginPath(); c.arc(-s*.16, -s*.02, s*.06, Math.PI, 0); c.arc(s*.16, -s*.02, s*.06, Math.PI, 0); c.stroke(); }
   else if (blink){ c.beginPath(); c.moveTo(-s*.22,-s*.02); c.lineTo(-s*.1,-s*.02); c.moveTo(s*.1,-s*.02); c.lineTo(s*.22,-s*.02); c.stroke(); }
   else { c.beginPath(); c.arc(-s*.16, -s*.03, s*.045, 0, 7); c.arc(s*.16, -s*.03, s*.045, 0, 7); c.fill(); }
   if (mood === "angry"){ c.beginPath(); c.moveTo(-s*.25,-s*.16); c.lineTo(-s*.09,-s*.11); c.moveTo(s*.25,-s*.16); c.lineTo(s*.09,-s*.11); c.stroke(); }
+  if (G.ear === "panda"){ c.strokeStyle = "#2a2420"; c.fillStyle = "#2a2420"; }
   c.beginPath();
   if (mood === "happy" || mood === "love" || mood === "ok") c.arc(0, s*.1, s*.08, .15*Math.PI, .85*Math.PI);
   else if (mood === "worried"){ c.moveTo(-s*.06, s*.15); c.lineTo(s*.06, s*.15); }
@@ -2000,7 +2040,7 @@ function recBox(title, rows, empty){
 function rewardBox(kinds){
   const list = REWARDS.filter(r => kinds.includes(r.k));
   const short = {elv: v => `レベル${v}`, emon: v => `売上${yen(v)}`, rank: v => `ランク${v}`, day: v => `${v}日達成`};
-  const gv = g => [g.decor && "🎁" + DECOR.find(d => d.id === g.decor).name, g.title && "👑「" + g.title + "」", g.money && "💰" + yen(g.money)].filter(Boolean).join(" ");
+  const gv = g => [g.cos && "👕" + cosName(cosOfKey(g.cos)), g.decor && "🎁" + DECOR.find(d => d.id === g.decor).name, g.title && "👑「" + g.title + "」", g.money && "💰" + yen(g.money)].filter(Boolean).join(" ");
   return `<div class="rec"><h3>到達ほうび（1回だけ）</h3><ul>` + list.map(r => `<li class="rw ${save.claimed[r.id] ? "got" : ""}"><span style="flex:none">${short[r.k](r.v)}</span><b style="text-align:right">${gv(r.give)}</b></li>`).join("") + `</ul></div>`;
 }
 function stageRec(id){ const r = save.rec[id]; if (r) return r; return save.best[id] ? {best: save.best[id], plays: 0, clears: 0} : null; }
@@ -2120,7 +2160,7 @@ function showMap(){
   });
   bgm("map");
   renderChip(); if (!save.profile.set && save.tutDone && !save.profile.asked){ save.profile.asked = true; persist(); setTimeout(() => openForm(true), 400); }
-  drawHero(); checkTrophies(false); claim("rank", rankOf(save.total)); claim("day", save.dailyClears || 0);
+  drawHero(); checkTrophies(false); claim("rank", rankOf(save.total)); claim("day", save.dailyClears || 0); claim("elv", save.endless.lv || 0); claim("emon", save.endless.best || 0);
   // しばらく引き継ぎコードを保存していなくて、進み具合が増えていたらお知らせ
   const days = save.backupT ? Math.floor((Date.now() - save.backupT)/864e5) : null, gain = save.total - (save.backupTotal||0);
   const need = save.total >= 3000 && gain >= Math.max(3000, save.total*.1) && (days === null || days >= 7);
@@ -2201,12 +2241,80 @@ function drawHero(){
 }
 
 /* ---------- プロフィール ---------- */
-const ACCS = [["none","なし",0],["bowtie","蝶ネクタイ",0],["ribbon","リボン",0],["glasses","めがね",0],["beret","ベレー帽",5],["tophat","シルクハット",10],["crown","王冠",20]];
+// 着せかえ（アバター・小物・服）。手に入れ方：free=最初から / rank=ランクで解放 / shop=ショップで買う / reward=到達ほうび
+const COS = [
+  // アバター（動物）
+  ...[0,1,2,3,4,5].map(g => ({t:"ava", id:g, src:"free"})),
+  {t:"ava", id:6,  src:"shop", cost:20000},
+  {t:"ava", id:7,  src:"shop", cost:40000, rank:8},
+  {t:"ava", id:8,  src:"reward"},
+  {t:"ava", id:9,  src:"reward"},
+  {t:"ava", id:10, src:"reward"},
+  {t:"ava", id:11, src:"reward"},
+  {t:"ava", id:12, src:"shop", cost:60000, rank:12},
+  {t:"ava", id:13, src:"reward"},
+  // 小物
+  {t:"acc", id:"none", name:"なし", src:"free"}, {t:"acc", id:"bowtie", name:"蝶ネクタイ", src:"free"}, {t:"acc", id:"ribbon", name:"リボン", src:"free"}, {t:"acc", id:"glasses", name:"めがね", src:"free"},
+  {t:"acc", id:"beret",   name:"ベレー帽",     src:"rank", rank:5},
+  {t:"acc", id:"tophat",  name:"シルクハット", src:"rank", rank:10},
+  {t:"acc", id:"crown",   name:"王冠",         src:"rank", rank:20},
+  {t:"acc", id:"scarf",   name:"マフラー",     src:"shop", cost:5000},
+  {t:"acc", id:"hachi",   name:"ねじりはちまき", src:"shop", cost:8000},
+  {t:"acc", id:"knit",    name:"ニット帽",     src:"shop", cost:10000},
+  {t:"acc", id:"phones",  name:"ヘッドホン",   src:"shop", cost:12000},
+  {t:"acc", id:"shades",  name:"サングラス",   src:"shop", cost:15000},
+  {t:"acc", id:"captain", name:"船長帽",       src:"shop", cost:25000, rank:10},
+  {t:"acc", id:"chef",    name:"シェフ帽",     src:"shop", cost:30000, rank:12},
+  {t:"acc", id:"star",    name:"星のピン",     src:"reward"},
+  {t:"acc", id:"hearts",  name:"ハートめがね", src:"reward"},
+  {t:"acc", id:"flower",  name:"花かんむり",   src:"reward"},
+  {t:"acc", id:"halo",    name:"天使の輪",     src:"reward"},
+  // 服
+  {t:"fit", id:"plain",  name:"無地",       src:"free"},
+  {t:"fit", id:"stripe", name:"しましま",   src:"reward"},
+  {t:"fit", id:"dots",   name:"水玉",       src:"shop", cost:6000},
+  {t:"fit", id:"apron",  name:"エプロン",   src:"shop", cost:9000},
+  {t:"fit", id:"sweater",name:"セーター",   src:"shop", cost:12000},
+  {t:"fit", id:"happi",  name:"法被",       src:"reward"},
+  {t:"fit", id:"kimono", name:"着物",       src:"reward"},
+  {t:"fit", id:"tux",    name:"タキシード", src:"shop", cost:50000, rank:15},
+];
+const cosName = c => c.t === "ava" ? GNAME[c.id] : c.name;
+const cosKey = c => c.t + ":" + c.id;
+const cosOwned = c => c.src === "free" || (c.src === "rank" && rankOf(save.total) >= c.rank) || (save.cos || []).includes(cosKey(c));
+const cosFind = (t, id) => COS.find(c => c.t === t && c.id === id);
+function cosHow(c){ if (c.src === "rank") return `ランク${c.rank}で解放`; if (c.src === "shop") return `ショップ「店主」で ${yen(c.cost)}` + (c.rank ? `（ランク${c.rank}〜）` : "");
+  const r = REWARDS.find(x => x.give.cos === cosKey(c)); return r ? `${KNAME[r.k](r.v)}でもらえる` : ""; }
 function countDay(){ const k = todayKey(); if (save.lastDay !== k){ save.lastDay = k; save.playDays = (save.playDays||0) + 1; } }
 function drawAvatar(c, p, x, y, s, t){
   drawGuest(c, p.g, x, y, s, "happy", t || 0, false, COLORS[p.wear]);
   c.save(); c.translate(x, y); c.lineCap = "round"; c.lineJoin = "round";
+  // 服の柄（胴の部分にだけ描く）
+  c.save(); c.beginPath(); rr(c, -s*.62, s*.42, s*1.24, s*.8, s*.35); c.clip();
+  switch (p.fit){
+    case "stripe": c.fillStyle = "rgba(255,255,255,.45)"; for (let k=0;k<5;k++) c.fillRect(-s*.7, s*.5 + k*s*.14, s*1.4, s*.06); break;
+    case "dots": c.fillStyle = "rgba(255,255,255,.6)"; for (let i=0;i<5;i++) for (let j=0;j<3;j++){ c.beginPath(); c.arc(-s*.48 + i*s*.24 + (j%2)*s*.12, s*.55 + j*s*.16, s*.035, 0, 7); c.fill(); } break;
+    case "apron": c.fillStyle = "#fffaf0"; rr(c, -s*.3, s*.48, s*.6, s*.8, s*.08); c.fill(); c.strokeStyle = "#fffaf0"; c.lineWidth = s*.04; c.beginPath(); c.moveTo(-s*.3, s*.5); c.lineTo(-s*.15, s*.42); c.moveTo(s*.3, s*.5); c.lineTo(s*.15, s*.42); c.stroke(); break;
+    case "sweater": c.strokeStyle = "rgba(0,0,0,.18)"; c.lineWidth = s*.03; c.beginPath(); for (let k=-5;k<=5;k++){ c.moveTo(k*s*.11, s*.5); c.lineTo(k*s*.11, s*1.2); } c.stroke(); c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(-s*.7, s*.42, s*1.4, s*.08); break;
+    case "happi": c.fillStyle = "#fffaf0"; c.beginPath(); c.moveTo(-s*.28, s*.42); c.lineTo(-s*.08, s*1.2); c.lineTo(-s*.18, s*1.2); c.lineTo(-s*.38, s*.42); c.fill(); c.beginPath(); c.moveTo(s*.28, s*.42); c.lineTo(s*.08, s*1.2); c.lineTo(s*.18, s*1.2); c.lineTo(s*.38, s*.42); c.fill();
+      c.fillStyle = "rgba(255,255,255,.85)"; c.font = `900 ${s*.2}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("祭", s*.38, s*.75); break;
+    case "kimono": c.strokeStyle = "#fffaf0"; c.lineWidth = s*.07; c.beginPath(); c.moveTo(-s*.25, s*.42); c.lineTo(s*.12, s*.95); c.moveTo(s*.25, s*.42); c.lineTo(-s*.02, s*.8); c.stroke(); c.fillStyle = "#e0b54a"; c.fillRect(-s*.7, s*.88, s*1.4, s*.14); break;
+    case "tux": c.fillStyle = "#1e1a16"; c.fillRect(-s*.7, s*.42, s*1.4, s*.9); c.fillStyle = "#fffaf0"; c.beginPath(); c.moveTo(-s*.18, s*.42); c.lineTo(s*.18, s*.42); c.lineTo(0, s*.95); c.closePath(); c.fill();
+      c.fillStyle = "#1e1a16"; c.beginPath(); c.moveTo(0, s*.5); c.lineTo(-s*.12, s*.44); c.lineTo(-s*.12, s*.56); c.closePath(); c.moveTo(0, s*.5); c.lineTo(s*.12, s*.44); c.lineTo(s*.12, s*.56); c.closePath(); c.fill(); break;
+  }
+  c.restore();
   switch (p.acc){
+    case "scarf": c.fillStyle = "#c0392b"; rr(c, -s*.36, s*.34, s*.72, s*.16, s*.08); c.fill(); c.fillRect(s*.12, s*.4, s*.14, s*.34); c.fillStyle = "rgba(255,255,255,.4)"; c.fillRect(s*.12, s*.6, s*.14, s*.04); break;
+    case "hachi": c.fillStyle = "#fffaf0"; c.save(); c.rotate(-.08); rr(c, -s*.47, -s*.3, s*.94, s*.1, s*.05); c.fill(); c.restore(); c.strokeStyle = "#c0392b"; c.lineWidth = s*.03; c.beginPath(); for (let k=0;k<6;k++){ c.moveTo(-s*.4 + k*s*.15, -s*.3); c.lineTo(-s*.33 + k*s*.15, -s*.2); } c.stroke(); break;
+    case "knit": c.fillStyle = "#3a6ee8"; c.beginPath(); c.arc(0, -s*.24, s*.44, Math.PI, 0); c.fill(); c.fillStyle = "#fffaf0"; rr(c, -s*.46, -s*.3, s*.92, s*.12, s*.05); c.fill(); c.beginPath(); c.arc(0, -s*.7, s*.09, 0, 7); c.fill(); break;
+    case "phones": c.strokeStyle = "#2a2420"; c.lineWidth = s*.07; c.beginPath(); c.arc(0, -s*.05, s*.5, Math.PI*1.05, Math.PI*1.95); c.stroke(); c.fillStyle = "#e63946"; rr(c, -s*.58, -s*.12, s*.16, s*.28, s*.06); c.fill(); rr(c, s*.42, -s*.12, s*.16, s*.28, s*.06); c.fill(); break;
+    case "shades": c.fillStyle = "#1e1a16"; rr(c, -s*.3, -s*.1, s*.26, s*.15, s*.05); c.fill(); rr(c, s*.04, -s*.1, s*.26, s*.15, s*.05); c.fill(); c.fillRect(-s*.06, -s*.07, s*.12, s*.03); break;
+    case "captain": c.fillStyle = "#fffaf0"; c.beginPath(); c.ellipse(0, -s*.42, s*.42, s*.16, 0, 0, 7); c.fill(); c.fillStyle = "#1e2a4a"; rr(c, -s*.4, -s*.4, s*.8, s*.1, s*.04); c.fill(); c.beginPath(); c.ellipse(s*.05, -s*.31, s*.3, s*.06, 0, 0, Math.PI); c.fill(); c.fillStyle = "#e0b54a"; c.beginPath(); c.arc(0, -s*.36, s*.05, 0, 7); c.fill(); break;
+    case "chef": c.fillStyle = "#fffaf0"; rr(c, -s*.28, -s*.5, s*.56, s*.2, s*.04); c.fill(); for (const dx of [-.2, 0, .2]){ c.beginPath(); c.arc(dx*s, -s*.66, s*.17, 0, 7); c.fill(); } break;
+    case "star": c.fillStyle = "#f6c945"; c.beginPath(); for (let i=0;i<10;i++){ const r2 = i%2 ? s*.05 : s*.12, a = -Math.PI/2 + i*Math.PI/5; c.lineTo(s*.32 + Math.cos(a)*r2, -s*.3 + Math.sin(a)*r2); } c.closePath(); c.fill(); break;
+    case "hearts": c.fillStyle = "#ef4f8a"; heart(c, -s*.16, -s*.04, s*.1); heart(c, s*.16, -s*.04, s*.1); break;
+    case "flower": for (let k=0;k<7;k++){ const a = Math.PI*(1.12 + k*.13); c.fillStyle = ["#f06aa8","#f6c945","#ffffff","#9b5de5"][k%4]; c.beginPath(); c.arc(Math.cos(a)*s*.42, Math.sin(a)*s*.38 - s*.04, s*.09, 0, 7); c.fill(); } break;
+    case "halo": c.strokeStyle = "#ffe08a"; c.lineWidth = s*.06; c.beginPath(); c.ellipse(0, -s*.72 + Math.sin((t||0)/400)*s*.03, s*.26, s*.07, 0, 0, 7); c.stroke(); break;
     case "bowtie": c.fillStyle = "#c0392b"; c.beginPath(); c.moveTo(0, s*.52); c.lineTo(-s*.2, s*.42); c.lineTo(-s*.2, s*.62); c.closePath(); c.moveTo(0, s*.52); c.lineTo(s*.2, s*.42); c.lineTo(s*.2, s*.62); c.closePath(); c.fill(); c.beginPath(); c.arc(0, s*.52, s*.05, 0, 7); c.fill(); break;
     case "ribbon": c.fillStyle = "#f06aa8"; c.beginPath(); c.ellipse(s*.22, -s*.38, s*.14, s*.08, -.6, 0, 7); c.ellipse(s*.4, -s*.3, s*.14, s*.08, .6, 0, 7); c.fill(); c.beginPath(); c.arc(s*.31, -s*.34, s*.05, 0, 7); c.fill(); break;
     case "glasses": c.strokeStyle = "#2a2420"; c.lineWidth = s*.045; c.beginPath(); c.arc(-s*.16, -s*.03, s*.12, 0, 7); c.moveTo(s*.28, -s*.03); c.arc(s*.16, -s*.03, s*.12, 0, 7); c.moveTo(-s*.04, -s*.05); c.lineTo(s*.04, -s*.05); c.stroke(); break;
@@ -2241,21 +2349,24 @@ function openProfile(){
 }
 let draft = null;
 function openForm(first){
-  draft = Object.assign({}, save.profile);
+  draft = Object.assign({fit: "plain"}, save.profile);
   $("pfShopIn").value = draft.shop; $("pfNameIn").value = draft.name; $("pfMsgIn").value = draft.msg; $("pfErr").textContent = "";
   $("pfH").textContent = first ? "お店をひらこう" : "プロフィールを編集"; $("pfView").classList.add("hidden"); $("pfForm").classList.remove("hidden"); $("profile").classList.remove("hidden");
   renderPick();
 }
 function renderPick(){
-  const r = rankOf(save.total);
+  const hint = c => { $("pfErr").style.color = "#8a5a2a"; $("pfErr").textContent = `🔒 ${cosName(c)}：${cosHow(c)}`; play("bad", {gain:.25}); };
   const ava = $("pfAva"); ava.innerHTML = "";
-  GUESTS.forEach((_, g) => { const b = document.createElement("button"); b.className = draft.g === g ? "on" : ""; b.setAttribute("aria-label", `アバター${g+1}`);
-    const cv = document.createElement("canvas"); cv.width = 104; cv.height = 104; const x = cv.getContext("2d"); x.save(); x.beginPath(); x.arc(52, 52, 52, 0, 7); x.clip(); drawAvatar(x, Object.assign({}, draft, {g}), 52, 54, 50, 600); x.restore();
-    b.appendChild(cv); b.onclick = () => { draft.g = g; play("pick", {gain:.4}); renderPick(); }; ava.appendChild(b); });
+  COS.filter(c => c.t === "ava").forEach(c => { const g = c.id, own = cosOwned(c), b = document.createElement("button"); b.className = draft.g === g ? "on" : ""; b.setAttribute("aria-label", cosName(c) + (own ? "" : "（未入手）"));
+    const cv = document.createElement("canvas"); cv.width = 104; cv.height = 104; const x = cv.getContext("2d"); x.save(); x.beginPath(); x.arc(52, 52, 52, 0, 7); x.clip(); if (!own) x.globalAlpha = .3; drawAvatar(x, Object.assign({}, draft, {g}), 52, 54, 50, 600); x.restore();
+    if (!own){ x.font = "28px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("🔒", 52, 52); }
+    b.appendChild(cv); b.onclick = () => { if (!own) return hint(c); draft.g = g; play("pick", {gain:.4}); renderPick(); }; ava.appendChild(b); });
   const wr = $("pfWear"); wr.innerHTML = "";
   COLORS.forEach((col, k) => { const b = document.createElement("button"); b.className = draft.wear === k ? "on" : ""; b.setAttribute("aria-label", CNAME[k]); b.innerHTML = `<span class="sw" style="background:${col}"></span>`; b.onclick = () => { draft.wear = k; play("pick", {gain:.4}); renderPick(); }; wr.appendChild(b); });
   const ac = $("pfAcc"); ac.innerHTML = "";
-  ACCS.forEach(([id, name, rk]) => { const b = document.createElement("button"); b.className = "ac" + (draft.acc === id ? " on" : ""); b.disabled = r < rk; b.textContent = r < rk ? `🔒${name}（ランク${rk}）` : name; b.onclick = () => { draft.acc = id; play("pick", {gain:.4}); renderPick(); }; ac.appendChild(b); });
+  COS.filter(c => c.t === "acc").forEach(c => { const own = cosOwned(c), b = document.createElement("button"); b.className = "ac" + (draft.acc === c.id ? " on" : ""); if (!own) b.style.opacity = ".45"; b.textContent = (own ? "" : "🔒") + c.name; b.onclick = () => { if (!own) return hint(c); draft.acc = c.id; play("pick", {gain:.4}); renderPick(); }; ac.appendChild(b); });
+  const ft = $("pfFit"); ft.innerHTML = "";
+  COS.filter(c => c.t === "fit").forEach(c => { const own = cosOwned(c), b = document.createElement("button"); b.className = "ac" + ((draft.fit || "plain") === c.id ? " on" : ""); if (!own) b.style.opacity = ".45"; b.textContent = (own ? "" : "🔒") + c.name; b.onclick = () => { if (!own) return hint(c); draft.fit = c.id; play("pick", {gain:.4}); renderPick(); }; ft.appendChild(b); });
   const fv = $("pfFav"); fv.innerHTML = "";
   COLORS.forEach((col, k) => { const b = document.createElement("button"); b.className = draft.fav === k ? "on" : ""; b.setAttribute("aria-label", CNAME[k]); b.innerHTML = `<span class="sw" style="background:${col}"></span>`; b.onclick = () => { draft.fav = k; play("pick", {gain:.4}); renderPick(); }; fv.appendChild(b); });
 }
@@ -2324,9 +2435,28 @@ $("cfYes").onclick = () => { const f = cfAction; cfAction = null; $("confirm").c
 function renderShop(){
   $("shopWallet").textContent = yen(save.wallet);
   const rank = rankOf(save.total);
-  [["tabUpg","upg"],["tabSpecial","special"],["tabBottle","bottle"],["tabRoom","room"],["tabDecor","decor"]].forEach(([id,t]) => $(id).setAttribute("aria-selected", shopTab === t));
+  [["tabUpg","upg"],["tabSpecial","special"],["tabBottle","bottle"],["tabRoom","room"],["tabDecor","decor"],["tabCos","cos"]].forEach(([id,t]) => $(id).setAttribute("aria-selected", shopTab === t));
   const box = $("shopItems"); box.innerHTML = "";
   const done = () => { persist(); play("pay", {gain:.6}); checkTrophies(false); renderShop(); refreshWallet(); };
+  if (shopTab === "cos"){
+    const intro = document.createElement("p"); intro.className = "set-p"; intro.textContent = "プロフィールのアバターを着せかえるアイテムです。買ったものは「プロフィール → 編集する」で選べます。ショップにないものは、エンドレス・日替わり・ランクのほうびでもらえます。"; box.appendChild(intro);
+    [["ava","アバター（動物）"],["fit","服の柄"],["acc","小物"]].forEach(([t, label]) => {
+      const h = document.createElement("div"); h.className = "slot-h"; h.textContent = label; box.appendChild(h);
+      COS.filter(c => c.t === t && c.src !== "free").forEach(c => {
+        const own = cosOwned(c), lock = c.rank && rank < c.rank, buyable = c.src === "shop";
+        const el = document.createElement("div"); el.className = "item";
+        el.innerHTML = `<canvas width="88" height="120"></canvas><div class="t"><b>${cosName(c)}</b>${own ? "持っています" : cosHow(c)}</div>
+          <button class="buy ${own ? "on" : ""}" ${own || !buyable || lock || save.wallet < (c.cost||0) ? "disabled" : ""}>${own ? "持っています" : !buyable ? "ほうび" : lock ? "🔒" : yen(c.cost)}</button>`;
+        const x = el.querySelector("canvas").getContext("2d"); x.fillStyle = "#3a2a1c"; rr(x, 0, 0, 88, 120, 14); x.fill();
+        const base = Object.assign({}, save.profile, {acc: "none", fit: "plain"}); if (t === "ava") base.g = c.id; if (t === "acc") base.acc = c.id; if (t === "fit") base.fit = c.id;
+        x.save(); if (!own) x.globalAlpha = .55; drawAvatar(x, base, 44, 58, 46, 600); x.restore();
+        el.querySelector(".buy").onclick = () => { if (own || !buyable || lock || save.wallet < c.cost) return;
+          confirmBuy(cosName(c), c.cost, () => { if (save.wallet < c.cost || cosOwned(c)) return; save.wallet -= c.cost; save.cos.push(cosKey(c)); done(); }); };
+        box.appendChild(el);
+      });
+    });
+    return;
+  }
   if (shopTab === "decor"){
     const intro = document.createElement("p"); intro.className = "set-p"; intro.textContent = "インテリアはショップでは売っていません。エンドレスや日替わり、ランクの到達ほうびでもらえます。もらったものは、天井・壁・カウンターに1つずつ好きに飾れます。"; box.appendChild(intro);
     SLOTS.forEach(([slot, label]) => {
@@ -2400,6 +2530,7 @@ $("tabSpecial").onclick = () => { shopTab = "special"; renderShop(); };
 $("tabBottle").onclick = () => { shopTab = "bottle"; renderShop(); };
 $("tabRoom").onclick = () => { shopTab = "room"; renderShop(); };
 $("tabDecor").onclick = () => { shopTab = "decor"; renderShop(); };
+$("tabCos").onclick = () => { shopTab = "cos"; renderShop(); };
 
 /* ---------- 称号とトロフィー ---------- */
 $("trophyBtn").onclick = () => {
@@ -2492,7 +2623,7 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
 }
 try { if (sessionStorage.getItem("justUpdated")){ sessionStorage.removeItem("justUpdated");
   setTimeout(() => { toastQ.push({ic:"✨", name:"最新版に更新しました", sub:"お知らせ"}); runToast(); }, 600); } } catch(e){}
-window.__g = { get stored(){ return stored; }, get stats(){ return {money, servedN, missed, dumped, maxCombo, bottlesOut, elvl, lives, sup: expSupply/SUPPLY_COST}; }, exportCode, importCode, dailyDef, get bgm(){ return [bgmKey, !!bgmNode, bgmNode ? [bgmNode.loopStart, bgmNode.loopEnd, bgmNode.buffer.duration] : null]; }, set speed(v){ SPEED = v; }, showIntro, get ended(){ return ended; }, get save(){ return save; }, drawVessel, bottleShape };
+window.__g = { get stored(){ return stored; }, get stats(){ return {money, servedN, missed, dumped, maxCombo, bottlesOut, elvl, lives, sup: expSupply/SUPPLY_COST}; }, exportCode, importCode, dailyDef, drawAvatar, get bgm(){ return [bgmKey, !!bgmNode, bgmNode ? [bgmNode.loopStart, bgmNode.loopEnd, bgmNode.buffer.duration] : null]; }, set speed(v){ SPEED = v; }, showIntro, get ended(){ return ended; }, get save(){ return save; }, drawVessel, bottleShape };
 })();
 </script>
 </body>
