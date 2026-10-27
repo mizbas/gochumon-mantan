@@ -1,7 +1,7 @@
 // ご注文は満タンで オフライン用
 // ゲームを更新するときは VERSION だけ書き換える。
 // ブラウザはこの小さなファイル（約1KB）だけを確かめ、変わっていたときだけ新しい版をダウンロードする。
-const VERSION = "2026-10-27i";
+const VERSION = "2026-10-27j";
 const APP = "tokutoku-app-" + VERSION;        // ゲーム本体（版ごと）
 const STATIC = "tokutoku-static-v2";           // アイコンとフォント（版をまたいで使い回す）
 const APP_FILES = ["./", "index.html", "manifest.json"];
@@ -24,6 +24,7 @@ self.addEventListener("activate", e => {
   })());
 });
 
+// BGM（bgm/*.mp3）は、そのワールドで初めて流れたときに1回だけダウンロードして、版をまたいで使い回す。
 // 保存してあるものを使う。ないものだけ通信して保存する（毎回の確かめ直しはしない）
 self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
@@ -34,7 +35,7 @@ self.addEventListener("fetch", e => {
       const r = await fetch(e.request);
       if (r && (r.ok || r.type === "opaque")){
         const url = new URL(e.request.url);
-        const keep = url.origin !== location.origin ? STATIC : (/\.(png|woff2?)$/.test(url.pathname) ? STATIC : APP);
+        const keep = url.origin !== location.origin ? STATIC : (/\.(png|woff2?|mp3)$/.test(url.pathname) ? STATIC : APP);
         (await caches.open(keep)).put(e.request, r.clone());
       }
       return r;

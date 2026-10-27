@@ -71,6 +71,28 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
 .foot{display:flex;justify-content:space-between;color:var(--mute);font-size:13px}
 .link{padding:8px 2px;color:var(--mute);text-decoration:underline;text-underline-offset:3px}
 .credit{color:#7d6c5d;font-size:12px;text-align:center}
+.specials{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.spbtn{border-radius:20px;background:var(--walnut-2);padding:14px 10px 12px;display:flex;flex-direction:column;align-items:center;gap:3px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25);text-align:center}
+.spbtn .ic{font-size:26px;line-height:1}
+.spbtn b{font-size:15px;font-weight:900}
+.spbtn small{font-size:12px;color:var(--mute);line-height:1.35}
+.spbtn small em{font-style:normal;color:var(--amber);font-weight:700}
+.spbtn.locked{opacity:.45}
+.spbtn:active:not(.locked){transform:translateY(2px)}
+.set-row{display:flex;align-items:center;gap:10px;margin:10px 0;text-align:left;font-size:14px;font-weight:700}
+.set-row span{width:64px;flex:none}
+.set-row input[type=range]{flex:1;accent-color:var(--rust);height:28px}
+.set-row output{width:38px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink-2)}
+.set-h{font-weight:900;font-size:15px;text-align:left;margin:18px 0 4px;color:var(--rust)}
+.set-p{font-size:12.5px;line-height:1.6;color:#5b4a3a;text-align:left;margin:4px 0 8px}
+.set-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.set-btns button{height:44px;border-radius:22px;background:#eadbc1;font-weight:800;font-size:14px}
+.set-btns button.m{background:var(--rust);color:#fff}
+#xferTxt{width:100%;height:64px;border-radius:12px;border:1.5px solid #d8c7a8;background:#fffaf0;font:12px/1.4 ui-monospace,monospace;padding:8px;resize:none;color:var(--ink)}
+#xferMsg{font-size:13px;min-height:18px;color:#2f7d32;font-weight:700}
+#xferMsg.ng{color:#c0392b}
+.tog{height:40px;padding:0 16px;border-radius:20px;background:#eadbc1;font-weight:800;margin-left:auto}
+.tog.on{background:var(--rust);color:#fff}
 
 /* ---- プレイ ---- */
 #play{padding-left:0;padding-right:0;gap:6px}
@@ -171,16 +193,17 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
       <div class="sub">注文どおりの色を満タンの瓶にして、お客さんに渡そう</div>
     </div>
     <button class="go" id="contBtn">1-1 をはじめる</button>
+    <div class="specials" id="specials"></div>
     <div id="worlds" style="display:flex;flex-direction:column;gap:14px"></div>
     <div class="menu-row">
       <button class="mbtn" id="shopBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1.5 11h-13z"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/></svg>ショップ</button>
       <button class="mbtn" id="trophyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6"/></svg>ランクとトロフィー</button>
+      <button class="mbtn" id="setBtn" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>設定・データの引き継ぎ</button>
     </div>
     <div class="foot">
-      <button class="link" id="soundBtn">音：オン</button>
       <button class="link" id="wipeBtn">記録を消す</button>
     </div>
-    <div class="credit">効果音：効果音ラボ</div>
+    <div class="credit">効果音：効果音ラボ　音楽：魔王魂</div>
   </div>
 </section>
 
@@ -193,7 +216,7 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
       </button>
       <div class="lvl" id="lvlV">1-1</div>
       <div class="money"><div class="v" id="moneyV">¥0</div><div class="g" id="moneyG">目標 ¥0</div></div>
-      <div class="left"><b id="leftV">8</b><span>人まち</span></div>
+      <div class="left"><b id="leftV">8</b><span id="leftL">人まち</span></div>
     </div>
     <div class="bars"><div class="fill" id="moneyBar"></div><div class="mark" id="m1"></div><div class="mark s" id="m2"></div><div class="mark s" id="m3"></div></div>
     <div class="row2"><button class="buyb hidden" id="sandBtn">⏳ 全員 +10秒</button><span class="hint" id="hintV"></span><button class="buyb" id="buyBtn">空き瓶 +1</button></div>
@@ -265,6 +288,23 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
     <h2 id="cfH" style="font-size:26px">買いますか？</h2>
     <p class="rules" id="cfP" style="text-align:center"></p>
     <div class="btns"><button class="b-sub" id="cfNo">やめる</button><button class="b-main" id="cfYes">買う</button></div>
+  </div>
+</div>
+
+<div id="settings" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="setH">
+  <div class="card">
+    <h2 id="setH">設定</h2>
+    <div class="set-row"><span>音</span><button class="tog on" id="sndTog">オン</button></div>
+    <div class="set-row"><span>BGM</span><input type="range" id="bgmVol" min="0" max="100" step="5"><output id="bgmOut">60</output></div>
+    <div class="set-row"><span>効果音</span><input type="range" id="seVol" min="0" max="100" step="5"><output id="seOut">100</output></div>
+    <div class="set-h">データの引き継ぎ</div>
+    <p class="set-p">遊んだ記録はこのスマホの中だけにあります。機種変更や、ブラウザのデータを消す前に「引き継ぎコード」を保存しておくと、別のスマホでも続きから遊べます。iPhoneはホーム画面に追加して遊ぶと記録が消えにくくなります。</p>
+    <div class="set-btns"><button class="m" id="xferCopy">コードをコピー</button><button id="xferFile">ファイルに保存</button></div>
+    <textarea id="xferTxt" placeholder="ここに引き継ぎコードを貼り付け" spellcheck="false" autocomplete="off"></textarea>
+    <div class="set-btns"><button class="m" id="xferLoad">コードで読み込む</button><button id="xferPick">ファイルから読み込む</button></div>
+    <input type="file" id="xferIn" accept=".txt,text/plain" hidden>
+    <div id="xferMsg" role="status" aria-live="polite"></div>
+    <button class="close" id="setClose">閉じる</button>
   </div>
 </div>
 
@@ -398,13 +438,19 @@ const TROPHIES = [
   {id:"special", ic:"🌟", name:"すごいもの",         desc:"「特別」の品を全部そろえる",   ok: s => SPECIAL.every(x => (s.special||[]).includes(x.id))},
   {id:"maxup",   ic:"🛠️", name:"こだわりの店",       desc:"強化をひとつ最大にする",     ok: s => UPG.some(u => (s.upg[u.id]||0) >= u.max)},
   {id:"fashion", ic:"🎨", name:"おしゃれ好き",       desc:"スキンを3つ買う",            ok: s => s.owned.length - 2 >= 3},
+  {id:"end5",    ic:"🌙", name:"夜ふかし営業",       desc:"エンドレス営業でレベル5",     ok: s => (s.endless||{}).lv >= 5},
+  {id:"end10",   ic:"🌌", name:"眠らない店",         desc:"エンドレス営業でレベル10",    ok: s => (s.endless||{}).lv >= 10},
+  {id:"end15",   ic:"🌠", name:"不夜城",             desc:"エンドレス営業でレベル15",    ok: s => (s.endless||{}).lv >= 15},
+  {id:"daily1",  ic:"📅", name:"今日のおすすめ",     desc:"日替わり特別営業で目標達成",   ok: s => (s.dailyClears||0) >= 1},
+  {id:"daily7",  ic:"🗓️", name:"常連さん",           desc:"日替わりの目標を7日達成",      ok: s => (s.dailyClears||0) >= 7},
 ];
 
 /* ---------- 保存 ---------- */
 const KEY = "tokutoku-fever-v1";
-const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true});
+const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
 let save = fresh();
-try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.stats) save = Object.assign(fresh(), s, {stats: Object.assign(fresh().stats, s.stats)}); } catch(e){}
+const loadSave = s => Object.assign(fresh(), s, {stats: Object.assign(fresh().stats, s.stats || {}), endless: Object.assign(fresh().endless, s.endless || {})});
+try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.stats) save = loadSave(s); } catch(e){}
 const persist = () => { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch(e){} };
 // 以前の「空き瓶を増やす」強化は、ステージ中に買う形に変えたので払い戻す
 if (save.upg.spare){ save.wallet += [0, 800, 3200][Math.min(2, save.upg.spare)]; delete save.upg.spare; persist(); }
@@ -418,10 +464,50 @@ function audio(){
   if (ac){ if (ac.state === "suspended") ac.resume(); return; }
   try{
     ac = new (window.AudioContext || window.webkitAudioContext)(); master = ac.createGain(); master.connect(ac.destination);
+    bgmGain = ac.createGain(); bgmGain.connect(ac.destination); applyVolume();
     const s = ac.createBufferSource(); s.buffer = ac.createBuffer(1,1,22050); s.connect(master); s.start(0);
     for (const k in SND){ const done = b => { BUF[k] = b; }; const p = ac.decodeAudioData(b64(SND[k]), done, ()=>{}); if (p && p.then) p.then(done).catch(()=>{}); }
+    if (bgmWant) { const k = bgmWant; bgmWant = null; bgm(k); }
   }catch(e){ ac = null; }
 }
+function applyVolume(){
+  if (!ac) return; const t = ac.currentTime;
+  master.gain.setTargetAtTime(save.sound ? save.seVol : 0, t, .03);
+  bgmGain.gain.setTargetAtTime(save.sound ? save.bgmVol*.55 : 0, t, .08);
+}
+/* ---------- BGM（魔王魂の曲。遊ぶ場所に入ったときに初めて読み込み、そのあとはスマホに保存される） ---------- */
+const BGM = {
+  map: "maoudamashii_bgm_acoustic38.mp3", w1: "maoudamashii_bgm_acoustic15.mp3", w2: "maoudamashii_bgm_acoustic41.mp3",
+  w3: "maoudamashii_bgm_ethnic09.mp3", w4: "maoudamashii_bgm_acoustic54.mp3", w5: "maoudamashii_bgm_ethnic10.mp3",
+  endless: "maoudamashii_bgm_acoustic10.mp3", daily: "maoudamashii_bgm_ethnic14.mp3"
+};
+let bgmGain = null, bgmKey = null, bgmWant = null, bgmNode = null, bgmTok = 0; const BGMBUF = {};
+function loopPoints(b){ // 曲の頭と終わりの無音をとばして、つなぎ目なくくり返す
+  const d = b.getChannelData(0), n = d.length, th = 2e-4; let a = 0, z = n - 1;
+  const lim = Math.min(n >> 1, Math.floor(b.sampleRate*3));
+  while (a < lim && Math.abs(d[a]) < th) a++;
+  while (z > n - lim && Math.abs(d[z]) < th) z--;
+  return [a/b.sampleRate, (z+1)/b.sampleRate];
+}
+function bgm(key){
+  if (!ac){ bgmWant = key; return; }
+  if (key === bgmKey) return;
+  bgmKey = key; const tok = ++bgmTok;
+  if (bgmNode){ const old = bgmNode, g = old._g, t = ac.currentTime; g.gain.setTargetAtTime(0, t, .25); setTimeout(() => { try { old.stop(); } catch(e){} }, 1400); bgmNode = null; }
+  const file = BGM[key]; if (!file) return;
+  const start = buf => {
+    if (tok !== bgmTok) return;
+    const src = ac.createBufferSource(), g = ac.createGain(), [a, z] = buf._lp || (buf._lp = loopPoints(buf));
+    src.buffer = buf; src.loop = true; src.loopStart = a; src.loopEnd = z;
+    g.gain.setValueAtTime(0, ac.currentTime); g.gain.linearRampToValueAtTime(1, ac.currentTime + 1.2);
+    src.connect(g).connect(bgmGain); src.start(0, a); src._g = g; bgmNode = src;
+  };
+  if (BGMBUF[file]) return start(BGMBUF[file]);
+  fetch("bgm/" + file).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(ab => new Promise((ok, ng) => { const p = ac.decodeAudioData(ab, ok, ng); if (p && p.then) p.then(ok, ng); }))
+    .then(buf => { for (const k in BGMBUF) delete BGMBUF[k]; BGMBUF[file] = buf; start(buf); }).catch(() => {});
+}
+document.addEventListener("visibilitychange", () => { if (!ac) return; if (document.visibilityState === "hidden") ac.suspend(); else ac.resume(); });
 function play(name, o={}){
   if (!save.sound || !ac || !BUF[name] || window.__mute) return;
   const b = BUF[name], s = ac.createBufferSource(), g = ac.createGain(), t = ac.currentTime + (o.delay||0);
@@ -608,8 +694,11 @@ let SPEED = 1, T = 0, lastTs = 0, running = false, ended = false;
 let stg = 0, S = null, room = ROOMS[0], bottles = [], seats = [], sel = -1, pours = [], flights = [], busy = new Set();
 let money = 0, combo = 0, maxCombo = 0, servedN = 0, missed = 0, dumped = 0, bottlesOut = 0, guestsLeft = 0;
 let lift = [], floats = [], parts = [], shakeT = {}, waveT = {}, botNext = 0;
-const R = (a,b) => a + Math.random()*(b-a);
-const pick = a => a[Math.floor(Math.random()*a.length)];
+const R = (a,b) => a + Math.random()*(b-a);         // 飾りの動き用
+let rnd = Math.random;                                  // お客さん・仕入れ用（日替わりは日付で決まる乱数）
+const RG = (a,b) => a + rnd()*(b-a);
+const pick = a => a[Math.floor(rnd()*a.length)];
+function mulberry(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const palette = () => [...Array(S.colors).keys()];
 const isFull = b => b.units.length === CAP && b.units.every(u => u.c === b.units[0].c && !u.h);
 const topRun = u => { if (!u.length) return 0; const c = u[u.length-1].c; let n = 0; for (let i=u.length-1;i>=0 && u[i].c===c && !u[i].h;i--) n++; return n; };
@@ -624,21 +713,61 @@ function wanted(){ // まだ渡していない注文の色（予約済みは除�
 // 仕入れる瓶の中身：待っているお客さんの色を多めに。目利きの強化で色の種類が減る
 function stockUnits(){
   const need = wanted(), pal = palette(), maxC = [4,3,2][Math.min(2, upg("refill"))], set = [];
-  for (let k=0; k<30 && set.length < maxC; k++){ const c = need.length && Math.random() < .65 ? pick(need) : pick(pal); if (!set.includes(c)) set.push(c); }
+  for (let k=0; k<30 && set.length < maxC; k++){ const c = need.length && rnd() < .65 ? pick(need) : pick(pal); if (!set.includes(c)) set.push(c); }
   if (set.length < 2) set.push(pal.find(c => !set.includes(c)));
   const u = [set[0], set[1]]; while (u.length < CAP) u.push(pick(set));
-  for (let k=u.length-1;k>0;k--){ const j = Math.floor(Math.random()*(k+1)); [u[k],u[j]] = [u[j],u[k]]; }
+  for (let k=u.length-1;k>0;k--){ const j = Math.floor(rnd()*(k+1)); [u[k],u[j]] = [u[j],u[k]]; }
   // 一番上（最後）は、待っているお客さんの色にしておく
   const top = u.findIndex(c => need.includes(c)); if (top >= 0){ const x = u[top]; u[top] = u[CAP-1]; u[CAP-1] = x; }
   return u;
 }
 let stock = [], stockT = 0;
+let lives = 3, elvl = 1;
+
+/* ---------- 特別営業（エンドレス・日替わり） ---------- */
+function todayJST(){ const d = new Date(Date.now() + 9*3600e3); return {y: d.getUTCFullYear(), m: d.getUTCMonth()+1, d: d.getUTCDate()}; }
+function todayKey(){ const t = todayJST(); return `${t.y}-${String(t.m).padStart(2,"0")}-${String(t.d).padStart(2,"0")}`; }
+function dailyDef(){
+  const t = todayJST(), seed = t.y*10000 + t.m*100 + t.d, r = mulberry(seed*7919 + 17);
+  const w = 1 + Math.floor(r()*5), colors = 5 + Math.floor(r()*3);
+  const pool = ["hide","rush","ice","supply"], gm = [];
+  while (gm.length < 2){ const g = pool[Math.floor(r()*pool.length)]; if (!gm.includes(g)) gm.push(g); }
+  const d = {id:"日替わり", mode:"daily", w, n:0, colors, ord:[1,3], seats:3, guests:12, pat:60, shelf:colors, spare:2, seed, key: todayKey(), label:`${t.m}月${t.d}日`, gm};
+  if (gm.includes("hide")){ d.hide = true; d.pat += 4; }
+  if (gm.includes("rush")) d.rush = .3;
+  if (gm.includes("ice")){ d.ice = colors >= 7 ? [2,3,5] : [2,4]; d.pat += 2; }
+  if (gm.includes("supply")){ d.supply = 34 + (colors-5)*2; d.vip = .2; d.pat += 4; }
+  d.goal = Math.round((3900 + 250*(colors-5) - (d.hide ? 300 : 0) - (d.supply ? 200 : 0) - (d.ice ? 200 : 0))/100)*100;
+  return d;
+}
+const ENDLESS = () => ({id:"エンドレス", mode:"endless", w:1, n:0, colors:4, ord:[1,2], seats:3, guests:Infinity, pat:62, shelf:5, spare:2, goal:0});
+function stageDef(i){ return i === "endless" ? ENDLESS() : i === "daily" ? dailyDef() : STAGES[i]; }
+const specialOpen = k => (save.stars[k === "endless" ? "1-8" : "2-8"] || 0) >= 1;
+// エンドレス：5人満足させるごとにレベルが上がり、だんだん忙しくなる
+function endlessStep(){
+  const lv = 1 + Math.floor(servedN/5); if (lv <= elvl) return;
+  elvl = lv; const msg = [];
+  S.pat = 62*Math.max(.5, 1 - .035*(lv-1));
+  if ((lv === 3 || lv === 5) && S.colors < 6){ S.colors++; bottles.push({units: [], spare:true}); lift.push(0); layout(); msg.push(`新しい色「${CNAME[S.colors-1]}」が入荷`); }
+  if (lv === 4){ S.ord = [1,3]; msg.push("注文が増えてきた"); }
+  if (lv === 8){ S.ord = [2,3]; msg.push("大口の注文が中心に"); }
+  if (lv === 6){ S.rush = .25; msg.push("急ぎのお客さんが来はじめた"); }
+  if (lv === 10) S.rush = .35;
+  if (lv === 7){ S.hide = true; msg.push("仕入れに？の色がまざる"); }
+  if (lv === 9){ S.vip = .2; msg.push("団体さんが来はじめた"); }
+  if (lv % 5 === 0 && lives < 3){ lives++; msg.push("ハート +1"); }
+  floatText(W/2, lay.counterY + 40, `レベル${lv}！`, "#f6c945", 1.4, 300);
+  msg.forEach((m, k) => floatText(W/2, lay.counterY + 74 + k*24, m, "#f6ead6", .8, 500 + k*150));
+  play("bonus", {gain:.55, delay:.5});
+}
 
 function startStage(i){
-  stg = i; S = STAGES[i]; room = ROOMS.find(r => r.id === save.room) || ROOMS[0];
+  stg = i; S = stageDef(i); room = ROOMS.find(r => r.id === save.room) || ROOMS[0];
+  rnd = S.mode === "daily" ? mulberry(S.seed) : Math.random; lives = 3; elvl = 1;
+  bgm(S.mode || "w" + S.w);
   const pal = palette(), pool = [];
   for (let k=0;k<S.shelf*CAP;k++) pool.push(pal[k % pal.length]);
-  for (let k=pool.length-1;k>0;k--){ const j = Math.floor(Math.random()*(k+1)); [pool[k],pool[j]] = [pool[j],pool[k]]; }
+  for (let k=pool.length-1;k>0;k--){ const j = Math.floor(rnd()*(k+1)); [pool[k],pool[j]] = [pool[j],pool[k]]; }
   bottles = [];
   for (let k=0;k<S.shelf;k++) bottles.push({units: pool.slice(k*CAP, k*CAP+CAP).map((c,j) => ({c, h: !!S.hide && j < CAP-1})), spare:false});
   for (let k=0;k<S.spare;k++) bottles.push({units: [], spare:true});
@@ -676,7 +805,7 @@ window.addEventListener("resize", () => { if (!$("play").classList.contains("hid
 
 /* ---------- お客さん ---------- */
 function newOrder(fixed){
-  const pal = palette(), n = fixed || Math.round(R(S.ord[0]-.49, S.ord[1]+.49)), o = [];
+  const pal = palette(), n = fixed || Math.round(RG(S.ord[0]-.49, S.ord[1]+.49)), o = [];
   const want = {}; wanted().forEach(c => want[c] = (want[c]||0) + 1);
   // まだ誰にも頼まれていない満タン瓶（棚の栓つき・保管棚）の色を優先して注文してもらう
   const spare = {}; bottles.forEach(b => { if (b.corked) spare[b.units[0].c] = (spare[b.units[0].c]||0) + 1; }); stored.forEach(c => spare[c] = (spare[c]||0) + 1);
@@ -687,11 +816,11 @@ function newOrder(fixed){
   for (let i=0;i<n;i++){
     const ready = pal.filter(c => (spare[c]||0) > 0);
     let c;
-    if (ready.length && Math.random() < .8){ c = pick(ready); spare[c]--; }
+    if (ready.length && rnd() < .8){ c = pick(ready); spare[c]--; }
     else {
       // すでにたくさん頼まれている色は選ばれにくくする
       const wts = pal.map(c => Math.max(.15, Math.max(0, avail[c]||0) + 1) / (1 + 2*(want[c]||0) + (o.includes(c) ? 1.5 : 0)));
-      let r = Math.random()*wts.reduce((a,b)=>a+b,0); c = pal[0];
+      let r = rnd()*wts.reduce((a,b)=>a+b,0); c = pal[0];
       for (let k=0;k<pal.length;k++){ r -= wts[k]; if (r <= 0){ c = pal[k]; break; } }
     }
     o.push(c); want[c] = (want[c]||0) + 1; avail[c] = (avail[c]||0) - CAP;
@@ -702,10 +831,10 @@ function patienceFor(order){ return S.pat*1000 * (1 + .3*(order.length-1)) * (1 
 function updateSeats(){
   seats.forEach((s, k) => {
     if (s.state === "empty" && guestsLeft > 0 && T >= s.next){
-      guestsLeft--; s.state = "in"; s.t0 = T; s.g = Math.floor(Math.random()*GUESTS.length);
+      guestsLeft--; s.state = "in"; s.t0 = T; s.g = Math.floor(rnd()*GUESTS.length);
       s.order = newOrder(); s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order);
-      s.rush = !!S.rush && Math.random() < S.rush; if (s.rush) s.pat *= .6;
-      s.vip = !s.rush && !!S.vip && Math.random() < S.vip;
+      s.rush = !!S.rush && rnd() < S.rush; if (s.rush) s.pat *= .6;
+      s.vip = !s.rush && !!S.vip && rnd() < S.vip;
       if (s.vip){ const two = newOrder(2); s.order = [two[0], two[0], two[1], two[1]]; s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order)*1.25; }
       play("door", {gain:.3}); hud();
     }
@@ -713,6 +842,8 @@ function updateSeats(){
     if (s.state === "wait" && !s.res.some(Boolean) && T - s.t0 > s.pat) leave(k, "timeout");
     if (s.state === "leave" && T - s.t0 > 900){ s.state = "empty"; s.next = T + 700; }
   });
+  if (S.mode === "endless" && lives <= 0 && guestsLeft > 0){ // ハートがなくなったら閉店
+    guestsLeft = 0; flights = []; seats.forEach(s => { if (s.state === "in" || s.state === "wait"){ s.state = "leave"; s.mood = "angry"; s.t0 = T; s.res = s.res.map(() => false); } }); }
   if (!ended && guestsLeft === 0 && seats.every(s => s.state === "empty") && !flights.length) endStage();
 }
 function payGuest(k){
@@ -723,7 +854,7 @@ function payGuest(k){
   combo++; maxCombo = Math.max(maxCombo, combo);
   const bonus = base*Math.min(has("juke") ? 2 : 1, (combo-1)*.1);
   const total = Math.round((base + tip + bonus)/10)*10;
-  money += total; servedN++;
+  money += total; servedN++; if (S.mode === "endless") endlessStep();
   floatText(sp.x, sp.y - 40, `+${yen(total)}`, "#f2b54a", 1.3);
   if (tip >= 10) floatText(sp.x, sp.y - 68, `はやい！ チップ ${yen(Math.round(tip/10)*10)}`, "#7fd17a", .8, 120);
   if (combo >= 2) floatText(sp.x, sp.y - 94, `${combo}連続 +${yen(Math.round(bonus/10)*10)}`, "#f6ead6", .85, 240);
@@ -734,7 +865,9 @@ function payGuest(k){
 }
 function leave(k, mood){
   const s = seats[k];
-  if (mood === "timeout"){ combo = 0; missed++; const sp = lay.seatPos[k]; floatText(sp.x, sp.y - 70, "もういいよ…", "#ef6b5b", .9); play("wrong", {gain:.25, rate:.85}); hud(); }
+  if (mood === "timeout"){ combo = 0; missed++; const sp = lay.seatPos[k]; floatText(sp.x, sp.y - 70, "もういいよ…", "#ef6b5b", .9); play("wrong", {gain:.25, rate:.85});
+    if (S.mode === "endless"){ lives--; floatText(W/2, lay.counterY + 44, lives > 0 ? `ハート −1（のこり ${lives}）` : "ハートがなくなった…", "#ef6b5b", 1); }
+    hud(); }
   s.state = "leave"; s.mood = mood === "timeout" ? "angry" : mood; s.t0 = T;
 }
 
@@ -882,12 +1015,21 @@ function floatText(x, y, text, color, size=1, delay=0){ floats.push({x, y, text,
 
 /* ---------- HUD ---------- */
 function hud(){
-  $("lvlV").textContent = S.id;
+  $("lvlV").textContent = S.mode === "endless" ? `∞ Lv${elvl}` : S.mode === "daily" ? "日替わり" : S.id;
   $("sandBtn").classList.toggle("hidden", !has("sand")); $("sandBtn").disabled = sandUsed;
   const bc = BUY_COST[bought];
   $("buyBtn").disabled = bought >= BUY_COST.length || save.wallet < (bc||1e9);
   $("buyBtn").innerHTML = bought >= BUY_COST.length ? "空き瓶の追加はここまで" : `空き瓶 +1 <b>財布から ${yen(bc)}</b>` + (save.wallet < bc ? "（足りません）" : "");
   $("moneyV").textContent = yen(money);
+  if (S.mode === "endless"){
+    const best = save.endless.best || 0, max = Math.max(3000, best*1.15, money*1.05);
+    $("moneyG").textContent = "♥".repeat(Math.max(0, lives)) + "♡".repeat(Math.max(0, 3 - lives)) + (best ? `　ベスト ${yen(best)}` : "") + (combo >= 2 ? `　${combo}連続中` : "");
+    $("moneyBar").style.width = Math.min(100, money/max*100) + "%"; $("moneyBar").style.background = best && money > best ? "var(--good)" : "var(--amber)";
+    $("m1").style.left = (best ? best/max*100 : -10) + "%"; $("m2").style.left = "-10%"; $("m3").style.left = "-10%";
+    $("leftV").textContent = servedN; $("leftL").textContent = "人目";
+    return;
+  }
+  $("leftL").textContent = "人まち";
   $("moneyG").textContent = `目標 ${yen(S.goal)}` + (money >= S.goal ? "　達成！" : "") + (combo >= 2 ? `　${combo}連続中` : "");
   const max = S.goal*1.7;
   $("moneyBar").style.width = Math.min(100, money/max*100) + "%";
@@ -1114,6 +1256,7 @@ requestAnimationFrame(frame);
 function starsFor(i, m){ const g = STAGES[i].goal; return m >= g*1.5 ? 3 : m >= g*1.25 ? 2 : m >= g ? 1 : 0; }
 function titleOf(total){ return [0, titleOfRank(rankOf(total))]; }
 function endStage(){
+  if (S.mode) return endSpecial();
   ended = true; running = false; sel = -1;
   const id = S.id, clear = money >= S.goal, st = starsFor(stg, money);
   const rankBefore = rankOf(save.total);
@@ -1141,15 +1284,68 @@ function endStage(){
   if (titleAfter !== titleBefore) earned += `<br>称号が <b>${titleAfter}</b> になりました！`;
   if (newTr.length) earned += `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>`;
   $("resEarned").innerHTML = earned + `</div>`;
+  $("resStars").classList.remove("hidden");
   const canNext = (save.stars[id]||0) >= 1 && stg < STAGES.length-1;
-  $("nextBtn").disabled = !canNext; $("nextBtn").textContent = stg < STAGES.length-1 ? `${STAGES[stg+1].id} へ` : "全ステージクリア";
+  $("nextBtn").classList.remove("hidden"); $("nextBtn").disabled = !canNext; $("nextBtn").textContent = stg < STAGES.length-1 ? `${STAGES[stg+1].id} へ` : "全ステージクリア";
   setTimeout(() => {
     $("result").classList.remove("hidden");
     if (clear){ play("fanfare", {gain:.6}); play("clap", {gain:.45, delay:.3}); } else play("wrong", {gain:.3});
   }, 700);
 }
+function endSpecial(){
+  ended = true; running = false; sel = -1;
+  const rankBefore = rankOf(save.total), branch = has("branch") ? Math.round(money*.1/10)*10 : 0;
+  let bonus = 0, clear = false, st = 0, newBest = false, shareTxt = "";
+  if (S.mode === "endless"){
+    const e = save.endless; newBest = money > (e.best||0);
+    if (newBest) e.best = money; e.lv = Math.max(e.lv||0, elvl); e.served = Math.max(e.served||0, servedN);
+  } else {
+    clear = money >= S.goal; st = money >= S.goal*1.5 ? 3 : money >= S.goal*1.25 ? 2 : clear ? 1 : 0;
+    const dd = save.daily; if (dd.key !== S.key){ for (const k in dd) delete dd[k]; dd.key = S.key; dd.best = 0; dd.bonus = false; }
+    newBest = money > (dd.best||0); if (newBest) dd.best = money;
+    if (clear && !dd.bonus){ dd.bonus = true; bonus = money; save.dailyClears = (save.dailyClears||0) + 1; }
+    shareTxt = `ご注文は満タンで\n日替わり特別営業 ${S.label}\n売上 ${yen(dd.best)} ${"★".repeat(st)}\nhttps://mizbas.github.io/gochumon-mantan/`;
+  }
+  save.wallet += money + branch + bonus; save.total += money;
+  const rankAfter = rankOf(save.total); let rankGift = 0;
+  for (let r = rankBefore + 1; r <= rankAfter; r++) rankGift += rankReward(r);
+  save.wallet += rankGift;
+  save.stats.served += servedN; save.stats.bottles += bottlesOut; save.stats.maxCombo = Math.max(save.stats.maxCombo, maxCombo);
+  const newTr = checkTrophies(true); persist();
+  const endless = S.mode === "endless";
+  $("resH").textContent = endless ? (newBest ? "閉店！ ベスト更新" : "閉店　おつかれさま") : (clear ? "閉店！ 目標達成" : "閉店… 目標まであと少し");
+  $("resMoney").textContent = yen(money);
+  $("resGoal").textContent = endless ? `レベル${elvl}まで到達・ベスト ${yen(save.endless.best)}` : `${S.label}の目標 ${yen(S.goal)}` + (clear ? "" : `（あと ${yen(S.goal - money)}）`);
+  $("resStars").classList.toggle("hidden", endless);
+  $("resStars").innerHTML = [0,1,2].map(k => `<span class="${k < st ? "on" : ""}">★</span>`).join("");
+  $("resList").innerHTML = [["満足したお客さん", `${servedN}人`], ["渡した満タン瓶", `${bottlesOut}本`], ["最高連続", `${maxCombo}連続`], ["帰ってしまったお客さん", `${missed}人`]]
+    .map(([a,b]) => `<li><span>${a}</span><b>${b}</b></li>`).join("");
+  let earned = `<div class="earned">売上 <b>${yen(money)}</b> を財布に入れました（財布 ${yen(save.wallet)}）`;
+  if (bonus) earned += `<br>今日はじめての目標達成！ 日替わりボーナス <b>+${yen(bonus)}</b>`;
+  else if (!endless && save.daily.bonus) earned += `<br>今日の日替わりボーナスは受け取り済みです`;
+  if (branch) earned += `<br>二号店の評判ボーナス <b>+${yen(branch)}</b>`;
+  if (rankAfter > rankBefore){ earned += `<br>ランクアップ！ <b>ランク${rankAfter}</b>（ごほうび +${yen(rankGift)}）`; setTimeout(() => { toastQ.push({ic:"⬆️", name:`ランク${rankAfter}になりました`, sub:"ランクアップ"}); runToast(); }, 900); }
+  if (newTr.length) earned += `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>`;
+  $("resEarned").innerHTML = earned + `</div>`;
+  $("nextBtn").disabled = endless; $("nextBtn").textContent = endless ? "—" : "記録をコピー";
+  $("nextBtn").classList.toggle("hidden", endless);
+  resShare = shareTxt;
+  setTimeout(() => {
+    $("result").classList.remove("hidden");
+    if (newBest || clear){ play("fanfare", {gain:.6}); play("clap", {gain:.45, delay:.3}); } else play("wrong", {gain:.3});
+  }, 700);
+}
+let resShare = "";
+function copyText(t, ta){
+  const fb = () => { const x = ta || document.createElement("textarea"); if (!ta){ x.value = t; x.style.cssText = "position:fixed;left:-999px;top:0"; document.body.appendChild(x); }
+    x.select(); x.setSelectionRange(0, t.length); let ok = false; try { ok = document.execCommand("copy"); } catch(e){} if (!ta) x.remove(); return ok; };
+  if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(t).then(() => true, () => fb());
+  return Promise.resolve(fb());
+}
 $("retryBtn").onclick = () => { $("result").classList.add("hidden"); showIntro(stg); };
-$("nextBtn").onclick = () => { $("result").classList.add("hidden"); showIntro(stg+1); };
+$("nextBtn").onclick = () => {
+  if (typeof stg === "string"){ if (stg === "daily") copyText(resShare).then(ok => { $("nextBtn").textContent = ok ? "コピーしました" : "コピーできませんでした"; setTimeout(() => $("nextBtn").textContent = "記録をコピー", 1800); }); return; }
+  $("result").classList.add("hidden"); showIntro(stg+1); };
 $("resMap").onclick = () => { $("result").classList.add("hidden"); showMap(); };
 
 /* ---------- トロフィー ---------- */
@@ -1170,8 +1366,26 @@ function runToast(){
 /* ---------- マップ・開店前 ---------- */
 function unlocked(i){ return i === 0 || (save.stars[STAGES[i-1].id]||0) >= 1; }
 function showIntro(i){
-  stg = i; S = STAGES[i];
+  stg = i; S = stageDef(i);
   ["map","play","result","intro"].forEach(id => $(id).classList.add("hidden"));
+  if (S.mode === "endless"){
+    $("introH").textContent = "エンドレス営業";
+    $("introGoal").textContent = `ハート3つ・ベスト ${save.endless.best ? yen(save.endless.best) : "まだなし"}（最高レベル${save.endless.lv || 0}）`;
+    $("introRules").innerHTML = `・お客さんが途切れずにやってきます。<b>帰らせるとハートが1つ減り</b>、全部なくなったら閉店です<br>
+      ・5人満足させるごとにレベルアップ。色が増えたり、急ぎのお客さんや？の色、団体さんが出てきます<br>
+      ・5レベルごとにハートが1つ回復します（最大3つ）<br>・売上はいつもどおり財布とランクに入ります`;
+    $("intro").classList.remove("hidden"); return;
+  }
+  if (S.mode === "daily"){
+    const dd = save.daily.key === S.key ? save.daily : {}, names = {hide:"？の色", rush:"急ぎのお客さん", ice:"凍った瓶", supply:"仕入れ制限と団体さん"};
+    $("introH").textContent = `日替わり特別営業　${S.label}`;
+    $("introGoal").textContent = `目標 ${yen(S.goal)}・お客さん ${S.guests}人・${WORLDS[S.w-1].name}`;
+    $("introRules").innerHTML = `今日のお題：<b>${S.colors}色・${S.gm.map(g => names[g]).join("＋")}</b><br>
+      ・最初の棚とお客さんの流れは<b>今日遊ぶ人みんな同じ</b>です。友達と売上を比べてみよう<br>
+      ・その日はじめて目標を達成すると、<b>売上と同じ額の日替わりボーナス</b>がもらえます${dd.bonus ? "（今日は受け取り済み）" : ""}<br>
+      ・何回でも挑戦できます。今日のベスト：${dd.best ? yen(dd.best) : "まだなし"}<br>・日付が変わるとお題が変わります`;
+    $("intro").classList.remove("hidden"); return;
+  }
   $("introH").textContent = `${S.id}　${WORLDS[S.w-1].name}`;
   $("introGoal").textContent = `目標 ${yen(S.goal)}・お客さん ${S.guests}人`;
   $("introRules").innerHTML = i === 0 ? `
@@ -1224,12 +1438,59 @@ function showMap(){
     wbox.appendChild(sec);
   });
   $("contBtn").textContent = `${STAGES[next].id} をはじめる`; $("contBtn").onclick = () => { audio(); showIntro(next); };
-  $("soundBtn").textContent = "音：" + (save.sound ? "オン" : "オフ");
+  const sp = $("specials"); sp.innerHTML = "";
+  const dd = save.daily.key === todayKey() ? save.daily : {}, td = todayJST();
+  [["endless","🌙","エンドレス営業", specialOpen("endless") ? (save.endless.best ? `ベスト <em>${yen(save.endless.best)}</em><br>最高レベル${save.endless.lv}` : "ハートが尽きるまで<br>どこまで行ける？") : "1-8 をクリアで解放"],
+   ["daily","📅",`日替わり ${td.m}/${td.d}`, specialOpen("daily") ? (dd.bonus ? `今日のベスト <em>${yen(dd.best)}</em><br>ボーナス受け取り済み` : dd.best ? `今日のベスト <em>${yen(dd.best)}</em><br>目標達成でボーナス` : "毎日ちがうお題<br>目標達成でボーナス") : "2-8 をクリアで解放"]]
+  .forEach(([k, ic, name, sub]) => {
+    const open = specialOpen(k), b = document.createElement("button"); b.className = "spbtn" + (open ? "" : " locked");
+    b.innerHTML = `<span class="ic">${open ? ic : "🔒"}</span><b>${name}</b><small>${sub}</small>`;
+    b.onclick = () => { audio(); if (!open){ play("bad", {gain:.3}); return; } showIntro(k); };
+    sp.appendChild(b);
+  });
+  bgm("map");
   drawHero(); checkTrophies(false);
 }
-$("soundBtn").onclick = () => { audio(); save.sound = !save.sound; persist(); $("soundBtn").textContent = "音：" + (save.sound ? "オン" : "オフ"); play("pick"); };
+/* ---------- 設定・データの引き継ぎ ---------- */
+function renderSettings(){
+  $("sndTog").textContent = save.sound ? "オン" : "オフ"; $("sndTog").classList.toggle("on", save.sound);
+  $("bgmVol").value = Math.round(save.bgmVol*100); $("bgmOut").textContent = $("bgmVol").value;
+  $("seVol").value = Math.round(save.seVol*100); $("seOut").textContent = $("seVol").value;
+}
+$("setBtn").onclick = () => { audio(); renderSettings(); $("xferMsg").textContent = ""; $("settings").classList.remove("hidden"); };
+$("setClose").onclick = () => $("settings").classList.add("hidden");
+$("sndTog").onclick = () => { audio(); save.sound = !save.sound; persist(); applyVolume(); renderSettings(); play("pick"); };
+$("bgmVol").oninput = e => { save.bgmVol = e.target.value/100; $("bgmOut").textContent = e.target.value; applyVolume(); };
+$("seVol").oninput = e => { save.seVol = e.target.value/100; $("seOut").textContent = e.target.value; applyVolume(); };
+$("bgmVol").onchange = $("seVol").onchange = () => { persist(); play("pick"); };
+const XPRE = "MANTAN1-";
+function sum(t){ let h = 2166136261; for (let i=0;i<t.length;i++){ h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); }
+function exportCode(){ const b = btoa(unescape(encodeURIComponent(JSON.stringify(save)))); return XPRE + b + "-" + sum(b); }
+function importCode(txt){
+  const t = (txt || "").replace(/\s+/g, ""), i = t.indexOf(XPRE); if (i < 0) return null;
+  const body = t.slice(i + XPRE.length), k = body.lastIndexOf("-"); if (k < 0) return null;
+  const b = body.slice(0, k); if (sum(b) !== body.slice(k+1)) return null;
+  try { const o = JSON.parse(decodeURIComponent(escape(atob(b)))); return o && o.stats && typeof o.wallet === "number" ? o : null; } catch(e){ return null; }
+}
+const xmsg = (m, ng) => { $("xferMsg").textContent = m; $("xferMsg").classList.toggle("ng", !!ng); };
+$("xferCopy").onclick = () => { const c = exportCode(); $("xferTxt").value = c;
+  copyText(c, $("xferTxt")).then(ok => xmsg(ok ? "引き継ぎコードをコピーしました。メモなどに貼って保存してください" : "下の枠のコードを長押しでコピーしてください", !ok)); };
+$("xferFile").onclick = () => { const c = exportCode(), t = todayJST(), a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([c], {type:"text/plain"})); a.download = `gochumon-mantan-${t.y}${String(t.m).padStart(2,"0")}${String(t.d).padStart(2,"0")}.txt`;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); xmsg("ファイルに保存しました"); };
+function askImport(o){
+  const r = rankOf(o.total || 0);
+  $("cfH").textContent = "読み込みますか？";
+  $("cfP").innerHTML = `読み込むデータ：ランク${r}・財布 ${yen(o.wallet)}・★${Object.values(o.stars||{}).reduce((a,b)=>a+b,0)}<br><b>いまのデータは上書きされます。</b>`;
+  $("cfYes").textContent = "読み込む";
+  cfAction = () => { save = loadSave(o); persist(); applyVolume(); renderSettings(); xmsg("読み込みました！"); showMap(); $("settings").classList.remove("hidden"); };
+  $("confirm").classList.remove("hidden");
+}
+$("xferLoad").onclick = () => { const o = importCode($("xferTxt").value); if (!o) return xmsg("コードが正しくありません。全部コピーできているか確かめてください", true); askImport(o); };
+$("xferPick").onclick = () => $("xferIn").click();
+$("xferIn").onchange = e => { const f = e.target.files[0]; if (!f) return; f.text().then(t => { e.target.value = ""; const o = importCode(t); if (!o) return xmsg("このファイルは引き継ぎデータではないようです", true); askImport(o); }); };
 $("wipeBtn").onclick = () => { const b = $("wipeBtn");
-  if (b.dataset.c){ const snd = save.sound; save = fresh(); save.sound = snd; persist(); delete b.dataset.c; b.textContent = "記録を消す"; showMap(); }
+  if (b.dataset.c){ const keep = {sound: save.sound, bgmVol: save.bgmVol, seVol: save.seVol}; save = Object.assign(fresh(), keep); persist(); delete b.dataset.c; b.textContent = "記録を消す"; showMap(); }
   else { b.dataset.c = "1"; b.textContent = "もう一度押すと財布も全部消えます"; setTimeout(() => { delete b.dataset.c; b.textContent = "記録を消す"; }, 3000); } };
 function drawHero(){
   const c = $("heroCv"), x = c.getContext("2d"); x.clearRect(0,0,520,320);
@@ -1247,7 +1508,7 @@ let shopTab = "upg";
 function openShop(){ $("shop").classList.remove("hidden"); renderShop(); }
 let cfAction = null;
 function confirmBuy(name, cost, action){
-  $("cfH").textContent = "買いますか？";
+  $("cfH").textContent = "買いますか？"; $("cfYes").textContent = "買う";
   $("cfP").innerHTML = `<b>${name}</b> を <b>${yen(cost)}</b> で買います。<br>財布 ${yen(save.wallet)} → ${yen(save.wallet - cost)}`;
   cfAction = action; $("confirm").classList.remove("hidden"); play("pick", {gain:.4});
 }
@@ -1367,7 +1628,7 @@ showMap();
 let updateReady = false;
 function applyUpdate(){
   if (!updateReady) return;
-  const busyNow = !$("play").classList.contains("hidden") || !$("intro").classList.contains("hidden") || !$("result").classList.contains("hidden");
+  const busyNow = !$("play").classList.contains("hidden") || !$("intro").classList.contains("hidden") || !$("result").classList.contains("hidden") || !$("settings").classList.contains("hidden");
   if (busyNow) return;
   try { sessionStorage.setItem("justUpdated", "1"); } catch(e){}
   location.reload();
@@ -1386,7 +1647,7 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
 }
 try { if (sessionStorage.getItem("justUpdated")){ sessionStorage.removeItem("justUpdated");
   setTimeout(() => { toastQ.push({ic:"✨", name:"最新版に更新しました", sub:"お知らせ"}); runToast(); }, 600); } } catch(e){}
-window.__g = { get stored(){ return stored; }, get stats(){ return {money, servedN, missed, dumped, maxCombo, bottlesOut}; }, set speed(v){ SPEED = v; }, showIntro, get ended(){ return ended; }, get save(){ return save; }, drawVessel, bottleShape };
+window.__g = { get stored(){ return stored; }, get stats(){ return {money, servedN, missed, dumped, maxCombo, bottlesOut, elvl, lives}; }, exportCode, importCode, dailyDef, get bgm(){ return [bgmKey, !!bgmNode, bgmNode ? [bgmNode.loopStart, bgmNode.loopEnd, bgmNode.buffer.duration] : null]; }, set speed(v){ SPEED = v; }, showIntro, get ended(){ return ended; }, get save(){ return save; }, drawVessel, bottleShape };
 })();
 </script>
 </body>
