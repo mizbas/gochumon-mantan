@@ -674,11 +674,19 @@ function cork(i){ const b = bottles[i]; b.units.forEach(u => { if (u.h){ u.h = f
 function floatText(x, y, text, color, size=1, delay=0){ floats.push({x, y, text, color, size, t0: T + delay}); }
 
 /* ---------- HUD ---------- */
+function prepProgress(){
+  const best = {};
+  bottles.forEach(b => { if (b.glass || !b.units.length) return; const c = b.units[0].c; let n = 0; while (n < b.units.length && b.units[n].c === c) n++; best[c] = Math.max(best[c] || 0, b.corked ? CAP : n); });
+  const done = Object.values(best).reduce((a, n) => a + n, 0);
+  return Math.min(1, done / (S.colors * CAP));
+}
 function hud(){
   if (S.mode === "prep"){
     $("lvlV").textContent = S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `仕込み・目安${S.par}手`; $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
-    $("moneyBar").style.width = Math.min(100, prepMoves/(S.par*1.6)*100) + "%"; $("moneyBar").style.background = prepMoves <= S.par ? "var(--good)" : "var(--amber)";
-    $("m1").style.left = (1/1.6*100) + "%"; $("m2").style.left = (1.3/1.6*100) + "%"; $("m3").style.left = "-10%";
+    // ゲージは完成までの進み具合（色ごとに、瓶の底からそろっている数）。色はいまの★（3=緑・2=黄・1=赤）
+    const st = prepStars();
+    $("moneyBar").style.width = (prepProgress()*100) + "%"; $("moneyBar").style.background = st >= 3 ? "var(--good)" : st === 2 ? "var(--amber)" : "#ef6b5b";
+    $("m1").style.left = "-10%"; $("m2").style.left = "-10%"; $("m3").style.left = "-10%";
     $("sandBtn").classList.remove("hidden"); $("sandBtn").disabled = false; $("sandBtn").textContent = "💡 ヒント";
     $("undoBtn").disabled = !(undoSnap || undoStack.length); $("undoBtn").textContent = "↶ 戻す";
     $("buyBtn").disabled = bought >= 1; $("buyBtn").innerHTML = bought >= 1 ? "空き瓶の追加は1回まで" : "空き瓶 +1（★が1つ減る）";
