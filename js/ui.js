@@ -96,8 +96,8 @@ function endSpecial(){
   if (rankAfter > rankBefore){ earned += `<br>ランクアップ！ <b>ランク${rankAfter}</b>（ごほうび +${yen(rankGift)}）`; setTimeout(() => { toastQ.push({ic:"⬆️", name:`ランク${rankAfter}になりました`, sub:"ランクアップ"}); runToast(); }, 900); }
   if (newTr.length) earned += `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>`;
   $("resEarned").innerHTML = earned + `</div>`;
-  $("nextBtn").disabled = endless; $("nextBtn").textContent = endless ? "—" : "記録をコピー";
-  $("nextBtn").classList.toggle("hidden", endless);
+  $("nextBtn").disabled = false; $("nextBtn").textContent = "記録をシェア";
+  $("nextBtn").classList.remove("hidden");
   resShare = shareTxt;
   setTimeout(() => {
     $("result").classList.remove("hidden");
@@ -114,9 +114,10 @@ function copyText(t, ta){
 $("retryBtn").onclick = () => { $("result").classList.add("hidden"); showIntro(stg); };
 $("resMap").addEventListener("click", () => { if (S && S.mode === "prep"){ setTimeout(openPrepSel, 0); } });
 $("nextBtn").onclick = () => {
+  if (S && S.daily){ shareMine("pd", $("nextBtn")); return; }
   if (S && S.mode === "prep"){ if (resNext){ $("result").classList.add("hidden"); showIntro(resNext); } return; }
   if (stg === STAGES.length-1){ $("result").classList.add("hidden"); showEnding(); return; }
-  if (typeof stg === "string"){ if (stg === "daily") copyText(resShare).then(ok => { $("nextBtn").textContent = ok ? "コピーしました" : "コピーできませんでした"; setTimeout(() => $("nextBtn").textContent = "記録をコピー", 1800); }); return; }
+  if (typeof stg === "string"){ if (stg === "daily" || stg === "endless") shareMine(stg, $("nextBtn")); return; }
   $("result").classList.add("hidden"); showIntro(stg+1); };
 $("resMap").onclick = () => { $("result").classList.add("hidden"); showMap(); };
 
@@ -158,8 +159,12 @@ function showIntro(i){
     $("introGoal").textContent = `${S.colors}色・空き瓶${S.spare}本・目安${S.par}手`;
     $("introRules").innerHTML = `お客さんは来ません。時間制限もありません。<b>全部の瓶を1色ずつ満タン</b>にそろえたら完成です。<br>
       ・<b>目安の手数</b>以内で★3、その1.3倍までで★2<br>・「↶ 戻す」は何回でも使えます<br>・「💡 ヒント」と「空き瓶 +1」は使うと★の上限が1つずつ下がります${S.hide ? "<br>・？の色があります" : ""}${S.ice ? "<br>・凍った瓶は15秒ごとに溶けていきます" : ""}`;
+    if (S.daily){ const pd = pdToday(); $("introH").textContent = `今日の仕込み ${S.label}`;
+      $("introRules").innerHTML = `毎日1問、<b>遊んでいる人みんなが同じ問題</b>です。月曜がいちばんやさしく、日曜がいちばん難しくなります。<br>今日はじめて解くと、財布にごほうび。「友達と比べる」で手数を比べられます。<br>` + $("introRules").innerHTML;
+      $("introRec").innerHTML = recBox("今日の記録", pd && pd.best ? [["今日のベスト", `${pd.best}手`, 1], ["星", "★".repeat(pd.st) + "☆".repeat(3 - pd.st)]] : [], "今日はまだ解いていません");
+    } else {
     const best = save.prep.best[S.pid], st = save.prep.stars[S.pid] || 0;
-    $("introRec").innerHTML = recBox(`${S.id} の記録`, best ? [["ベスト", `${best}手`, 1], ["星", "★".repeat(st) + "☆".repeat(3-st)]] : [], "まだ記録はありません");
+    $("introRec").innerHTML = recBox(`${S.id} の記録`, best ? [["ベスト", `${best}手`, 1], ["星", "★".repeat(st) + "☆".repeat(3-st)]] : [], "まだ記録はありません"); }
     $("intro").classList.remove("hidden"); bgm("prep"); return;
   }
   if (S.mode === "endless"){
@@ -225,15 +230,61 @@ function pauseGame(){
   $("pauseTop").textContent = S.mode === "prep" ? "仕込みをやめる" : "お店を閉めてマップに戻る";
   $("pauseOv").classList.remove("hidden"); play("pick", {gain:.4});
 }
+/* ---------- しかけ・お客さんの初回の説明（1回だけ） ---------- */
+const TIPS = {
+  hide:     ["❓", "？の色", "瓶の下のほうの色が「？」で隠れています。上の色を注ぎ出すと見えます。<br>満タンになった瓶は、隠れていた色も見えて栓がされます。"],
+  ice:      ["❄️", "寒波", "ときどき寒波が来て、瓶が1本凍ります。凍った瓶は注ぐことも注がれることもできません。<br>「寒波が来る！」と出たら、3秒のうちに中身を移せば逃がせます。満タン瓶を1本渡すか、10秒で溶けます。"],
+  supply:   ["⚓", "仕入れは回数まで", "仕入れ台を使える回数に限りがあります（残りは仕入れ台に表示）。<br>流しに捨てる量を減らして、大事に使いましょう。"],
+  cocktail: ["🍸", "カクテル", "カクテルのお客さんには、グラスに<b>下から順に</b>注文どおりの色を1杯ずつ重ねます。グラスにはどの色でも注げます。<br>間違えたら、グラスを選んで流しへ。"],
+  reserve:  ["📋", "予約ボード", "次に来る2人の注文が、先にボードに出ます。<br>来る前に満タン瓶を用意しておいて、来てすぐ出すと代金1.3倍です。"],
+  lock:     ["🔒", "カギつき瓶", "カギのかかった瓶は使えません。<br>カギと同じ色の満タン瓶を渡すか、30秒たつと開きます。"],
+  dark:     ["🔦", "停電", "ときどき7秒間停電して、瓶の色が見えなくなります。灯台の光が当たった瓶だけ見えます。<br>「停電しそう…」と出たら、先に注ぐ瓶を決めておきましょう。"],
+  happy:    ["🎉", "ハッピーアワー", "20秒だけ、代金が1.5倍になります。どんどん出しましょう！"],
+  regular:  ["😊", "常連さん", "緑の札のお客さんは常連さん。待てる時間が長め（1.4倍）で、チップが2倍です。"],
+  critic:   ["🎩", "評論家", "紫の札のお客さんは評論家。待てる時間が少し短めですが、満足させると代金2.5倍です。"],
+  rush:     ["⏱️", "急ぎのお客さん", "赤い札のお客さんは急ぎ。待てる時間が短い（0.6倍）かわりに、代金1.4倍です。"],
+  vip:      ["👥", "団体さん", "黄色の札のお客さんは団体さん。2色を2本ずつ、満タン瓶4本の大口注文です。待てる時間は長めで、代金は2倍。"]
+};
+const TIP_ORDER = ["hide", "ice", "supply", "cocktail", "reserve", "lock", "dark", "happy", "rush", "vip", "critic", "regular"];
+// 前から遊んでいる人は、クリア済みのステージに出てきたものは知っているとみなす
+function tipsMigrate(){
+  if (save.tipsInit) return; save.tips = save.tips || {};
+  STAGES.forEach((d, i) => { if (!(save.stars[d.id] >= 1)) return;
+    ["hide", "ice", "supply", "cocktail", "reserve", "dark", "rush", "vip"].forEach(k => { if (d[k]) save.tips[k] = 1; });
+    if (d.lock || d.relock) save.tips.lock = 1;
+    if (i >= 3){ save.tips.regular = save.tips.critic = 1; } if (i >= 8) save.tips.happy = 1; });
+  if (save.endless.plays || save.dailyClears) TIP_ORDER.forEach(k => { if (["regular", "critic", "rush"].includes(k)) save.tips[k] = 1; });
+  save.tipsInit = true; persist();
+}
+tipsMigrate();
+let tipT = 0, tipOpen = null;
+function tipNeed(){
+  if (!S || S.mode === "prep") return null;
+  const g = t => seats.some(s => (s.state === "in" || s.state === "wait") && s[t]);
+  const on = {hide: S.hide, ice: S.ice, supply: S.supply && isFinite(S.supply), cocktail: S.cocktail || g("cock"), reserve: S.reserve, lock: S.lock || S.relock, dark: S.dark,
+    happy: happyNow(), rush: g("rush"), vip: g("vip"), critic: g("critic"), regular: g("regular")};
+  return TIP_ORDER.find(k => on[k] && !(save.tips || {})[k]) || null;
+}
+function tipCheck(){
+  if (!running || paused || ended || tut || tipOpen || window.__bot || window.__noTips || performance.now() < tipT) return; tipT = performance.now() + 300;
+  const k = tipNeed(); if (!k) return;
+  const [ic, name, desc] = TIPS[k]; tipOpen = k; save.tips = save.tips || {}; save.tips[k] = 1; persist();
+  paused = true; sel = -1;
+  $("tipIc").textContent = ic; $("tipH").textContent = name; $("tipP").innerHTML = desc + `<br><small>（時間は止まっています。一時停止メニューの「お客さん・しかけの説明」でいつでも見られます）</small>`;
+  $("tipOv").classList.remove("hidden"); play("kira", {gain:.35});
+}
+function closeTip(){ $("tipOv").classList.add("hidden"); tipOpen = null; if ($("pauseOv").classList.contains("hidden") && $("rackAsk").classList.contains("hidden")) paused = false; lastTs = 0; tipT = performance.now() + 600; }
+$("tipGo").onclick = () => { audio(); closeTip(); };
 function resumeGame(){
   $("pauseOv").classList.add("hidden");
+  if (tipOpen) { lastTs = 0; return; } // 説明を見ている途中なら、そのまま止めておく
   if (tut && TUT[tut.step].shown !== false && tut.step > 0) { tutShow(); if (TUT[tut.step].next){ return; } }
   if ($("rackAsk").classList.contains("hidden")) paused = false;
   lastTs = 0; play("pick", {gain:.4, rate:1.1});
 }
 $("homeBtn").onclick = () => { audio(); pauseGame(); };
 $("pauseGo").onclick = resumeGame;
-$("pauseTop").onclick = () => { if (S && S.mode === "prep"){ $("pauseOv").classList.add("hidden"); running = false; paused = false; openPrepSel(); return; } if (tut){ tut = null; $("tutBox").classList.add("hidden"); } $("pauseOv").classList.add("hidden"); running = false; paused = false; $("rackAsk").classList.add("hidden"); showMap(); };
+$("pauseTop").onclick = () => { $("tipOv").classList.add("hidden"); tipOpen = null; if (S && S.mode === "prep"){ $("pauseOv").classList.add("hidden"); running = false; paused = false; openPrepSel(); return; } if (tut){ tut = null; $("tutBox").classList.add("hidden"); } $("pauseOv").classList.add("hidden"); running = false; paused = false; $("rackAsk").classList.add("hidden"); showMap(); };
 // アプリを裏に回したら自動で一時停止
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && running && !$("play").classList.contains("hidden")) pauseGame(); });
 function showMap(){
@@ -275,7 +326,7 @@ function showMap(){
     sp.appendChild(b);
   });
   { const cl = Object.keys(save.prep.stars).length, open = prepOpen(), b = $("prepBtn"); b.classList.toggle("locked", !open);
-    $("prepSub").textContent = open ? (cl ? `クリア ${cl} / ${PREP_CH.length*PREP_N}問・★${Object.values(save.prep.stars).reduce((a,b)=>a+b,0)}` : "時間制限なし。全部の瓶を1色ずつそろえよう") : "1-1 をクリアで解放";
+    $("prepSub").textContent = open ? (cl ? `クリア ${cl} / ${PREP_CH.length*PREP_N}問・★${Object.values(save.prep.stars).reduce((a,b)=>a+b,0)}` : "時間制限なし。全部の瓶を1色ずつそろえよう") + (pdToday() && pdToday().best ? "・今日の1問 ✓" : "・今日の1問あり") : "1-1 をクリアで解放";
     b.onclick = () => { audio(); if (!open){ play("bad", {gain:.3}); return; } openPrepSel(); }; }
   $("prepSel").classList.add("hidden");
   bgm("map");

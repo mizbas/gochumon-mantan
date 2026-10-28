@@ -227,3 +227,46 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
 #toast small{display:block;color:var(--ink-2);font-size:12px}
 #toast b{font-size:15px}
 @media (prefers-reduced-motion:reduce){.card{animation:none}#toast{transition:none}}
+
+.tipic{font-size:44px;line-height:1;margin:2px 0 4px}
+#tipOv .card{max-width:340px}
+#tipOv h2{margin:4px 0 8px}
+#tipOv .rules{text-align:left;font-size:14.5px;line-height:1.65}
+#tipOv small{color:var(--ink-2)}
+
+/* 友達と比べる */
+.fr-b{background:#f3e6cf;border-radius:16px;padding:10px 12px;margin:10px 0;text-align:left}
+.fr-b h3{margin:0 0 6px;font-size:15px;color:var(--rust)}
+.fr-b h3 small{font-size:12px;color:var(--ink-2);font-weight:400}
+.fr-empty{margin:2px 0;font-size:13px;color:var(--ink-2)}
+.fr-r{display:flex;align-items:center;gap:8px;padding:4px 0;border-top:1px dashed #dcc9a8}
+.fr-r:first-of-type{border-top:0}
+.fr-r.me{background:#fff4dc;border-radius:10px;padding:4px 6px;margin:0 -6px}
+.fr-n{width:18px;text-align:center;font-weight:900;color:var(--rust)}
+.fr-av{width:36px;height:36px;flex:none}
+.fr-t{flex:1;min-width:0;display:flex;flex-direction:column}
+.fr-t b,.fr-t small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fr-t small{font-size:11.5px;color:var(--ink-2)}
+.fr-v{font-weight:900;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.fr-v small{display:block;font-size:11px;color:#c08a1e;font-weight:700}
+.frin{width:100%;height:64px;border-radius:12px;border:1.5px solid #d8c7a8;background:#fffaf0;font:12px/1.4 ui-monospace,monospace;padding:8px;resize:none;color:var(--ink)}
+.frmsg{font-size:13px;min-height:18px;color:#2f7d32;font-weight:700}
+.frmsg.ng{color:#c0392b}
+.fr-l{display:flex;align-items:center;gap:8px;justify-content:space-between;text-align:left;font-size:13.5px;padding:6px 0;border-top:1px dashed #dcc9a8}
+.fr-l span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.fr-l small{display:block;color:var(--ink-2);font-size:11.5px}
+.fr-l button{flex:none;height:32px;padding:0 12px;border-radius:16px;background:#eadbc1;font-weight:800;font-size:13px}
+/* お客さん図鑑 */
+.zoo-list{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+.zoo-c{background:#f3e6cf;border-radius:16px;padding:8px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.zoo-c canvas{width:96px;height:88px}
+.zoo-c b{font-size:15px}
+.zoo-c .zs{color:#e0a020;letter-spacing:1px}
+.zoo-c small{font-size:11.5px;color:var(--ink-2)}
+.zoo-c p{margin:4px 0 2px;font-size:12px;line-height:1.5;color:var(--ink-2);text-align:left}
+.zoo-c.unk b{color:#a8957c}
+.zt{display:flex;flex-wrap:wrap;gap:3px;justify-content:center}
+.zt span{font-size:10.5px;padding:1px 6px;border-radius:8px;background:#e2d2b5;color:#a8957c;font-weight:800}
+.zt span.on{color:#fff}
+.pdbtn{flex-direction:row;justify-content:flex-start;gap:12px;padding:12px 16px;width:100%;max-width:560px}
+.mbtn span{font-size:18px}

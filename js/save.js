@@ -1,7 +1,7 @@
 // ご注文は満タンで：保存データの読み書き
 /* ---------- 保存 ---------- */
 const KEY = "tokutoku-fever-v1";
-const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, cb:false, profile:null, cos:[], prep:{stars:{}, best:{}}, playDays:0, lastDay:"", tutDone:false, endingSeen:false, rec:{}, dailyHist:{}, claimed:{}, titles:[], titleSel:null, decor:{owned:[], ceil:null, wall:null, counter:null}, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0});
+const fresh = () => ({special:[], wallet:0, total:0, stars:{}, best:{}, upg:{}, owned:["classic","walnut"], bottle:"classic", room:"walnut", trophies:{}, stats:{served:0, bottles:0, maxCombo:0, allHappy:0}, sound:true, cb:false, profile:null, cos:[], prep:{stars:{}, best:{}}, playDays:0, lastDay:"", tutDone:false, endingSeen:false, rec:{}, dailyHist:{}, claimed:{}, titles:[], titleSel:null, decor:{owned:[], ceil:null, wall:null, counter:null}, backupT:0, backupTotal:0, bgmVol:.6, seVol:1, endless:{best:0, lv:0, served:0}, daily:{}, dailyClears:0, tips:{}, zoo:{}, friends:{}, prepDaily:null, prepDailyHist:{}, prepDailyClears:0});
 let save = fresh();
 // 型がおかしい項目（null・文字列になった数字など）は初期値に戻してから読む（データが一部壊れても起動できるように）
 function sanitizeSave(s){

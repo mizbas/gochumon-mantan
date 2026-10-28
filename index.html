@@ -41,6 +41,8 @@
     <div class="menu-row">
       <button class="mbtn" id="shopBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1.5 11h-13z"/><path d="M8 9V7a4 4 0 0 1 8 0v2"/></svg>ショップ</button>
       <button class="mbtn" id="trophyBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M9 20h6"/></svg>ランクとトロフィー</button>
+      <button class="mbtn" id="friendBtn"><span aria-hidden="true">👥</span>友達と比べる</button>
+      <button class="mbtn" id="zooBtn"><span aria-hidden="true">📖</span>お客さん図鑑</button>
       <button class="mbtn" id="setBtn" style="grid-column:1/-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>設定・データの引き継ぎ</button>
     </div>
     <div class="foot">
@@ -155,6 +157,14 @@
   </div>
 </div>
 
+<div id="tipOv" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="tipH" style="z-index:6">
+  <div class="card">
+    <div class="tipic" id="tipIc" aria-hidden="true"></div>
+    <h2 id="tipH"></h2>
+    <p class="rules" id="tipP"></p>
+    <div class="btns"><button class="b-main" id="tipGo">わかった</button></div>
+  </div>
+</div>
 <div id="profile" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="pfH">
   <div class="card">
     <h2 id="pfH">プロフィール</h2>
@@ -203,6 +213,31 @@
   </div>
 </div>
 
+<div id="friendsOv" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="frH">
+  <div class="card">
+    <h2 id="frH">友達と比べる</h2>
+    <div id="frBoards"></div>
+    <div class="set-h">記録を送り合う</div>
+    <p class="set-p">「自分の記録を送る」でできたメッセージを、LINEなどで友達に送ります。友達から届いたメッセージは、まるごと下に貼ってください。インターネットに記録を送ることはありません。</p>
+    <div class="set-btns"><button class="m" id="frShare">自分の記録を送る</button></div>
+    <textarea id="frIn" class="frin" placeholder="ここに友達から届いたメッセージを貼り付け" spellcheck="false" autocomplete="off"></textarea>
+    <div class="set-btns"><button class="m" id="frAdd">友達の記録を入れる</button></div>
+    <div id="frMsg" class="frmsg" role="status" aria-live="polite"></div>
+    <div id="frList"></div>
+    <button class="close" id="frClose">閉じる</button>
+  </div>
+</div>
+
+<div id="zooOv" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="zooH">
+  <div class="card">
+    <h2 id="zooH">お客さん図鑑</h2>
+    <p class="set-p" style="text-align:center" id="zooSum"></p>
+    <div class="zoo-list" id="zooList"></div>
+    <p class="set-p" style="text-align:center">下の札は、そのお客さんが常連さん・評論家などとして来て満足したことがあるかです。</p>
+    <button class="close" id="zooClose">閉じる</button>
+  </div>
+</div>
+
 <div id="gInfo" class="ginfo hidden" role="status" aria-live="polite"></div>
 
 <div id="guideOv" class="ov hidden" role="dialog" aria-modal="true" aria-labelledby="guideH" style="z-index:8">
@@ -232,6 +267,7 @@
 <script src="js/game.js"></script>
 <script src="js/scene.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/social.js"></script>
 <script src="js/boot.js"></script>
 </body>
 </html>

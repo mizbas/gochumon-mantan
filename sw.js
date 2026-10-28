@@ -1,11 +1,11 @@
 // ご注文は満タンで オフライン用
 // ゲームを更新するときは VERSION だけ書き換える。
 // ブラウザはこの小さなファイル（約1KB）だけを確かめ、変わっていたときだけ新しい版をダウンロードする。
-const VERSION = "2026-10-28k";
+const VERSION = "2026-10-29a";
 const APP = "tokutoku-app-" + VERSION;        // ゲーム本体（版ごと）
 const STATIC = "tokutoku-static-v2";           // アイコン・フォント・効果音・BGM（版をまたいで使い回す）
 const APP_FILES = ["./", "index.html", "manifest.json", "css/style.css",
-  "js/data.js", "js/save.js", "js/audio.js", "js/draw.js", "js/game.js", "js/scene.js", "js/ui.js", "js/boot.js"];
+  "js/data.js", "js/save.js", "js/audio.js", "js/draw.js", "js/game.js", "js/scene.js", "js/ui.js", "js/social.js", "js/boot.js"];
 // 効果音（js/sounds.js）はほとんど変わらないので、版をまたいで使い回す（中身を変えるときはファイル名を変える）
 const STATIC_FILES = ["icon-180.png", "icon-192.png", "icon-512.png", "js/sounds.js"];
 

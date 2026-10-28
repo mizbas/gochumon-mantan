@@ -119,6 +119,7 @@ const PREP_N = 8;
 const prepId = (c, n) => `p${c}-${n}`, prepName = id => "仕込み " + id.slice(1);
 const prepCache = {};
 function prepDef(id){
+  if (id === "pd") return prepDailyDef();
   const [c, n] = id.slice(1).split("-").map(Number), [k, e, hide, ice] = PREP_CH[c-1];
   if (!prepCache[id]) prepCache[id] = prepGen(k, e, CAP, c*1000 + n*37 + 11, mulberry);
   const g = prepCache[id];
@@ -148,6 +149,7 @@ function prepHintGo(){
   prepHint = {from: sol[0].from, to: sol[0].to, used: true}; sel = -1; play("kira", {gain:.4}); hud();
 }
 function endPrep(){
+  if (S.daily) return endPrepDaily();
   running = false; sel = -1;
   const id = S.pid, st = prepStars(), first = !(save.prep.stars[id] >= 1), prev = save.prep.best[id];
   if (st > (save.prep.stars[id] || 0)) save.prep.stars[id] = st;
@@ -169,6 +171,9 @@ let resNext = null;
 function openPrepSel(){
   ["map","play","result","intro"].forEach(id => $(id).classList.add("hidden"));
   const box = $("prepList"); box.innerHTML = "";
+  { const pd = pdToday(), c = prepDailyCh(), [k] = PREP_CH[c-1], b = document.createElement("button"); b.className = "spbtn pdbtn";
+    b.innerHTML = `<span class="ic">📅</span><span style="text-align:left"><b>今日の仕込み（${prepDailyWd()}曜日）</b><small>みんな同じ1問・${k}色　${pd && pd.best ? `今日のベスト ${pd.best}手 ${"★".repeat(pd.st)}` : "まだ解いていません"}</small></span>`;
+    b.onclick = () => { audio(); $("prepSel").classList.add("hidden"); showIntro("pd"); }; box.appendChild(b); }
   PREP_CH.forEach(([k, e, hide, ice], ci) => {
     const c = ci + 1, open = prepUnlocked(prepId(c, 1));
     let tot = 0; for (let n=1;n<=PREP_N;n++) tot += save.prep.stars[prepId(c, n)] || 0;
@@ -394,7 +399,7 @@ function updateSeats(){
         s.rush = s.vip = s.critic = false; s.cock = genCock(); s.order = []; s.got = []; s.res = []; s.pat = S.pat*1000*(1.2 + .15*s.cock.length)*(1 + .12*upg("pat")); }
       s.regular = !s.cock && !s.rush && !s.vip && !s.critic && !(typeof stg === "number" && stg < 1) && rnd() < .12; if (s.regular) s.pat *= 1.4;
       if (s.vip){ const two = newOrder(2); s.order = [two[0], two[0], two[1], two[1]]; s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order)*1.25; }
-      play("door", {gain:.3}); hud();
+      zooSeen(s); play("door", {gain:.3}); hud();
     }
     if (s.state === "in" && T - s.t0 > 450){ s.state = "wait"; s.t0 = T; }
     if (s.state === "wait" && !s.res.some(Boolean) && T - s.t0 > s.pat) leave(k, "timeout");
@@ -405,6 +410,7 @@ function updateSeats(){
   if (!ended && guestsLeft === 0 && seats.every(s => s.state === "empty") && !flights.length) endStage();
 }
 function payGuest(k){
+  zooServed(seats[k]);
   const s = seats[k], n = s.cock ? (s.cock.length >= 4 ? 3 : 2.4) : s.order.length, sp = lay.seatPos[k];
   const left = Math.max(0, 1 - (T - s.t0)/s.pat);
   const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1)*(s.critic ? 2.5 : 1)*(happyNow() ? 1.5 : 1);
@@ -691,7 +697,7 @@ function prepProgress(){
 }
 function hud(){
   if (S.mode === "prep"){
-    $("lvlV").textContent = S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `仕込み・目安${S.par}手`; $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
+    $("lvlV").textContent = S.daily ? "今日" : S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `${S.daily ? "今日の仕込み" : "仕込み"}・目安${S.par}手`; $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
     // ゲージは完成までの進み具合（色ごとに、瓶の底からそろっている数）。色はいまの★（3=緑・2=黄・1=赤）
     const st = prepStars();
     $("moneyBar").style.width = (prepProgress()*100) + "%"; $("moneyBar").style.background = st >= 3 ? "var(--good)" : st === 2 ? "var(--amber)" : "#ef6b5b";
@@ -759,7 +765,7 @@ function frame(ts){
   if (running && !paused){
     T += dt*SPEED;
     if (T >= iceTick){ iceTick = T + (S.mode === "prep" ? 15000 : 10000); if (bottles.some(b => b.ice)) thaw(); }
-    coldWave(); lockWave(); stockFix();
+    coldWave(); lockWave(); stockFix(); tipCheck();
     if (S.dark && T >= darkT + DARK_LEN){ darkT = T + 26000; }
     if (S.dark && darkSoon() && !S._dw){ S._dw = 1; floatText(W/2, lay.counterY + 40, "停電しそう…", "#9eb8f0", 1); }
     if (S.dark && darkNow() && S._dw === 1){ S._dw = 2; play("wrong", {gain:.2, rate:.6}); }
