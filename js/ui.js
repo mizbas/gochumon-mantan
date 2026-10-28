@@ -249,7 +249,7 @@ function showMap(){
     const list = STAGES.map((st,i) => ({st, i})).filter(o => o.st.w === wd.w), open = unlocked(list[0].i);
     let total = 0; list.forEach(o => total += save.stars[o.st.id] || 0);
     const sec = document.createElement("div"); sec.className = "world" + (open ? "" : " soon");
-    sec.innerHTML = `<h2>ワールド${wd.w}　${wd.name} <small>${open ? `★ ${total} / ${list.length*3}` : "🔒"}</small></h2>` + (open ? "" : `<p>${STAGES[list[0].i-1].id} をクリアするとオープンします。</p>`);
+    sec.innerHTML = `<h2><span class="wn">ワールド${wd.w}　${wd.name}</span><small>${open ? `★ ${total} / ${list.length*3}` : "🔒"}</small></h2>` + (open ? "" : `<p>${STAGES[list[0].i-1].id} をクリアするとオープンします。</p>`);
     const grid = document.createElement("div"); grid.className = "stages";
     list.forEach(({st, i}) => {
       const s2 = save.stars[st.id] || 0, lock = !unlocked(i);

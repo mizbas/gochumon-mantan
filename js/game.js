@@ -696,7 +696,7 @@ function hud(){
     $("m1").style.left = "-10%"; $("m2").style.left = "-10%"; $("m3").style.left = "-10%";
     $("sandBtn").classList.remove("hidden"); $("sandBtn").disabled = false; $("sandBtn").textContent = "💡 ヒント";
     $("undoBtn").disabled = !(undoSnap || undoStack.length); $("undoBtn").textContent = "↶ 戻す";
-    $("buyBtn").disabled = bought >= 1; $("buyBtn").innerHTML = bought >= 1 ? "空き瓶の追加は1回まで" : "空き瓶 +1（★が1つ減る）";
+    $("buyBtn").disabled = bought >= 1; $("buyBtn").innerHTML = bought >= 1 ? "空き瓶の追加は1回まで" : "空き瓶 +1（★−1）";
     return;
   }
   $("sandBtn").textContent = "⏳ 全員 +10秒";
