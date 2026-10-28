@@ -9,6 +9,7 @@ function profitHTML(pf){
     `＝ 利益 <b>${yen(pf.profit)}</b> を財布に入れました` + (money < pf.exp ? "（赤字の分は店長がかぶりました）" : "") + `（財布 ${yen(save.wallet)}）`;
 }
 function endStage(){
+  if (S.mode === "event") return endEventStage();
   if (S.mode) return endSpecial();
   ended = true; running = false; sel = -1;
   const id = S.id, clear = money >= S.goal, st = starsFor(stg, money);
@@ -42,7 +43,7 @@ function endStage(){
   if (rankAfter > rankBefore){ earned += `<br>ランクアップ！ <b>ランク${rankAfter}</b>（ごほうび +${yen(rankGift)}）`; setTimeout(() => { toastQ.push({ic:"⬆️", name:`ランク${rankAfter}になりました`, sub:"ランクアップ"}); runToast(); }, 900); }
   if (titleAfter !== titleBefore) earned += `<br>称号が <b>${titleAfter}</b> になりました！`;
   if (newTr.length) earned += `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>`;
-  earned += evAward(clear ? 1 : 0);
+  earned += evAward((clear ? 1 : 0) + evcServed);
   $("resEarned").innerHTML = earned + `</div>`;
   $("resStars").classList.remove("hidden");
   const last = stg === STAGES.length-1, endingNow = last && clear && !save.endingSeen;
@@ -96,7 +97,7 @@ function endSpecial(){
   if (branch) earned += `<br>二号店の評判ボーナス <b>+${yen(branch)}</b>`;
   if (rankAfter > rankBefore){ earned += `<br>ランクアップ！ <b>ランク${rankAfter}</b>（ごほうび +${yen(rankGift)}）`; setTimeout(() => { toastQ.push({ic:"⬆️", name:`ランク${rankAfter}になりました`, sub:"ランクアップ"}); runToast(); }, 900); }
   if (newTr.length) earned += `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>`;
-  earned += evAward(bonus ? 3 : 0);
+  earned += evAward((bonus ? 3 : 0) + evcServed);
   $("resEarned").innerHTML = earned + `</div>`;
   $("nextBtn").disabled = false; $("nextBtn").textContent = "記録をシェア";
   $("nextBtn").classList.remove("hidden");
@@ -116,12 +117,13 @@ function copyText(t, ta){
 $("retryBtn").onclick = () => { $("result").classList.add("hidden"); showIntro(stg); };
 $("resMap").addEventListener("click", () => { if (S && S.mode === "prep"){ setTimeout(openPrepSel, 0); } });
 $("nextBtn").onclick = () => {
+  if (S && S.mode === "event"){ evNext(); return; }
   if (S && S.daily){ shareMine("pd", $("nextBtn")); return; }
   if (S && S.mode === "prep"){ if (resNext){ $("result").classList.add("hidden"); showIntro(resNext); } return; }
   if (stg === STAGES.length-1){ $("result").classList.add("hidden"); showEnding(); return; }
   if (typeof stg === "string"){ if (stg === "daily" || stg === "endless") shareMine(stg, $("nextBtn")); return; }
   $("result").classList.add("hidden"); showIntro(stg+1); };
-$("resMap").onclick = () => { $("result").classList.add("hidden"); showMap(); };
+$("resMap").onclick = () => { $("result").classList.add("hidden"); if (S && S.mode === "event") openEvShop(); else showMap(); };
 
 /* ---------- トロフィー ---------- */
 let toastQ = [], toastOn = false;
@@ -154,7 +156,7 @@ function rewardBox(kinds){
 function stageRec(id){ const r = save.rec[id]; if (r) return r; return save.best[id] ? {best: save.best[id], plays: 0, clears: 0} : null; }
 function showIntro(i){
   stg = i; S = stageDef(i);
-  ["map","play","result","intro","prepSel"].forEach(id => $(id).classList.add("hidden"));
+  ["map","play","result","intro","prepSel","evShop"].forEach(id => $(id).classList.add("hidden"));
   $("openBtn").textContent = S.mode === "prep" ? "はじめる" : "開店する";
   if (S.mode === "prep"){
     $("introH").textContent = S.id;
@@ -169,6 +171,7 @@ function showIntro(i){
     $("introRec").innerHTML = recBox(`${S.id} の記録`, best ? [["ベスト", `${best}手`, 1], ["星", "★".repeat(st) + "☆".repeat(3-st)]] : [], "まだ記録はありません"); }
     $("intro").classList.remove("hidden"); bgm("prep"); return;
   }
+  if (S.mode === "event") return evIntro();
   if (S.mode === "endless"){
     $("introH").textContent = "エンドレス営業";
     $("introGoal").textContent = `ハート3つ・ベスト ${save.endless.best ? yen(save.endless.best) : "まだなし"}（最高レベル${save.endless.lv || 0}）`;
@@ -214,7 +217,7 @@ function showIntro(i){
   $("intro").classList.remove("hidden");
 }
 $("openBtn").onclick = () => { audio(); $("intro").classList.add("hidden"); $("play").classList.remove("hidden"); startStage(stg); };
-$("introBack").onclick = () => { $("intro").classList.add("hidden"); if (S && S.mode === "prep") openPrepSel(); else showMap(); };
+$("introBack").onclick = () => { $("intro").classList.add("hidden"); if (S && S.mode === "prep") openPrepSel(); else if (S && S.mode === "event") openEvShop(); else showMap(); };
 $("buyBtn").onclick = () => { if (!paused) buyBottle(); };
 $("undoBtn").onclick = () => { audio(); doUndo(); };
 $("sandBtn").onclick = () => { if (S && S.mode === "prep"){ audio(); prepHintGo(); return; }
@@ -245,7 +248,7 @@ const TIPS = {
   regular:  ["😊", "常連さん", "緑の札のお客さんは常連さん。待てる時間が長め（1.4倍）で、チップが2倍です。"],
   critic:   ["🎩", "評論家", "紫の札のお客さんは評論家。待てる時間が少し短めですが、満足させると代金2.5倍です。"],
   rush:     ["⏱️", "急ぎのお客さん", "赤い札のお客さんは急ぎ。待てる時間が短い（0.6倍）かわりに、代金1.4倍です。"],
-  fav:      ["💗", "大好物", "お客さんにはそれぞれ好きな色があります。「大好物」の札のお客さんは、注文に好きな色が入っていて代金1.2倍。<br>好きな色はお客さんをタップするか、図鑑で見られます。"],
+  fav:      ["💗", "大好物", "お客さんにはそれぞれ好きな色があります。ハートの印のお客さんは、注文に好きな色が入っていて代金1.2倍。<br>好きな色はお客さんをタップするか、図鑑で見られます。"],
   sig:      ["⭐", "看板メニュー", "あなたが決めた看板メニューの注文が来ました！ 代金1.5倍です。<br>看板メニューはプロフィールでいつでも変えられます。"],
   vip:      ["👥", "団体さん", "黄色の札のお客さんは団体さん。2色を2本ずつ、満タン瓶4本の大口注文です。待てる時間は長めで、代金は2倍。"]
 };
@@ -267,12 +270,14 @@ function tipNeed(){
   const g = t => seats.some(s => (s.state === "in" || s.state === "wait") && s[t]);
   const on = {hide: S.hide, ice: S.ice, supply: S.supply && isFinite(S.supply), cocktail: S.cocktail || g("cock"), reserve: S.reserve, lock: S.lock || S.relock, dark: S.dark,
     happy: happyNow(), rush: g("rush"), vip: g("vip"), critic: g("critic"), regular: g("regular"), sig: g("sig"), fav: g("favHit")};
-  return TIP_ORDER.find(k => on[k] && !(save.tips || {})[k]) || null;
+  const k0 = TIP_ORDER.find(k => on[k] && !(save.tips || {})[k]); if (k0) return k0;
+  const e = evNow(); if (e && g("evc") && !(save.tips || {})["evc_" + e.id]) return "evc_" + e.id;
+  return null;
 }
 function tipCheck(){
   if (!running || paused || ended || tut || tipOpen || window.__bot || window.__noTips || performance.now() < tipT) return; tipT = performance.now() + 300;
   const k = tipNeed(); if (!k) return;
-  const [ic, name, desc] = TIPS[k]; tipOpen = k; save.tips = save.tips || {}; save.tips[k] = 1; persist();
+  const [ic, name, desc] = TIPS[k] || (() => { const e = evNow(); return [e.ic, e.chara.name, `${e.name}のあいだだけ来る、特別なお客さんです。<br>代金2倍で、満足させると${e.mark}が1つもらえます（${e.mark}をためると限定の小物と称号）。`]; })(); tipOpen = k; save.tips = save.tips || {}; save.tips[k] = 1; persist();
   paused = true; sel = -1;
   $("tipIc").textContent = ic; $("tipH").textContent = name; $("tipP").innerHTML = desc + `<br><small>（時間は止まっています。一時停止メニューの「お客さん・しかけの説明」でいつでも見られます）</small>`;
   $("tipOv").classList.remove("hidden"); play("kira", {gain:.35});
@@ -288,12 +293,12 @@ function resumeGame(){
 }
 $("homeBtn").onclick = () => { audio(); pauseGame(); };
 $("pauseGo").onclick = resumeGame;
-$("pauseTop").onclick = () => { $("tipOv").classList.add("hidden"); tipOpen = null; if (S && S.mode === "prep"){ $("pauseOv").classList.add("hidden"); running = false; paused = false; openPrepSel(); return; } if (tut){ tut = null; $("tutBox").classList.add("hidden"); } $("pauseOv").classList.add("hidden"); running = false; paused = false; $("rackAsk").classList.add("hidden"); showMap(); };
+$("pauseTop").onclick = () => { $("tipOv").classList.add("hidden"); tipOpen = null; if (S && S.mode === "prep"){ $("pauseOv").classList.add("hidden"); running = false; paused = false; openPrepSel(); return; } if (tut){ tut = null; $("tutBox").classList.add("hidden"); } $("pauseOv").classList.add("hidden"); running = false; paused = false; $("rackAsk").classList.add("hidden"); if (S && S.mode === "event") openEvShop(); else showMap(); };
 // アプリを裏に回したら自動で一時停止
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && running && !$("play").classList.contains("hidden")) pauseGame(); });
 function showMap(){
   running = false;
-  ["play","intro","result","shop","trophies"].forEach(id => $(id).classList.add("hidden")); $("map").classList.remove("hidden");
+  ["play","intro","result","shop","trophies","evShop"].forEach(id => $(id).classList.add("hidden")); $("map").classList.remove("hidden");
   $("walletV").textContent = yen(save.wallet);
   { const r = rankOf(save.total); $("rankV").textContent = `ランク${r}`; $("titleV").textContent = titleShown();
     $("rankBar").style.width = r >= RANK_MAX ? "100%" : Math.min(100, (save.total - rankReq(r))/(rankReq(r+1) - rankReq(r))*100) + "%"; }
@@ -452,6 +457,22 @@ const COS = [
   {t:"acc", id:"monocle", name:"片めがね",     src:"reward"},
   {t:"acc", id:"sakura",  name:"桜のかんざし",   src:"event", ev:"hanami"},
   {t:"acc", id:"dango",   name:"花見だんご",     src:"event", ev:"hanami"},
+  {t:"acc", id:"choco", name:"チョコのピン", src:"event", ev:"valentine"},
+  {t:"acc", id:"lovebox", name:"ハートの箱", src:"event", ev:"valentine"},
+  {t:"acc", id:"nanohana", name:"菜の花のかんざし", src:"event", ev:"hina"},
+  {t:"acc", id:"bonbori", name:"ぼんぼり", src:"event", ev:"hina"},
+  {t:"acc", id:"koi", name:"こいのぼりのピン", src:"event", ev:"kodomo"},
+  {t:"acc", id:"kashiwa", name:"かしわの葉", src:"event", ev:"kodomo"},
+  {t:"acc", id:"umbrella", name:"かさの帽子", src:"event", ev:"tsuyu"},
+  {t:"acc", id:"snail", name:"かたつむりのピン", src:"event", ev:"tsuyu"},
+  {t:"acc", id:"star2", name:"星のかざり", src:"event", ev:"tanabata"},
+  {t:"acc", id:"tanzaku", name:"笹かざり", src:"event", ev:"tanabata"},
+  {t:"acc", id:"furin", name:"風鈴", src:"event", ev:"natsu"},
+  {t:"acc", id:"kakigori", name:"かき氷の帽子", src:"event", ev:"natsu"},
+  {t:"acc", id:"moon", name:"お月さまの帽子", src:"event", ev:"tsukimi"},
+  {t:"acc", id:"susuki", name:"すすき", src:"event", ev:"tsukimi"},
+  {t:"acc", id:"momiji", name:"もみじのピン", src:"event", ev:"harvest"},
+  {t:"acc", id:"kuri", name:"くりのピン", src:"event", ev:"harvest"},
   {t:"acc", id:"pumpkin", name:"かぼちゃの帽子", src:"event", ev:"halloween"},
   {t:"acc", id:"witch",   name:"まほうの帽子",   src:"event", ev:"halloween"},
   {t:"acc", id:"antler",  name:"トナカイの角",   src:"event", ev:"xmas"},
@@ -517,6 +538,7 @@ function accDraw(c, acc, s, t){
       c.fillStyle = "#f6c945"; c.beginPath(); c.arc(s*.3, -s*.38, s*.03, 0, 7); c.fill(); c.strokeStyle = "#8a5a32"; c.lineWidth = s*.03; c.beginPath(); c.moveTo(s*.34, -s*.32); c.lineTo(s*.52, -s*.12); c.stroke(); break;
     case "dango": c.strokeStyle = "#c9a26a"; c.lineWidth = s*.03; c.beginPath(); c.moveTo(s*.12, -s*.2); c.lineTo(s*.56, -s*.82); c.stroke();
       [["#7cbf6a", .22], ["#fbf6ea", .34], ["#f7a8c4", .46]].forEach(([col, k]) => { c.fillStyle = col; c.beginPath(); c.arc(s*(.12 + .44*k/.5), -s*(.2 + .62*k/.5), s*.08, 0, 7); c.fill(); }); break;
+    default: emAcc(c, acc, s);
   }
 }
 function drawAvatar(c, p, x, y, s, t){
@@ -612,7 +634,9 @@ const GTYPE = {
   cock:    ["カクテル", "#d6418f", "カクテルグラスに、下から順に注文どおりの色を1杯ずつ重ねる"],
   resv:    ["予約", "#c9962e", "予約ボードに出ていた注文。来てすぐ出すと代金1.3倍"],
   sig:     ["看板メニュー", "#b5562a", "あなたのお店の看板メニューを注文。代金1.5倍"],
-  fav:     ["大好物", "#ef6b8a", "好きな色が注文に入っている。代金1.2倍"]
+  fav:     ["大好物", "#ef6b8a", "好きな色が注文に入っている。代金1.2倍"],
+  evc:     ["イベントのお客さん", "#c0392b", "イベントのあいだだけ来る特別なお客さん。代金2倍"],
+  pair:    ["ペア", "#ef6b8a", "同じ色を2本の注文。代金1.6倍"]
 };
 const GIMMICK = [
   ["？の色", "瓶の下のほうの色が隠れています。上を注ぎ出すと見えます"],
@@ -624,13 +648,13 @@ const GIMMICK = [
   ["停電", "7秒間、色が見えなくなります。灯台の光が当たった瓶だけ見えます"],
   ["ハッピーアワー", "20秒だけ代金が1.5倍になります"]
 ];
-function guestTypes(s){ const t = []; if (s.cock) t.push("cock"); if (s.rush) t.push("rush"); if (s.vip) t.push("vip"); if (s.critic) t.push("critic"); if (s.regular) t.push("regular"); if (s.resv) t.push("resv"); if (s.sig) t.push("sig"); else if (s.favHit) t.push("fav"); if (!t.length) t.push("plain"); return t; }
+function guestTypes(s){ const t = []; if (s.cock) t.push("cock"); if (s.rush) t.push("rush"); if (s.vip) t.push("vip"); if (s.critic) t.push("critic"); if (s.regular) t.push("regular"); if (s.resv) t.push("resv"); if (s.evc) t.push("evc"); if (s.pair) t.push("pair"); if (s.sig) t.push("sig"); else if (s.favHit) t.push("fav"); if (!t.length) t.push("plain"); return t; }
 let gInfoT = 0;
 function showGuestInfo(k){
   const s = seats[k], p = lay.seatPos[k], r = cv.getBoundingClientRect(), el = $("gInfo");
   const left = s.state === "wait" ? Math.max(0, Math.ceil((s.pat - (T - s.t0))/1000)) : Math.ceil(s.pat/1000);
   const order = s.cock ? "下から " + s.cock.map(c => CNAME[c]).join("→") : s.order.map((c, j) => CNAME[c] + (s.got[j] ? "✓" : "")).join("・");
-  el.innerHTML = `<b>${GNAME[s.g]}のお客さん</b>　あと${left}秒<br>` + guestTypes(s).map(t => `<span class="tg" style="background:${GTYPE[t][1]}">${GTYPE[t][0]}</span>${GTYPE[t][2]}`).join("<br>") + `<br><small>注文：${order}　好きな色：${CNAME[FAVC[s.g]]}</small>`;
+  el.innerHTML = `<b>${s.evc && evNow() ? evNow().chara.name : GNAME[s.g] + "のお客さん"}</b>　あと${left}秒<br>` + guestTypes(s).map(t => `<span class="tg" style="background:${GTYPE[t][1]}">${GTYPE[t][0]}</span>${GTYPE[t][2]}`).join("<br>") + `<br><small>注文：${order}　好きな色：${CNAME[FAVC[s.g]]}</small>`;
   el.classList.remove("hidden"); const w = el.offsetWidth; el.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + p.x - w/2)) + "px"; el.style.top = (r.top + p.y + 8) + "px";
   clearTimeout(gInfoT); gInfoT = setTimeout(() => el.classList.add("hidden"), 3200); play("pick", {gain:.3, rate:1.2});
 }
@@ -722,7 +746,7 @@ function renderShop(){
       DECOR.filter(d => d.slot === slot).forEach(d => {
         const owned = save.decor.owned.includes(d.id), on = save.decor[slot] === d.id, rw = REWARDS.find(r => r.give.decor === d.id);
         const el = document.createElement("div"); el.className = "item";
-        el.innerHTML = `<canvas width="88" height="120"></canvas><div class="t"><b>${owned ? d.name : "？？？"}</b>${owned ? (on ? "飾っています" : "持っています") : `${KNAME[rw.k](rw.v)}でもらえる`}</div>
+        el.innerHTML = `<canvas width="88" height="120"></canvas><div class="t"><b>${owned ? d.name : "？？？"}</b>${owned ? (on ? "飾っています" : "持っています") : `${rw ? KNAME[rw.k](rw.v) + "でもらえる" : d.how || ""}`}</div>
           <button class="buy ${on ? "on" : ""}" ${owned ? "" : "disabled"}>${!owned ? "🔒" : on ? "外す" : "飾る"}</button>`;
         const rm = ROOMS.find(r => r.id === save.room) || ROOMS[0], cvx = el.querySelector("canvas"), x = cvx.getContext("2d"), g = x.createLinearGradient(0,0,0,120); g.addColorStop(0, rm.wall[1]); g.addColorStop(1, rm.wall[2]);
         x.fillStyle = g; rr(x, 0, 0, 88, 120, 14); x.fill();

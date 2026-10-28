@@ -153,7 +153,7 @@ const GUESTS = [
 const FAVC = [0, 1, 4, 2, 3, 5, 6, 3, 7, 1, 3, 6, 4, 1];
 const GNAME = ["ねこ","くま","うさぎ","ねこ（グレー）","いぬ","くろくま"].concat(GUESTS.slice(6).map(g => g.name));
 function drawGuest(c, g, x, y, s, mood, t, noWear, wearCol){
-  const G = GUESTS[g];
+  const G = typeof g === "object" ? g : GUESTS[g];  // イベントのキャラクターは見た目を直接わたす
   c.save(); c.translate(x, y);
   if (!noWear){ c.fillStyle = wearCol || G.wear; rr(c, -s*.62, s*.42, s*1.24, s*.8, s*.35); c.fill(); }
   c.fillStyle = G.fur;

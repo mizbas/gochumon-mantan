@@ -47,7 +47,7 @@ let updateReady = false;
 function applyUpdate(){
   if (!updateReady) return;
   // 遊んでいる途中・何かの画面やウィンドウを開いている途中は読み込み直さない（マップだけのときに読み込む）
-  const busyNow = !$("play").classList.contains("hidden") || !$("prepSel").classList.contains("hidden") || !$("ending").classList.contains("hidden") || [...document.querySelectorAll(".ov")].some(o => !o.classList.contains("hidden"));
+  const busyNow = !$("play").classList.contains("hidden") || !$("prepSel").classList.contains("hidden") || !$("evShop").classList.contains("hidden") || !$("ending").classList.contains("hidden") || [...document.querySelectorAll(".ov")].some(o => !o.classList.contains("hidden"));
   if (busyNow) return;
   try { sessionStorage.setItem("justUpdated", "1"); } catch(e){}
   location.reload();

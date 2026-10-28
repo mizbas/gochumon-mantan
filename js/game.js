@@ -222,7 +222,7 @@ function startPrep(){
   $("rackAsk").classList.add("hidden"); $("tutBox").classList.add("hidden");
   layout(); hud();
 }
-function stageDef(i){ return i === "endless" ? ENDLESS() : i === "daily" ? dailyDef() : typeof i === "string" && i[0] === "p" ? prepDef(i) : STAGES[i]; }
+function stageDef(i){ return i === "endless" ? ENDLESS() : i === "daily" ? dailyDef() : typeof i === "string" && i.startsWith("ev") ? evStageDef(+i.slice(2)) : typeof i === "string" && i[0] === "p" ? prepDef(i) : STAGES[i]; }
 const specialOpen = k => (save.stars[k === "endless" ? "1-8" : "2-8"] || 0) >= 1;
 // エンドレス：5人満足させるごとにレベルが上がり、だんだん忙しくなる
 function endlessStep(){
@@ -251,7 +251,7 @@ function endlessStep(){
 function startStage(i){
   stg = i; S = stageDef(i); room = ROOMS.find(r => r.id === save.room) || ROOMS[0];
   rnd = S.mode === "daily" ? mulberry(S.seed) : Math.random; lives = 3; elvl = 1; runStart = Date.now();
-  bgm(S.mode || "w" + S.w);
+  bgm(S.mode && S.mode !== "event" ? S.mode : "w" + S.w);
   const pal = palette(), pool = [];
   if (S.mode === "prep") return startPrep();
   for (let k=0;k<S.shelf*CAP;k++) pool.push(pal[k % pal.length]);
@@ -275,6 +275,7 @@ function startStage(i){
   resQ = []; if (S.reserve){ resQ.push(newOrder(), newOrder()); }
   darkT = S.dark ? 22000 : Infinity; S._dw = 0;
   // 最初から凍っている瓶はなし（待ち時間が長くなるため）。凍るのは予告つきの寒波だけ
+  evStart();
   layout(); hud();
 }
 
@@ -405,7 +406,8 @@ function updateSeats(){
           else if (f < S.colors && !s.order.includes(f) && r2 < .35) s.order[Math.floor(r3*s.order.length)] = f;
           s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); }
         s.favHit = !s.cock && s.order.includes(f); }
-      zooSeen(s); play("door", {gain:.3}); hud();
+      evOnGuest(s, rnd());
+      zooSeen(s); evArrive(s, k); play("door", {gain:.3}); hud();
     }
     if (s.state === "in" && T - s.t0 > 450){ s.state = "wait"; s.t0 = T; }
     if (s.state === "wait" && !s.res.some(Boolean) && T - s.t0 > s.pat) leave(k, "timeout");
@@ -419,14 +421,14 @@ function payGuest(k){
   zooServed(seats[k]);
   const s = seats[k], n = s.cock ? (s.cock.length >= 4 ? 3 : 2.4) : s.order.length, sp = lay.seatPos[k];
   const left = Math.max(0, 1 - (T - s.t0)/s.pat);
-  const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1)*(s.critic ? 2.5 : 1)*(happyNow() ? 1.5 : 1)*(s.favHit ? 1.2 : 1)*(s.sig ? 1.5 : 1);
+  const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1)*(s.critic ? 2.5 : 1)*(happyNow() ? 1.5 : 1)*(s.favHit ? 1.2 : 1)*(s.sig ? 1.5 : 1)*evPay(s);
   const resvOK = s.resv && left > .6;
   if (resvOK){ floatText(sp.x, sp.y - 140, "予約どおり！ ×1.3", "#ffd56b", .9, 480); }
   const tip = base*(.3 + .1*upg("tip"))*(has("cat") ? 1.2 : 1)*(s.regular ? 2 : 1)*Math.max(0, (left - .5)/.5);
   if (s.critic) floatText(sp.x, sp.y - 120, "評論家「すばらしい！」", "#d6b3ff", .9, 360);
   if (s.sig) floatText(sp.x, sp.y - 146, "看板メニュー！ ×1.5", "#ffb27a", .9, 420); else if (s.favHit) floatText(sp.x, sp.y - 146, `大好物の${CNAME[FAVC[s.g]]}！ ×1.2`, "#ff9ec0", .8, 420);
   combo++; maxCombo = Math.max(maxCombo, combo);
-  const bonus = base*Math.min(has("juke") ? 2 : 1, (combo-1)*.1);
+  const bonus = base*Math.min(has("juke") ? 2 : 1, (combo-1)*.1)*(S.evg === "fire" ? 2 : 1);
   const total = Math.round((base + tip + bonus)*(resvOK ? 1.3 : 1)/10)*10;
   money += total; servedN++; if (S.mode === "endless"){ endlessStep(); claim("emon", money); }
   floatText(sp.x, sp.y - 40, `+${yen(total)}`, "#f2b54a", 1.3);
@@ -556,6 +558,7 @@ function cockState(){ // グラスの中身が、注文の下からの並びと�
   return {gi, u, g, ok, next: ok && u.length < g.cock.length ? g.cock[u.length] : null};
 }
 function genCock(){
+  if (S.evg === "hina") return [3, 1, 4]; // ひしもち：下から緑・黄・桃
   const pal = palette(), len = Math.round(RG(S.cockLen[0] - .49, S.cockLen[1] + .49)), cs = [];
   while (cs.length < Math.min(3, len - 1)){ const c = pick(pal); if (!cs.includes(c)) cs.push(c); }
   let p; do { p = []; for (let k=0;k<len;k++) p.push(pick(cs)); } while (new Set(p).size < 2);
@@ -580,7 +583,7 @@ function tapSupply(){
   sel = -1; snap();
   supplyLeft--; expSupply += SUPPLY_COST; floatText(lay.supply.x, lay.supply.y - lay.sh.H*.7, `仕入れ代 −${yen(SUPPLY_COST)}`, "#bba895", .7);
   bottles[i].units = stock.shift().map((c,j) => ({c, h: !!S.hide && j < CAP-1})); stock.push(stockUnits()); stockT = T;
-  bottles[i].refillT = T; waveT[i] = T;
+  bottles[i].refillT = T; waveT[i] = T; evOnSupply(i);
   pourSound(.45, 0, 1); play("pick", {gain:.4, rate:.95});
 }
 function findTarget(c){
@@ -772,7 +775,7 @@ function frame(ts){
   if (running && !paused){
     T += dt*SPEED;
     if (T >= iceTick){ iceTick = T + (S.mode === "prep" ? 15000 : 10000); if (bottles.some(b => b.ice)) thaw(); }
-    coldWave(); lockWave(); stockFix(); tipCheck();
+    coldWave(); lockWave(); stockFix(); tipCheck(); evTick();
     if (S.dark && T >= darkT + DARK_LEN){ darkT = T + 26000; }
     if (S.dark && darkSoon() && !S._dw){ S._dw = 1; floatText(W/2, lay.counterY + 40, "停電しそう…", "#9eb8f0", 1); }
     if (S.dark && darkNow() && S._dw === 1){ S._dw = 2; play("wrong", {gain:.2, rate:.6}); }
@@ -861,7 +864,7 @@ function slowLayer(name, need, paint, y0 = 0, y1 = lay.counterY + 24){
 // 注文の吹き出しは、中身が変わったときだけ描き直す（重さ対策）
 const BCACHE = new Map();
 function bubbleSprite(s, bw, bh, cell, n){
-  const key = [bw|0, bh|0, cell|0, s.cock ? s.cock.join("") : s.order.join(""), s.got.map(g => g ? 1 : 0).join(""), s.rush ? 1 : 0, s.vip ? 1 : 0, s.critic ? 1 : 0, s.regular ? 1 : 0, s.sig ? 1 : 0, s.favHit ? 1 : 0, save.cb ? 1 : 0].join("|");
+  const key = [bw|0, bh|0, cell|0, s.cock ? s.cock.join("") : s.order.join(""), s.got.map(g => g ? 1 : 0).join(""), s.rush ? 1 : 0, s.vip ? 1 : 0, s.critic ? 1 : 0, s.regular ? 1 : 0, s.sig ? 1 : 0, s.favHit ? 1 : 0, s.pair ? 1 : 0, save.cb ? 1 : 0].join("|");
   let sp = BCACHE.get(key);
   if (!sp){
     if (BCACHE.size > 120) BCACHE.clear();
@@ -877,7 +880,8 @@ function bubbleSprite(s, bw, bh, cell, n){
     if (s.cock) tag("カクテル", "#d6418f", "#fff");
     if (s.regular) tag("常連さん", "#3f8f4a", "#fff");
     if (s.sig) tag("看板メニュー", "#b5562a", "#fff");
-    if (s.favHit && !s.sig){ c.fillStyle = "#ef6b8a"; rr(c, bx - 2, by - 9, 40, 18, 9); c.fill(); c.fillStyle = "#fff"; c.font = `900 11px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("大好物", bx + 18, by); }
+    if (s.favHit && !s.sig){ c.fillStyle = "#ef6b8a"; c.beginPath(); c.arc(bx + 8, by, 10, 0, 7); c.fill(); c.fillStyle = "#fff"; heart(c, bx + 8, by + 1, 5); }
+    if (s.pair) tag("ペア", "#ef6b8a", "#fff");
     if (s.vip){ c.strokeStyle = "#e0a020"; c.lineWidth = 3; rr(c, bx, by, bw, bh, 14); c.stroke();
     c.fillStyle = "#e0a020"; rr(c, bx + bw - 40, by - 9, 42, 18, 9); c.fill(); c.fillStyle = "#2a1a0c"; c.font = `900 11px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("団体", bx + bw - 19, by); }
     c.fillStyle = "#f6ead6";

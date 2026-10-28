@@ -94,6 +94,11 @@ function drawFlowers(c, cy, lv){
   });
 }
 function drawDecor(c, id, x, y, s, t){ // x,y = 天井:左上(幅s) 壁:上の中心 カウンター:下の中心
+  { const d = DECOR.find(q => q.id === id); if (d && d.emoji){ c.save(); c.textAlign = "center"; const F = z => `${z}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+    if (d.slot === "ceil"){ c.font = F(Math.min(26, s*.09)); c.textBaseline = "top"; for (let k=0;k<5;k++){ const kx = (k + .5)/5; c.fillText(d.emoji, x + kx*s, y + 4 + 14*4*kx*(1-kx) + Math.sin(t/700 + k)*2); } }
+    else if (d.slot === "wall"){ c.font = F(s*.9); c.textBaseline = "top"; c.fillText(d.emoji, x, y); }
+    else { c.font = F(s*.9); c.textBaseline = "bottom"; c.fillText(d.emoji, x, y + 2); }
+    c.restore(); return; } }
   c.save(); c.lineCap = "round"; c.lineJoin = "round";
   const curve = (w, sag) => k => [k*w, 6 + sag*4*k*(1-k)];
   switch (id){
@@ -187,7 +192,7 @@ function draw(){
     if (s.state === "wait"){ const left = 1 - (T - s.t0)/s.pat; mood = left > .6 ? "happy" : left > .3 ? "ok" : left > .15 ? "worried" : "angry"; }
     if (s.state === "leave") mood = s.mood;
     ctx.save(); ctx.globalAlpha = alpha; ctx.beginPath(); ctx.rect(0, 0, W, cy); ctx.clip();
-    drawGuest(ctx, s.g, p.x, headY + dy, size, mood, T + k*700);
+    if (s.evc && evNow()) evDrawChara(ctx, evNow(), p.x, headY + dy, size, mood, T + k*700); else drawGuest(ctx, s.g, p.x, headY + dy, size, mood, T + k*700);
     evGuestHat(ctx, s, k, p.x, headY + dy, size, T);
     if (s.critic){ const hx = p.x, hy = headY + dy; ctx.fillStyle = "#2a2440"; ctx.beginPath(); ctx.ellipse(hx - size*.05, hy - size*.4, size*.36, size*.13, -.15, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(hx + size*.1, hy - size*.52, size*.05, 0, 7); ctx.fill();
       ctx.strokeStyle = "#e0b54a"; ctx.lineWidth = Math.max(1.5, size*.04); ctx.beginPath(); ctx.arc(hx + size*.16, hy - size*.03, size*.1, 0, 7); ctx.moveTo(hx + size*.26, hy); ctx.lineTo(hx + size*.32, hy + size*.25); ctx.stroke(); }

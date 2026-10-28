@@ -132,6 +132,9 @@ function openZoo(){
   $("zooList").querySelectorAll("canvas").forEach(cv2 => { const g = +cv2.dataset.g, x = cv2.getContext("2d"), seen = z[g] && z[g].n > 0;
     x.clearRect(0, 0, 120, 110); drawGuest(x, g, 60, 64, 42, "happy", 600);
     if (!seen){ x.save(); x.globalCompositeOperation = "source-in"; x.fillStyle = "rgba(70,50,38,.45)"; x.fillRect(0, 0, 120, 110); x.restore(); } });
+  { const met = save.evMet || {}, ev = EVENTS.filter(e => met[e.id]);
+    $("zooEv").innerHTML = `<div class="set-h">イベントのお客さん（${ev.length} / ${EVENTS.length}）</div>` + (ev.length ? `<div class="zoo-list">` + ev.map(e => `<div class="zoo-c"><canvas width="120" height="110" data-e="${e.id}"></canvas><b>${e.chara.name}</b><small>${e.name}・満足 ${met[e.id]}人</small><p>「${e.chara.line}」</p></div>`).join("") + `</div>` : `<p class="set-p">毎月のイベントのあいだだけ来る、特別なお客さんです。</p>`);
+    $("zooEv").querySelectorAll("canvas").forEach(cv2 => { const x = cv2.getContext("2d"), e = EVENTS.find(q => q.id === cv2.dataset.e); x.clearRect(0, 0, 120, 110); evDrawChara(x, e, 60, 60, 40, "happy", 600); }); }
   $("zooOv").classList.remove("hidden"); $("zooOv").querySelector(".card").scrollTop = 0;
 }
 $("zooBtn").onclick = openZoo;

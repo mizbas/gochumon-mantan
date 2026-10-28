@@ -63,6 +63,15 @@
 </section>
 
 <!-- プレイ -->
+<section id="evShop" class="screen hidden">
+  <div class="wrap">
+    <div class="topbar"><button class="link" id="evBack" style="color:var(--cream);text-decoration:none;font-weight:900">‹ マップへ</button><div class="badge"><b id="evSub"></b></div></div>
+    <h2 class="evh" id="evH"></h2>
+    <div class="evchara"><canvas id="evChara" width="150" height="150" aria-hidden="true"></canvas><div id="evCharaT"></div></div>
+    <p class="evinfo" id="evInfo"></p>
+    <div class="world"><h2><span class="wn">イベントのステージ</span><small>クリアで次がひらく</small></h2><div class="stages" id="evStages"></div></div>
+  </div>
+</section>
 <section id="play" class="screen hidden">
   <div class="hud">
     <div class="row1">
@@ -238,6 +247,7 @@
     <h2 id="zooH">お客さん図鑑</h2>
     <p class="set-p" style="text-align:center" id="zooSum"></p>
     <div class="zoo-list" id="zooList"></div>
+    <div id="zooEv"></div>
     <p class="set-p" style="text-align:center">下の札は、そのお客さんが常連さん・評論家などとして来て満足したことがあるかです。</p>
     <button class="close" id="zooClose">閉じる</button>
   </div>
