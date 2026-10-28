@@ -46,7 +46,8 @@ showMap();
 let updateReady = false;
 function applyUpdate(){
   if (!updateReady) return;
-  const busyNow = !$("play").classList.contains("hidden") || !$("intro").classList.contains("hidden") || !$("result").classList.contains("hidden") || !$("settings").classList.contains("hidden") || !$("profile").classList.contains("hidden") || !$("prepSel").classList.contains("hidden");
+  // 遊んでいる途中・何かの画面やウィンドウを開いている途中は読み込み直さない（マップだけのときに読み込む）
+  const busyNow = !$("play").classList.contains("hidden") || !$("prepSel").classList.contains("hidden") || !$("ending").classList.contains("hidden") || [...document.querySelectorAll(".ov")].some(o => !o.classList.contains("hidden"));
   if (busyNow) return;
   try { sessionStorage.setItem("justUpdated", "1"); } catch(e){}
   location.reload();
@@ -66,3 +67,8 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
 try { if (sessionStorage.getItem("justUpdated")){ sessionStorage.removeItem("justUpdated");
   setTimeout(() => { toastQ.push({ic:"✨", name:"最新版に更新しました", sub:"お知らせ"}); runToast(); }, 600); } } catch(e){}
 window.__g = { get stored(){ return stored; }, get ice(){ return bottles.map(b => b.ice || 0); }, get stats(){ return {money, servedN, missed, dumped, maxCombo, bottlesOut, elvl, lives, sup: expSupply/SUPPLY_COST}; }, exportCode, importCode, dailyDef, drawAvatar, get bgm(){ return [bgmKey, !!bgmNode, bgmNode ? [bgmNode.loopStart, bgmNode.loopEnd, bgmNode.buffer.duration] : null]; }, set speed(v){ SPEED = v; }, showIntro, get ended(){ return ended; }, get save(){ return save; }, drawVessel, bottleShape };
+// 同じゲームを別のタブでも開いているとき：そちらで記録が変わったら、こちらも読み直す（古い記録で上書きしないように）
+window.addEventListener("storage", e => {
+  if (e.key !== KEY || !e.newValue) return;
+  try { const s = JSON.parse(e.newValue); if (s && s.stats){ save = loadSave(s); ensureProfile(); if (!$("map").classList.contains("hidden")) showMap(); } } catch(err){}
+});

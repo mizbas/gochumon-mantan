@@ -500,6 +500,7 @@ function tapBottle(i){
   }
   if (sel === i){ sel = -1; play("pick", {gain:.35, rate:.9}); return; }
   const a = bottles[sel]; if (!a.units.length){ sel = -1; return; }
+  revealTop(sel); if (!topRun(a.units)){ sel = -1; return; } // 念のため：一番上が「？」のままなら見せてから
   const c = a.units[a.units.length-1].c;
   if (b.units.length >= CAP || (b.units.length && b.units[b.units.length-1].c !== c)){ shakeT[i] = T; play("bad", {gain:.3}); return; }
   snap(); startPour(sel, i, Math.min(topRun(a.units), CAP - b.units.length)); sel = -1;
@@ -656,6 +657,7 @@ function landFlight(f){
 }
 
 function startPour(from, to, n){
+  if (!(n > 0) || !bottles[from].units.length) return;
   const src = bottles[from].units, dst = bottles[to].units;
   const srcBefore = src.map(u => ({...u})), dstBefore = dst.map(u => ({...u}));
   const moved = src.splice(src.length - n, n); moved.forEach(u => dst.push({c:u.c}));
