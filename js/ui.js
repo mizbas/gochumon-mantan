@@ -155,7 +155,7 @@ function rewardBox(kinds){
 }
 function stageRec(id){ const r = save.rec[id]; if (r) return r; return save.best[id] ? {best: save.best[id], plays: 0, clears: 0} : null; }
 function showIntro(i){
-  stg = i; S = stageDef(i);
+  stg = i; S = stageDef(i); setDrinkTheme(); setTimeout(addDrinkList, 0);
   ["map","play","result","intro","prepSel","evShop"].forEach(id => $(id).classList.add("hidden"));
   $("openBtn").textContent = S.mode === "prep" ? "はじめる" : "開店する";
   if (S.mode === "prep"){
@@ -234,6 +234,12 @@ function pauseGame(){
   $("pauseP").innerHTML = S.mode === "prep" ? `いま ${prepMoves}手（目安 ${S.par}手）<br><small>やめると、この仕込みは最初からになります</small>` : `時間は止まっています。<br>いまの売上 <b>${yen(money)}</b>` + (S.mode === "endless" ? "" : `（目標 ${yen(S.goal)}）`) + `<br><small>マップに戻ると、このステージの売上は入りません</small>`;
   $("pauseTop").textContent = S.mode === "prep" ? "仕込みをやめる" : "お店を閉めてマップに戻る";
   $("pauseOv").classList.remove("hidden"); play("pick", {gain:.4});
+}
+// 説明画面に、このお店の飲み物の一覧を出す
+function addDrinkList(){
+  if (!S || S.mode === "prep" || $("intro").classList.contains("hidden") || $("introRules").querySelector(".drinks")) return;
+  const pal = [...Array(S.colors).keys()];
+  $("introRules").insertAdjacentHTML("beforeend", `<div class="drinks"><b>このお店の飲み物</b>` + pal.map(c => `<span><i style="background:${COLORS[c]}"></i>${drinkName(c)}</span>`).join("") + `</div>`);
 }
 /* ---------- しかけ・お客さんの初回の説明（1回だけ） ---------- */
 const TIPS = {
@@ -653,7 +659,7 @@ let gInfoT = 0;
 function showGuestInfo(k){
   const s = seats[k], p = lay.seatPos[k], r = cv.getBoundingClientRect(), el = $("gInfo");
   const left = s.state === "wait" ? Math.max(0, Math.ceil((s.pat - (T - s.t0))/1000)) : Math.ceil(s.pat/1000);
-  const order = s.cock ? "下から " + s.cock.map(c => CNAME[c]).join("→") : s.order.map((c, j) => CNAME[c] + (s.got[j] ? "✓" : "")).join("・");
+  const order = s.cock ? "下から " + s.cock.map(c => CNAME[c]).join("→") : s.order.map((c, j) => drinkName(c) + (s.got[j] ? "✓" : "")).join("・");
   el.innerHTML = `<b>${s.evc && evNow() ? evNow().chara.name : GNAME[s.g] + "のお客さん"}</b>　あと${left}秒<br>` + guestTypes(s).map(t => `<span class="tg" style="background:${GTYPE[t][1]}">${GTYPE[t][0]}</span>${GTYPE[t][2]}`).join("<br>") + `<br><small>注文：${order}　好きな色：${CNAME[FAVC[s.g]]}</small>`;
   el.classList.remove("hidden"); const w = el.offsetWidth; el.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + p.x - w/2)) + "px"; el.style.top = (r.top + p.y + 8) + "px";
   clearTimeout(gInfoT); gInfoT = setTimeout(() => el.classList.add("hidden"), 3200); play("pick", {gain:.3, rate:1.2});

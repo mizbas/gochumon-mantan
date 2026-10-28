@@ -103,7 +103,7 @@ const evId = n => "ev" + n;
 const evOpen = n => { const e = evNow(); if (!e) return false; if (n === 1) return true; return (evRec(e).st[n-1] || 0) >= 1; };
 function evStageDef(n){
   const e = evNow() || EVENTS.find(x => x.id === "halloween"), colors = [4, 5, 5, 6, 6][n-1];
-  const d = {id: `${e.ic}${n}`, mode: "event", ev: e.id, evg: e.gm, n, w: e.w, colors, ord: n <= 2 ? [1,2] : [1,3], seats: 3, guests: 9 + n, pat: 60, shelf: colors, spare: 2, goal: [3200, 3800, 4400, 5000, 5600][n-1]};
+  const d = {id: `${e.ic}${n}`, mode: "event", ev: e.id, evg: e.gm, n, w: e.w, colors, ord: n <= 2 ? [1,2] : [1,3], seats: 3, guests: 9 + n, pat: 60, shelf: colors, spare: 2, goal: [3800, 4500, 5200, 6000, 6700][n-1]};
   if (e.gm === "hide" || e.gm === "gift"){ d.hide = true; d.pat += 4; d.goal -= 200; }
   if (e.gm === "hina"){ d.colors = d.shelf = Math.max(5, colors); d.cocktail = .4; d.cockLen = [3, 3]; d.pat += 4; }
   if (e.gm === "dango"){ d.cocktail = .4; d.cockLen = [3, 3]; d.pat += 4; }

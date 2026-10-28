@@ -249,7 +249,7 @@ function endlessStep(){
 }
 
 function startStage(i){
-  stg = i; S = stageDef(i); room = ROOMS.find(r => r.id === save.room) || ROOMS[0];
+  stg = i; S = stageDef(i); setDrinkTheme(); room = ROOMS.find(r => r.id === save.room) || ROOMS[0];
   rnd = S.mode === "daily" ? mulberry(S.seed) : Math.random; lives = 3; elvl = 1; runStart = Date.now();
   bgm(S.mode && S.mode !== "event" ? S.mode : "w" + S.w);
   const pal = palette(), pool = [];
@@ -864,7 +864,7 @@ function slowLayer(name, need, paint, y0 = 0, y1 = lay.counterY + 24){
 // 注文の吹き出しは、中身が変わったときだけ描き直す（重さ対策）
 const BCACHE = new Map();
 function bubbleSprite(s, bw, bh, cell, n){
-  const key = [bw|0, bh|0, cell|0, s.cock ? s.cock.join("") : s.order.join(""), s.got.map(g => g ? 1 : 0).join(""), s.rush ? 1 : 0, s.vip ? 1 : 0, s.critic ? 1 : 0, s.regular ? 1 : 0, s.sig ? 1 : 0, s.favHit ? 1 : 0, s.pair ? 1 : 0, save.cb ? 1 : 0].join("|");
+  const key = [bw|0, bh|0, cell|0, s.cock ? s.cock.join("") : s.order.join(""), s.got.map(g => g ? 1 : 0).join(""), s.rush ? 1 : 0, s.vip ? 1 : 0, s.critic ? 1 : 0, s.regular ? 1 : 0, s.sig ? 1 : 0, s.favHit ? 1 : 0, s.pair ? 1 : 0, save.cb ? 1 : 0, drinkTheme].join("|");
   let sp = BCACHE.get(key);
   if (!sp){
     if (BCACHE.size > 120) BCACHE.clear();
@@ -887,7 +887,10 @@ function bubbleSprite(s, bw, bh, cell, n){
     c.fillStyle = "#f6ead6";
     c.beginPath(); c.moveTo(px - 7, by + bh - 1); c.lineTo(px, by + bh + 8); c.lineTo(px + 7, by + bh - 1); c.fill();
     if (s.cock) drawCock(c, px, by + bh - 13, bh*.66, s.cock, false);
-    else s.order.forEach((cc, j) => miniBottle(c, px + (j - (n-1)/2)*cell, by + bh - 14, bh*.62, COLORS[cc], s.got[j], cc));
+    else s.order.forEach((cc, j) => { const mx = px + (j - (n-1)/2)*cell; miniBottle(c, mx, by + bh - 14, (bh - 13)*.62, COLORS[cc], s.got[j], cc);
+      // 飲み物の名前（小さく、瓶の上に）
+      const nm = drinkOf(cc).short, fs = Math.min(10.5, (bh - 13)*.18); c.font = `900 ${fs}px "Zen Kaku Gothic New",sans-serif`; const tw = c.measureText(nm).width, sc = Math.min(1, (cell - 3)/tw);
+      c.save(); c.translate(mx, by + 16); c.scale(sc, 1); c.fillStyle = s.got[j] ? "rgba(90,60,40,.4)" : "#5a3a24"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(nm, 0, 0); c.restore(); });
     sp = {cv: cv2, w, h}; BCACHE.set(key, sp);
   }
   return sp;

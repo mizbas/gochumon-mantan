@@ -307,3 +307,8 @@ h1{font-family:var(--hand);font-weight:400;font-size:clamp(34px,10vw,48px);line-
 .evinfo b{color:var(--cream)}
 .evb{cursor:pointer}
 .evb .evgo{flex:none;font-weight:900;font-size:13px;color:var(--ev1,#f08a24);white-space:nowrap}
+
+.drinks{display:flex;flex-wrap:wrap;gap:4px 10px;margin-top:8px;padding-top:8px;border-top:1px dashed #dcc9a8;font-size:12.5px}
+.drinks b{width:100%;font-size:13px}
+.drinks span{display:inline-flex;align-items:center;gap:4px}
+.drinks i{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}

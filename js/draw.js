@@ -62,7 +62,7 @@ const VCACHE = new Map(), VRES = 2;
 function drawVessel(c, sh, x, y, a, layers0, o={}){
   const still = a === 0 && !o.wave && o.alpha == null && (o.cork == null || o.cork === 1) && layers0.every(L => Number.isInteger(L.v) && (L.rev == null || o.t == null || o.t - L.rev >= 320));
   if (!still) return drawVesselRaw(c, sh, x, y, a, layers0, o);
-  const key = sh.style + "|" + sh.w + "|" + layers0.map(L => L.c + (L.h ? "h" : "") + L.v).join(",") + "|" + (o.cork == null ? "" : 1) + (o.sel ? "s" : "") + (o.glow ? "g" : "") + (o.dark ? "d" : "") + (save.cb ? "c" : "");
+  const key = sh.style + "|" + sh.w + "|" + layers0.map(L => L.c + (L.h ? "h" : "") + L.v).join(",") + "|" + (o.cork == null ? "" : 1) + (o.sel ? "s" : "") + (o.glow ? "g" : "") + (o.dark ? "d" : "") + (save.cb ? "c" : "") + drinkTheme;
   let sp = VCACHE.get(key);
   if (!sp){
     if (VCACHE.size > 160) VCACHE.clear();
@@ -99,6 +99,7 @@ function drawVesselRaw(c, sh, x, y, a, layers0, o={}){
     if (isTop && o.wave){ const A = o.wave, k = 2*Math.PI/(sh.w*1.1); c.moveTo(minX-2, prevY); for (let px = minX-2; px <= maxX+2; px += 3) c.lineTo(px, yTop + Math.sin(px*k + (o.t||0)/90)*A); c.lineTo(maxX+2, prevY); }
     else c.rect(minX-2, yTop, maxX-minX+4, prevY - yTop + .6);
     c.fill();
+    if (!L.h && !o.dark && Math.abs(a) < .05 && L.rev == null) drinkTex(c, drinkOf(L.c).tex, minX - 2, maxX + 2, yTop, prevY, x, L.c*7 + i*3 + Math.round(acc), isTop, sh.w);
     if (isTop){ c.fillStyle = "rgba(255,255,255,.22)"; c.fillRect(minX-2, yTop, maxX-minX+4, Math.max(1.5, sh.w*.035)); }
     if (L.h && Math.abs(a) < .05){ c.fillStyle = "rgba(246,234,214,.6)"; c.font = `900 ${sh.w*.36}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle";
       for (let q=0;q<Math.round(L.v);q++){ const y0 = levelY(T, acc - (L.v - q)*sh.unit), y1 = levelY(T, acc - (L.v - q - 1)*sh.unit); c.fillText("?", x, (y0 + y1)/2); } }

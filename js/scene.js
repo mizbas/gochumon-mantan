@@ -200,7 +200,7 @@ function draw(){
     ctx.restore();
     if (s.state === "leave" && s.mood === "love"){ ctx.fillStyle = "#ef6b8a"; ctx.globalAlpha = alpha; heart(ctx, p.x + size*.5, headY - size*.6 - (T-s.t0)*.03, size*.12); ctx.globalAlpha = 1; }
     if (s.state === "wait" || s.state === "in"){
-      const n = s.cock ? 1.4 : s.order.length, bh = Math.min(lay.seatW*.42, 62), cell = Math.min(bh*.62, (lay.seatW*1.05 - 18)/n), bw = Math.max(bh*1.15, n*cell + 18), bx = p.x - bw/2, by = Math.max(4, headY - size*.72 - bh - 8);
+      const n = s.cock ? 1.4 : s.order.length, bh0 = Math.min(lay.seatW*.42, 62), bh = bh0 + (s.cock ? 0 : 13), cell = Math.min(bh0*.62, (lay.seatW*1.05 - 18)/n), bw = Math.max(bh0*1.15, n*cell + 18), bx = p.x - bw/2, by = Math.max(4, headY - size*.72 - bh - 8);
       ctx.globalAlpha = alpha;
       { const sp = bubbleSprite(s, bw, bh, cell, n); ctx.drawImage(sp.cv, bx - 12, by - 14, sp.w, sp.h); }
       const left = s.state === "wait" ? Math.max(0, 1 - (T - s.t0)/s.pat) : 1;
