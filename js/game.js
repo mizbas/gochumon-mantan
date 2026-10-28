@@ -32,22 +32,29 @@ function stockUnits(){
   return u;
 }
 let stock = [], stockT = 0;
-// 足りない色：お客さんが待っている色なのに、棚・保管・次の仕入れを合わせても満タン分に届かない色
-function shortColors(){
+// 足りない色：お客さんが待っている色なのに、すぐ使える分（瓶の一番上にそろっている分・栓をした瓶・保管）を合わせても足りない色。
+// ほかの色の下に埋もれている分は数えない
+function shortNeed(){
   const need = {}; wantedNow().forEach(c => need[c] = (need[c]||0) + CAP);
   const cg = cockGuest(); if (cg) cg.cock.forEach(c => need[c] = (need[c]||0) + 1);
-  const have = {}; bottles.forEach(b => b.units.forEach(u => have[u.c] = (have[u.c]||0) + 1)); stored.forEach(c => have[c] = (have[c]||0) + CAP);
-  return Object.keys(need).map(Number).filter(c => (have[c]||0) < need[c]);
+  const have = {};
+  bottles.forEach(b => { if (!b.units.length || b.glass) return; const c = b.units[b.units.length-1].c; have[c] = (have[c]||0) + (b.corked ? CAP : topRun(b.units)); });
+  stored.forEach(c => have[c] = (have[c]||0) + CAP);
+  const out = {}; Object.keys(need).forEach(c => { const m = need[c] - (have[c]||0); if (m > 0) out[c] = m; }); return out;
 }
-// 足りない色が、次の瓶にもその次の瓶にも入っていなければ、その次の瓶（小さく見えている瓶）を足りない色入りに差し替える。
-// 目の前の瓶は変えないので、1回仕入れれば必ず届く（運だけで詰まないように）
+const shortColors = () => Object.keys(shortNeed()).map(Number);
+// 仕入れの瓶の一番上にそろっている色と数
+const stockTop = u => { const c = u[u.length-1]; let n = 0; for (let k=u.length-1; k>=0 && u[k] === c; k--) n++; return [c, n]; };
+// 足りない色が、次の瓶にもその次の瓶にも「一番上」に入っていなければ、その次の瓶（小さく見えている瓶）を差し替える。
+// 目の前の瓶は変えないので、1回仕入れれば必ず届く。足りない数に合わせて2〜3つ入れる（運だけで詰まないように）
 let stockFixT = 0;
 function stockFix(){
   if (stock.length < 2 || S.mode === "prep" || T < stockFixT) return; stockFixT = T + 400;
-  const sh = shortColors(); if (!sh.length || stock[0].some(c => sh.includes(c)) || stock[1].some(c => sh.includes(c))) return;
-  const f = pick(sh), rest = stockUnits().filter(c => c !== f).slice(0, CAP - 2);
-  while (rest.length < CAP - 2) rest.unshift(f);
-  stock[1] = rest.concat([f, f]); // 足りない色を一番上に2つ
+  const sn = shortNeed(), sh = Object.keys(sn).map(Number); if (!sh.length) return;
+  if ([stock[0], stock[1]].some(u => sh.includes(stockTop(u)[0]))) return;
+  const f = pick(sh), n = Math.min(CAP - 1, Math.max(2, sn[f])), rest = stockUnits().filter(c => c !== f).slice(0, CAP - n);
+  while (rest.length < CAP - n) rest.unshift(f);
+  stock[1] = rest.concat(Array(n).fill(f));
 }
 let lives = 3, elvl = 1, runStart = 0;
 let resQ = [];           // 予約：次に来るお客さんの注文
