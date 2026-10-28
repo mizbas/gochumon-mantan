@@ -399,6 +399,12 @@ function updateSeats(){
         s.rush = s.vip = s.critic = false; s.cock = genCock(); s.order = []; s.got = []; s.res = []; s.pat = S.pat*1000*(1.2 + .15*s.cock.length)*(1 + .12*upg("pat")); }
       s.regular = !s.cock && !s.rush && !s.vip && !s.critic && !(typeof stg === "number" && stg < 1) && rnd() < .12; if (s.regular) s.pat *= 1.4;
       if (s.vip){ const two = newOrder(2); s.order = [two[0], two[0], two[1], two[1]]; s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order)*1.25; }
+      { const r1 = rnd(), r2 = rnd(), r3 = rnd(), f = FAVC[s.g]; s.sig = false;
+        if (!s.cock && !s.vip && !s.resv){
+          if (sigOn() && r1 < .12){ const m = s.pat/patienceFor(s.order); s.order = save.sig.slice(); s.sig = true; s.pat = patienceFor(s.order)*m; }
+          else if (f < S.colors && !s.order.includes(f) && r2 < .35) s.order[Math.floor(r3*s.order.length)] = f;
+          s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); }
+        s.favHit = !s.cock && s.order.includes(f); }
       zooSeen(s); play("door", {gain:.3}); hud();
     }
     if (s.state === "in" && T - s.t0 > 450){ s.state = "wait"; s.t0 = T; }
@@ -413,11 +419,12 @@ function payGuest(k){
   zooServed(seats[k]);
   const s = seats[k], n = s.cock ? (s.cock.length >= 4 ? 3 : 2.4) : s.order.length, sp = lay.seatPos[k];
   const left = Math.max(0, 1 - (T - s.t0)/s.pat);
-  const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1)*(s.critic ? 2.5 : 1)*(happyNow() ? 1.5 : 1);
+  const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1)*(s.critic ? 2.5 : 1)*(happyNow() ? 1.5 : 1)*(s.favHit ? 1.2 : 1)*(s.sig ? 1.5 : 1);
   const resvOK = s.resv && left > .6;
   if (resvOK){ floatText(sp.x, sp.y - 140, "予約どおり！ ×1.3", "#ffd56b", .9, 480); }
   const tip = base*(.3 + .1*upg("tip"))*(has("cat") ? 1.2 : 1)*(s.regular ? 2 : 1)*Math.max(0, (left - .5)/.5);
   if (s.critic) floatText(sp.x, sp.y - 120, "評論家「すばらしい！」", "#d6b3ff", .9, 360);
+  if (s.sig) floatText(sp.x, sp.y - 146, "看板メニュー！ ×1.5", "#ffb27a", .9, 420); else if (s.favHit) floatText(sp.x, sp.y - 146, `大好物の${CNAME[FAVC[s.g]]}！ ×1.2`, "#ff9ec0", .8, 420);
   combo++; maxCombo = Math.max(maxCombo, combo);
   const bonus = base*Math.min(has("juke") ? 2 : 1, (combo-1)*.1);
   const total = Math.round((base + tip + bonus)*(resvOK ? 1.3 : 1)/10)*10;
@@ -833,6 +840,7 @@ function buildBg(){
     ctx.fillStyle = room.shelf; rr(ctx, W/2 - s.half, s.y - 2, s.half*2, sh.w*.2, 4); ctx.fill(); ctx.fillStyle = room.stop; ctx.fillRect(W/2 - s.half + 4, s.y - 2, s.half*2 - 8, 2); });
   if (room.id === "space"){ ctx.fillStyle = "rgba(255,255,255,.8)"; for (let i=0;i<60;i++){ const x = (i*97) % W, y = (i*61) % Math.max(10, cy - 10); ctx.beginPath(); ctx.arc(x, y, (i%3)*.5 + .6, 0, 7); ctx.fill(); } }
   if (room.id === "palace"){ ctx.fillStyle = "rgba(243,215,122,.25)"; for (let i=0;i<4;i++){ const x = W*(.125 + .25*i); ctx.beginPath(); ctx.arc(x, 26, 14, 0, 7); ctx.fill(); ctx.fillRect(x - 1, 0, 2, 14); } }
+  evDecor(ctx, W, cy);
   drawFine(ctx, upg("price"), cy);
   seats.forEach((st, k) => { const p = lay.seatPos[k], size = Math.min(lay.seatW*.42, 64), headY = cy - size*.62; drawChair(ctx, p.x, headY, size, cy, upg("pat")); });
   if (has("branch")) drawBranchSign(ctx, cy);
@@ -853,7 +861,7 @@ function slowLayer(name, need, paint, y0 = 0, y1 = lay.counterY + 24){
 // 注文の吹き出しは、中身が変わったときだけ描き直す（重さ対策）
 const BCACHE = new Map();
 function bubbleSprite(s, bw, bh, cell, n){
-  const key = [bw|0, bh|0, cell|0, s.cock ? s.cock.join("") : s.order.join(""), s.got.map(g => g ? 1 : 0).join(""), s.rush ? 1 : 0, s.vip ? 1 : 0, s.critic ? 1 : 0, s.regular ? 1 : 0, save.cb ? 1 : 0].join("|");
+  const key = [bw|0, bh|0, cell|0, s.cock ? s.cock.join("") : s.order.join(""), s.got.map(g => g ? 1 : 0).join(""), s.rush ? 1 : 0, s.vip ? 1 : 0, s.critic ? 1 : 0, s.regular ? 1 : 0, s.sig ? 1 : 0, s.favHit ? 1 : 0, save.cb ? 1 : 0].join("|");
   let sp = BCACHE.get(key);
   if (!sp){
     if (BCACHE.size > 120) BCACHE.clear();
@@ -868,6 +876,8 @@ function bubbleSprite(s, bw, bh, cell, n){
     if (s.critic) tag("評論家", "#8e5cc4", "#fff");
     if (s.cock) tag("カクテル", "#d6418f", "#fff");
     if (s.regular) tag("常連さん", "#3f8f4a", "#fff");
+    if (s.sig) tag("看板メニュー", "#b5562a", "#fff");
+    if (s.favHit && !s.sig){ c.fillStyle = "#ef6b8a"; rr(c, bx - 2, by - 9, 40, 18, 9); c.fill(); c.fillStyle = "#fff"; c.font = `900 11px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("大好物", bx + 18, by); }
     if (s.vip){ c.strokeStyle = "#e0a020"; c.lineWidth = 3; rr(c, bx, by, bw, bh, 14); c.stroke();
     c.fillStyle = "#e0a020"; rr(c, bx + bw - 40, by - 9, 42, 18, 9); c.fill(); c.fillStyle = "#2a1a0c"; c.font = `900 11px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("団体", bx + bw - 19, by); }
     c.fillStyle = "#f6ead6";

@@ -175,6 +175,7 @@ function draw(){
     if (has("juke")) drawJuke(c, cy);
     { const d = decorOn("ceil"); if (d) drawDecor(c, d, 0, 0, W, T); }
     { const d = decorOn("wall"); if (d) drawDecor(c, d, W/2, cy*.06, Math.min(48, cy*.22), T); } });
+  evAnim(ctx, W, cy, T);
   // お客さん
   seats.forEach((s, k) => {
     const p = lay.seatPos[k], size = Math.min(lay.seatW*.42, 64), headY = cy - size*.62;
@@ -187,6 +188,7 @@ function draw(){
     if (s.state === "leave") mood = s.mood;
     ctx.save(); ctx.globalAlpha = alpha; ctx.beginPath(); ctx.rect(0, 0, W, cy); ctx.clip();
     drawGuest(ctx, s.g, p.x, headY + dy, size, mood, T + k*700);
+    evGuestHat(ctx, s, k, p.x, headY + dy, size, T);
     if (s.critic){ const hx = p.x, hy = headY + dy; ctx.fillStyle = "#2a2440"; ctx.beginPath(); ctx.ellipse(hx - size*.05, hy - size*.4, size*.36, size*.13, -.15, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(hx + size*.1, hy - size*.52, size*.05, 0, 7); ctx.fill();
       ctx.strokeStyle = "#e0b54a"; ctx.lineWidth = Math.max(1.5, size*.04); ctx.beginPath(); ctx.arc(hx + size*.16, hy - size*.03, size*.1, 0, 7); ctx.moveTo(hx + size*.26, hy); ctx.lineTo(hx + size*.32, hy + size*.25); ctx.stroke(); }
     if (s.regular){ ctx.fillStyle = "#ef6b8a"; heart(ctx, p.x + size*.42, headY + dy + size*.28, size*.09); }

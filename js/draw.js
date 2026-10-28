@@ -149,6 +149,8 @@ const GUESTS = [
   {fur:"#f6eedd", ear:"sheep",   cheek:"#f4b3c2", wear:"#7a5aa0", name:"ひつじ"},
   {fur:"#e9b44a", ear:"lion",    cheek:"#f3b8a0", wear:"#8a2f2a", name:"ライオン"},
 ];
+// それぞれの動物の好きな色（COLORS の番号）。注文に入っていると代金1.2倍
+const FAVC = [0, 1, 4, 2, 3, 5, 6, 3, 7, 1, 3, 6, 4, 1];
 const GNAME = ["ねこ","くま","うさぎ","ねこ（グレー）","いぬ","くろくま"].concat(GUESTS.slice(6).map(g => g.name));
 function drawGuest(c, g, x, y, s, mood, t, noWear, wearCol){
   const G = GUESTS[g];

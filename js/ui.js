@@ -42,6 +42,7 @@ function endStage(){
   if (rankAfter > rankBefore){ earned += `<br>ランクアップ！ <b>ランク${rankAfter}</b>（ごほうび +${yen(rankGift)}）`; setTimeout(() => { toastQ.push({ic:"⬆️", name:`ランク${rankAfter}になりました`, sub:"ランクアップ"}); runToast(); }, 900); }
   if (titleAfter !== titleBefore) earned += `<br>称号が <b>${titleAfter}</b> になりました！`;
   if (newTr.length) earned += `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>`;
+  earned += evAward(clear ? 1 : 0);
   $("resEarned").innerHTML = earned + `</div>`;
   $("resStars").classList.remove("hidden");
   const last = stg === STAGES.length-1, endingNow = last && clear && !save.endingSeen;
@@ -95,6 +96,7 @@ function endSpecial(){
   if (branch) earned += `<br>二号店の評判ボーナス <b>+${yen(branch)}</b>`;
   if (rankAfter > rankBefore){ earned += `<br>ランクアップ！ <b>ランク${rankAfter}</b>（ごほうび +${yen(rankGift)}）`; setTimeout(() => { toastQ.push({ic:"⬆️", name:`ランク${rankAfter}になりました`, sub:"ランクアップ"}); runToast(); }, 900); }
   if (newTr.length) earned += `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>`;
+  earned += evAward(bonus ? 3 : 0);
   $("resEarned").innerHTML = earned + `</div>`;
   $("nextBtn").disabled = false; $("nextBtn").textContent = "記録をシェア";
   $("nextBtn").classList.remove("hidden");
@@ -243,9 +245,11 @@ const TIPS = {
   regular:  ["😊", "常連さん", "緑の札のお客さんは常連さん。待てる時間が長め（1.4倍）で、チップが2倍です。"],
   critic:   ["🎩", "評論家", "紫の札のお客さんは評論家。待てる時間が少し短めですが、満足させると代金2.5倍です。"],
   rush:     ["⏱️", "急ぎのお客さん", "赤い札のお客さんは急ぎ。待てる時間が短い（0.6倍）かわりに、代金1.4倍です。"],
+  fav:      ["💗", "大好物", "お客さんにはそれぞれ好きな色があります。「大好物」の札のお客さんは、注文に好きな色が入っていて代金1.2倍。<br>好きな色はお客さんをタップするか、図鑑で見られます。"],
+  sig:      ["⭐", "看板メニュー", "あなたが決めた看板メニューの注文が来ました！ 代金1.5倍です。<br>看板メニューはプロフィールでいつでも変えられます。"],
   vip:      ["👥", "団体さん", "黄色の札のお客さんは団体さん。2色を2本ずつ、満タン瓶4本の大口注文です。待てる時間は長めで、代金は2倍。"]
 };
-const TIP_ORDER = ["hide", "ice", "supply", "cocktail", "reserve", "lock", "dark", "happy", "rush", "vip", "critic", "regular"];
+const TIP_ORDER = ["hide", "ice", "supply", "cocktail", "reserve", "lock", "dark", "happy", "rush", "vip", "critic", "regular", "sig", "fav"];
 // 前から遊んでいる人は、クリア済みのステージに出てきたものは知っているとみなす
 function tipsMigrate(){
   if (save.tipsInit) return; save.tips = save.tips || {};
@@ -262,7 +266,7 @@ function tipNeed(){
   if (!S || S.mode === "prep") return null;
   const g = t => seats.some(s => (s.state === "in" || s.state === "wait") && s[t]);
   const on = {hide: S.hide, ice: S.ice, supply: S.supply && isFinite(S.supply), cocktail: S.cocktail || g("cock"), reserve: S.reserve, lock: S.lock || S.relock, dark: S.dark,
-    happy: happyNow(), rush: g("rush"), vip: g("vip"), critic: g("critic"), regular: g("regular")};
+    happy: happyNow(), rush: g("rush"), vip: g("vip"), critic: g("critic"), regular: g("regular"), sig: g("sig"), fav: g("favHit")};
   return TIP_ORDER.find(k => on[k] && !(save.tips || {})[k]) || null;
 }
 function tipCheck(){
@@ -331,7 +335,7 @@ function showMap(){
   $("prepSel").classList.add("hidden");
   bgm("map");
   renderChip(); if (!save.profile.set && save.tutDone && !save.profile.asked){ save.profile.asked = true; persist(); setTimeout(() => openForm(true), 400); }
-  drawHero(); checkTrophies(false); claim("rank", rankOf(save.total)); claim("day", save.dailyClears || 0); claim("elv", save.endless.lv || 0); claim("emon", save.endless.best || 0);
+  renderEvent(); drawHero(); checkTrophies(false); claim("rank", rankOf(save.total)); claim("day", save.dailyClears || 0); claim("elv", save.endless.lv || 0); claim("emon", save.endless.best || 0);
   // しばらく引き継ぎコードを保存していなくて、進み具合が増えていたらお知らせ
   const days = save.backupT ? Math.floor((Date.now() - save.backupT)/864e5) : null, gain = save.total - (save.backupTotal||0);
   const need = save.total >= 3000 && gain >= Math.max(3000, save.total*.1) && (days === null || days >= 7);
@@ -403,8 +407,11 @@ function drawHero(){
     { const d = decorOn("wall"); if (d) drawDecor(x, d, 260, 10, 44, 1500); }
     x.save(); x.beginPath(); x.rect(0, 0, 520, 202); x.clip();
     drawChair(x, 130, 136, 96, 200, upg("pat")); drawChair(x, 390, 142, 90, 200, upg("pat"));
-    drawGuest(x, 0, 130, 136, 96, "happy", 500); drawGuest(x, 2, 390, 142, 90, "ok", 900); x.restore();
+    drawGuest(x, 0, 130, 136, 96, "happy", 500); drawGuest(x, 2, 390, 142, 90, "ok", 900);
+    { const e = evNow(); if (e){ [[130, 136, 96, 0], [390, 142, 90, 1]].forEach(([gx, gy, gs, k]) => { x.save(); x.translate(gx, gy); accDraw(x, e.items[k], gs, 1500); x.restore(); }); } }
+    x.restore();
     x.fillStyle = rm.counter; x.fillRect(0, 200, 520, 24); x.fillStyle = rm.ctop; x.fillRect(0, 200, 520, 5);
+    evDecor(x, 520, 200);
     if (has("cat")) drawCat(x, 200);
     { const d = decorOn("counter"); if (d) drawDecor(x, d, 36, 201, 40, 1500); }
   } finally { W = keep.W; lay = keep.lay; room = keep.room; }
@@ -443,6 +450,14 @@ const COS = [
   {t:"acc", id:"flower",  name:"花かんむり",   src:"reward"},
   {t:"acc", id:"halo",    name:"天使の輪",     src:"reward"},
   {t:"acc", id:"monocle", name:"片めがね",     src:"reward"},
+  {t:"acc", id:"sakura",  name:"桜のかんざし",   src:"event", ev:"hanami"},
+  {t:"acc", id:"dango",   name:"花見だんご",     src:"event", ev:"hanami"},
+  {t:"acc", id:"pumpkin", name:"かぼちゃの帽子", src:"event", ev:"halloween"},
+  {t:"acc", id:"witch",   name:"まほうの帽子",   src:"event", ev:"halloween"},
+  {t:"acc", id:"antler",  name:"トナカイの角",   src:"event", ev:"xmas"},
+  {t:"acc", id:"santa",   name:"サンタの帽子",   src:"event", ev:"xmas"},
+  {t:"acc", id:"sensu",   name:"おめでた扇子",   src:"event", ev:"newyear"},
+  {t:"acc", id:"kagami",  name:"鏡もちの帽子",   src:"event", ev:"newyear"},
   // 服
   {t:"fit", id:"plain",  name:"無地",       src:"free"},
   {t:"fit", id:"stripe", name:"しましま",   src:"reward"},
@@ -458,28 +473,12 @@ const cosName = c => c.t === "ava" ? GNAME[c.id] : c.name;
 const cosKey = c => c.t + ":" + c.id;
 const cosOwned = c => c.src === "free" || (c.src === "rank" && rankOf(save.total) >= c.rank) || (save.cos || []).includes(cosKey(c));
 const cosFind = (t, id) => COS.find(c => c.t === t && c.id === id);
-function cosHow(c){ if (c.src === "rank") return `ランク${c.rank}で解放`; if (c.src === "shop") return `ショップ「店主」で ${yen(c.cost)}` + (c.rank ? `（ランク${c.rank}〜）` : "");
+function cosHow(c){ if (c.src === "event"){ const e = EVENTS.find(x => x.id === c.ev); return e ? `イベント「${e.name}」（毎年${e.from[0]}/${e.from[1]}〜${e.to[0]}/${e.to[1]}）でもらえる` : ""; } if (c.src === "rank") return `ランク${c.rank}で解放`; if (c.src === "shop") return `ショップ「店主」で ${yen(c.cost)}` + (c.rank ? `（ランク${c.rank}〜）` : "");
   const r = REWARDS.find(x => x.give.cos === cosKey(c)); return r ? `${KNAME[r.k](r.v)}でもらえる` : ""; }
 function countDay(){ const k = todayKey(); if (save.lastDay !== k){ save.lastDay = k; save.playDays = (save.playDays||0) + 1; } }
-function drawAvatar(c, p, x, y, s, t){
-  drawGuest(c, p.g, x, y, s, "happy", t || 0, false, COLORS[p.wear]);
-  c.save(); c.translate(x, y); c.lineCap = "round"; c.lineJoin = "round";
-  // 服の柄（胴の部分にだけ描く）
-  c.save(); c.beginPath(); rr(c, -s*.62, s*.42, s*1.24, s*.8, s*.35); c.clip();
-  switch (p.fit){
-    case "stripe": c.fillStyle = "rgba(255,255,255,.45)"; for (let k=0;k<5;k++) c.fillRect(-s*.7, s*.5 + k*s*.14, s*1.4, s*.06); break;
-    case "dots": c.fillStyle = "rgba(255,255,255,.6)"; for (let i=0;i<5;i++) for (let j=0;j<3;j++){ c.beginPath(); c.arc(-s*.48 + i*s*.24 + (j%2)*s*.12, s*.55 + j*s*.16, s*.035, 0, 7); c.fill(); } break;
-    case "apron": c.fillStyle = "#fffaf0"; rr(c, -s*.3, s*.48, s*.6, s*.8, s*.08); c.fill(); c.strokeStyle = "#fffaf0"; c.lineWidth = s*.04; c.beginPath(); c.moveTo(-s*.3, s*.5); c.lineTo(-s*.15, s*.42); c.moveTo(s*.3, s*.5); c.lineTo(s*.15, s*.42); c.stroke(); break;
-    case "sweater": c.strokeStyle = "rgba(0,0,0,.18)"; c.lineWidth = s*.03; c.beginPath(); for (let k=-5;k<=5;k++){ c.moveTo(k*s*.11, s*.5); c.lineTo(k*s*.11, s*1.2); } c.stroke(); c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(-s*.7, s*.42, s*1.4, s*.08); break;
-    case "happi": c.fillStyle = "#fffaf0"; c.beginPath(); c.moveTo(-s*.28, s*.42); c.lineTo(-s*.08, s*1.2); c.lineTo(-s*.18, s*1.2); c.lineTo(-s*.38, s*.42); c.fill(); c.beginPath(); c.moveTo(s*.28, s*.42); c.lineTo(s*.08, s*1.2); c.lineTo(s*.18, s*1.2); c.lineTo(s*.38, s*.42); c.fill();
-      c.fillStyle = "rgba(255,255,255,.85)"; c.font = `900 ${s*.2}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("祭", s*.38, s*.75); break;
-    case "kimono": c.strokeStyle = "#fffaf0"; c.lineWidth = s*.07; c.beginPath(); c.moveTo(-s*.25, s*.42); c.lineTo(s*.12, s*.95); c.moveTo(s*.25, s*.42); c.lineTo(-s*.02, s*.8); c.stroke(); c.fillStyle = "#e0b54a"; c.fillRect(-s*.7, s*.88, s*1.4, s*.14); break;
-    case "lab": c.fillStyle = "#fbfbf6"; c.fillRect(-s*.7, s*.42, s*1.4, s*.9); c.strokeStyle = "rgba(0,0,0,.18)"; c.lineWidth = s*.03; c.beginPath(); c.moveTo(0, s*.45); c.lineTo(0, s*1.2); c.moveTo(-s*.2, s*.42); c.lineTo(0, s*.7); c.lineTo(s*.2, s*.42); c.stroke(); c.fillStyle = "#7fb3c9"; c.fillRect(s*.22, s*.62, s*.16, s*.04); break;
-    case "tux": c.fillStyle = "#1e1a16"; c.fillRect(-s*.7, s*.42, s*1.4, s*.9); c.fillStyle = "#fffaf0"; c.beginPath(); c.moveTo(-s*.18, s*.42); c.lineTo(s*.18, s*.42); c.lineTo(0, s*.95); c.closePath(); c.fill();
-      c.fillStyle = "#1e1a16"; c.beginPath(); c.moveTo(0, s*.5); c.lineTo(-s*.12, s*.44); c.lineTo(-s*.12, s*.56); c.closePath(); c.moveTo(0, s*.5); c.lineTo(s*.12, s*.44); c.lineTo(s*.12, s*.56); c.closePath(); c.fill(); break;
-  }
-  c.restore();
-  switch (p.acc){
+// 小物（アバターとお客さんで共通。c は顔の中心に移動ずみ）
+function accDraw(c, acc, s, t){
+  switch (acc){
     case "scarf": c.fillStyle = "#c0392b"; rr(c, -s*.36, s*.34, s*.72, s*.16, s*.08); c.fill(); c.fillRect(s*.12, s*.4, s*.14, s*.34); c.fillStyle = "rgba(255,255,255,.4)"; c.fillRect(s*.12, s*.6, s*.14, s*.04); break;
     case "hachi": c.fillStyle = "#fffaf0"; c.save(); c.rotate(-.08); rr(c, -s*.47, -s*.3, s*.94, s*.1, s*.05); c.fill(); c.restore(); c.strokeStyle = "#c0392b"; c.lineWidth = s*.03; c.beginPath(); for (let k=0;k<6;k++){ c.moveTo(-s*.4 + k*s*.15, -s*.3); c.lineTo(-s*.33 + k*s*.15, -s*.2); } c.stroke(); break;
     case "knit": c.fillStyle = "#3a6ee8"; c.beginPath(); c.arc(0, -s*.24, s*.44, Math.PI, 0); c.fill(); c.fillStyle = "#fffaf0"; rr(c, -s*.46, -s*.3, s*.92, s*.12, s*.05); c.fill(); c.beginPath(); c.arc(0, -s*.7, s*.09, 0, 7); c.fill(); break;
@@ -498,7 +497,47 @@ function drawAvatar(c, p, x, y, s, t){
     case "beret": c.fillStyle = "#3a2a6a"; c.beginPath(); c.ellipse(-s*.05, -s*.4, s*.38, s*.14, -.15, 0, 7); c.fill(); c.beginPath(); c.arc(s*.1, -s*.53, s*.05, 0, 7); c.fill(); break;
     case "tophat": c.fillStyle = "#1e1a16"; c.fillRect(-s*.24, -s*.95, s*.48, s*.5); c.beginPath(); c.ellipse(0, -s*.44, s*.42, s*.08, 0, 0, 7); c.fill(); c.fillStyle = "#c0392b"; c.fillRect(-s*.24, -s*.56, s*.48, s*.08); break;
     case "crown": c.fillStyle = "#f3d27a"; c.beginPath(); c.moveTo(-s*.3, -s*.36); c.lineTo(-s*.3, -s*.66); c.lineTo(-s*.15, -s*.5); c.lineTo(0, -s*.72); c.lineTo(s*.15, -s*.5); c.lineTo(s*.3, -s*.66); c.lineTo(s*.3, -s*.36); c.closePath(); c.fill(); c.fillStyle = "#e63946"; c.beginPath(); c.arc(0, -s*.46, s*.05, 0, 7); c.fill(); break;
+      case "pumpkin": c.fillStyle = "#e8781e"; c.beginPath(); c.ellipse(0, -s*.52, s*.32, s*.2, 0, 0, 7); c.fill(); c.strokeStyle = "rgba(120,50,0,.45)"; c.lineWidth = s*.03;
+      c.beginPath(); c.ellipse(0, -s*.52, s*.13, s*.2, 0, 0, 7); c.moveTo(0, -s*.72); c.lineTo(0, -s*.32); c.stroke(); c.fillStyle = "#4a7a2a"; rr(c, -s*.04, -s*.82, s*.08, s*.14, s*.03); c.fill();
+      c.fillStyle = "#3a1a08"; c.beginPath(); c.moveTo(-s*.17, -s*.56); c.lineTo(-s*.09, -s*.6); c.lineTo(-s*.09, -s*.52); c.closePath(); c.moveTo(s*.17, -s*.56); c.lineTo(s*.09, -s*.6); c.lineTo(s*.09, -s*.52); c.closePath(); c.fill(); break;
+    case "witch": c.fillStyle = "#3a2350"; c.beginPath(); c.ellipse(0, -s*.43, s*.52, s*.1, 0, 0, 7); c.fill(); c.beginPath(); c.moveTo(-s*.27, -s*.45); c.quadraticCurveTo(-s*.05, -s*.8, s*.2, -s*1.08); c.quadraticCurveTo(s*.12, -s*.75, s*.27, -s*.45); c.closePath(); c.fill();
+      c.fillStyle = "#f08a24"; c.fillRect(-s*.25, -s*.56, s*.5, s*.08); c.fillStyle = "#f6c945"; c.fillRect(-s*.05, -s*.57, s*.1, s*.1); break;
+    case "santa": c.fillStyle = "#d33a32"; c.beginPath(); c.moveTo(-s*.36, -s*.46); c.quadraticCurveTo(s*.05, -s*1.0, s*.5, -s*.72); c.lineTo(s*.36, -s*.46); c.closePath(); c.fill();
+      c.fillStyle = "#fffaf0"; rr(c, -s*.42, -s*.54, s*.84, s*.14, s*.07); c.fill(); c.beginPath(); c.arc(s*.5, -s*.72, s*.1, 0, 7); c.fill(); break;
+    case "antler": c.strokeStyle = "#8a5a32"; c.lineWidth = s*.07; c.beginPath();
+      for (const d of [-1, 1]){ c.moveTo(d*s*.2, -s*.4); c.lineTo(d*s*.34, -s*.86); c.moveTo(d*s*.27, -s*.62); c.lineTo(d*s*.46, -s*.72); c.moveTo(d*s*.31, -s*.76); c.lineTo(d*s*.18, -s*.92); } c.stroke();
+      c.fillStyle = "#d33a32"; c.beginPath(); c.arc(0, s*.1, s*.07, 0, 7); c.fill(); break;
+    case "sensu": c.save(); c.translate(s*.42, -s*.2); c.rotate(-.5); const fa = -Math.PI*.85, fb = -Math.PI*.15;
+      c.fillStyle = "#d33a32"; c.beginPath(); c.moveTo(0, 0); c.arc(0, 0, s*.34, fa, fb); c.closePath(); c.fill(); c.fillStyle = "#f6c945"; c.beginPath(); c.arc(0, -s*.18, s*.07, 0, 7); c.fill();
+      c.strokeStyle = "rgba(90,30,10,.45)"; c.lineWidth = s*.015; c.beginPath(); for (let k=0;k<=6;k++){ const a = fa + (fb - fa)*k/6; c.moveTo(0, 0); c.lineTo(Math.cos(a)*s*.34, Math.sin(a)*s*.34); } c.stroke(); c.restore(); break;
+    case "kagami": c.fillStyle = "#fbf6ea"; c.beginPath(); c.ellipse(0, -s*.48, s*.3, s*.11, 0, 0, 7); c.fill(); c.beginPath(); c.ellipse(0, -s*.62, s*.22, s*.09, 0, 0, 7); c.fill();
+      c.strokeStyle = "rgba(0,0,0,.12)"; c.lineWidth = s*.02; c.beginPath(); c.ellipse(0, -s*.48, s*.3, s*.11, 0, 0, 7); c.stroke();
+      c.fillStyle = "#f08a24"; c.beginPath(); c.arc(0, -s*.74, s*.09, 0, 7); c.fill(); c.fillStyle = "#4a8a3a"; c.beginPath(); c.ellipse(s*.08, -s*.83, s*.07, s*.03, -.5, 0, 7); c.fill(); break;
+    case "sakura": c.fillStyle = "#f7a8c4"; for (let k=0;k<5;k++){ const a = -Math.PI/2 + k*Math.PI*2/5; c.beginPath(); c.ellipse(s*.3 + Math.cos(a)*s*.08, -s*.38 + Math.sin(a)*s*.08, s*.07, s*.05, a, 0, 7); c.fill(); }
+      c.fillStyle = "#f6c945"; c.beginPath(); c.arc(s*.3, -s*.38, s*.03, 0, 7); c.fill(); c.strokeStyle = "#8a5a32"; c.lineWidth = s*.03; c.beginPath(); c.moveTo(s*.34, -s*.32); c.lineTo(s*.52, -s*.12); c.stroke(); break;
+    case "dango": c.strokeStyle = "#c9a26a"; c.lineWidth = s*.03; c.beginPath(); c.moveTo(s*.12, -s*.2); c.lineTo(s*.56, -s*.82); c.stroke();
+      [["#7cbf6a", .22], ["#fbf6ea", .34], ["#f7a8c4", .46]].forEach(([col, k]) => { c.fillStyle = col; c.beginPath(); c.arc(s*(.12 + .44*k/.5), -s*(.2 + .62*k/.5), s*.08, 0, 7); c.fill(); }); break;
   }
+}
+function drawAvatar(c, p, x, y, s, t){
+  drawGuest(c, p.g, x, y, s, "happy", t || 0, false, COLORS[p.wear]);
+  c.save(); c.translate(x, y); c.lineCap = "round"; c.lineJoin = "round";
+  // 服の柄（胴の部分にだけ描く）
+  c.save(); c.beginPath(); rr(c, -s*.62, s*.42, s*1.24, s*.8, s*.35); c.clip();
+  switch (p.fit){
+    case "stripe": c.fillStyle = "rgba(255,255,255,.45)"; for (let k=0;k<5;k++) c.fillRect(-s*.7, s*.5 + k*s*.14, s*1.4, s*.06); break;
+    case "dots": c.fillStyle = "rgba(255,255,255,.6)"; for (let i=0;i<5;i++) for (let j=0;j<3;j++){ c.beginPath(); c.arc(-s*.48 + i*s*.24 + (j%2)*s*.12, s*.55 + j*s*.16, s*.035, 0, 7); c.fill(); } break;
+    case "apron": c.fillStyle = "#fffaf0"; rr(c, -s*.3, s*.48, s*.6, s*.8, s*.08); c.fill(); c.strokeStyle = "#fffaf0"; c.lineWidth = s*.04; c.beginPath(); c.moveTo(-s*.3, s*.5); c.lineTo(-s*.15, s*.42); c.moveTo(s*.3, s*.5); c.lineTo(s*.15, s*.42); c.stroke(); break;
+    case "sweater": c.strokeStyle = "rgba(0,0,0,.18)"; c.lineWidth = s*.03; c.beginPath(); for (let k=-5;k<=5;k++){ c.moveTo(k*s*.11, s*.5); c.lineTo(k*s*.11, s*1.2); } c.stroke(); c.fillStyle = "rgba(255,255,255,.35)"; c.fillRect(-s*.7, s*.42, s*1.4, s*.08); break;
+    case "happi": c.fillStyle = "#fffaf0"; c.beginPath(); c.moveTo(-s*.28, s*.42); c.lineTo(-s*.08, s*1.2); c.lineTo(-s*.18, s*1.2); c.lineTo(-s*.38, s*.42); c.fill(); c.beginPath(); c.moveTo(s*.28, s*.42); c.lineTo(s*.08, s*1.2); c.lineTo(s*.18, s*1.2); c.lineTo(s*.38, s*.42); c.fill();
+      c.fillStyle = "rgba(255,255,255,.85)"; c.font = `900 ${s*.2}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("祭", s*.38, s*.75); break;
+    case "kimono": c.strokeStyle = "#fffaf0"; c.lineWidth = s*.07; c.beginPath(); c.moveTo(-s*.25, s*.42); c.lineTo(s*.12, s*.95); c.moveTo(s*.25, s*.42); c.lineTo(-s*.02, s*.8); c.stroke(); c.fillStyle = "#e0b54a"; c.fillRect(-s*.7, s*.88, s*1.4, s*.14); break;
+    case "lab": c.fillStyle = "#fbfbf6"; c.fillRect(-s*.7, s*.42, s*1.4, s*.9); c.strokeStyle = "rgba(0,0,0,.18)"; c.lineWidth = s*.03; c.beginPath(); c.moveTo(0, s*.45); c.lineTo(0, s*1.2); c.moveTo(-s*.2, s*.42); c.lineTo(0, s*.7); c.lineTo(s*.2, s*.42); c.stroke(); c.fillStyle = "#7fb3c9"; c.fillRect(s*.22, s*.62, s*.16, s*.04); break;
+    case "tux": c.fillStyle = "#1e1a16"; c.fillRect(-s*.7, s*.42, s*1.4, s*.9); c.fillStyle = "#fffaf0"; c.beginPath(); c.moveTo(-s*.18, s*.42); c.lineTo(s*.18, s*.42); c.lineTo(0, s*.95); c.closePath(); c.fill();
+      c.fillStyle = "#1e1a16"; c.beginPath(); c.moveTo(0, s*.5); c.lineTo(-s*.12, s*.44); c.lineTo(-s*.12, s*.56); c.closePath(); c.moveTo(0, s*.5); c.lineTo(s*.12, s*.44); c.lineTo(s*.12, s*.56); c.closePath(); c.fill(); break;
+  }
+  c.restore();
+  accDraw(c, p.acc, s, t);
   c.restore();
 }
 const pShop = () => (save.profile.shop || "名前のないお店"), pName = () => (save.profile.name || "店主");
@@ -521,6 +560,7 @@ function openProfile(){
   $("pfStats").innerHTML = [["開店日", `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`], ["営業した日数", `${save.playDays || 1}日`], ["累計売上", yen(save.total)], ["満足したお客さん", `${save.stats.served.toLocaleString()}人`],
     ["★", `${stars} / ${STAGES.length*3}`], ["トロフィー", `${tro} / ${TROPHIES.length}`], ["エンドレス", save.endless.best ? `${yen(save.endless.best)}（Lv${save.endless.lv}）` : "まだなし"], ["最高連続", `${save.stats.maxCombo}連続`]]
     .map(([a,b]) => `<div><small>${a}</small><b>${b}</b></div>`).join("");
+  renderSig();
   $("pfCopied").textContent = ""; $("pfView").classList.remove("hidden"); $("pfForm").classList.add("hidden"); $("pfH").textContent = "プロフィール";
   $("profile").classList.remove("hidden");
 }
@@ -570,7 +610,9 @@ const GTYPE = {
   rush:    ["急ぎ", "#d9473a", "待てる時間が短い（0.6倍）。代金1.4倍"],
   vip:     ["団体さん", "#e0a020", "2色を2本ずつ、満タン瓶4本の大口注文。代金2倍"],
   cock:    ["カクテル", "#d6418f", "カクテルグラスに、下から順に注文どおりの色を1杯ずつ重ねる"],
-  resv:    ["予約", "#c9962e", "予約ボードに出ていた注文。来てすぐ出すと代金1.3倍"]
+  resv:    ["予約", "#c9962e", "予約ボードに出ていた注文。来てすぐ出すと代金1.3倍"],
+  sig:     ["看板メニュー", "#b5562a", "あなたのお店の看板メニューを注文。代金1.5倍"],
+  fav:     ["大好物", "#ef6b8a", "好きな色が注文に入っている。代金1.2倍"]
 };
 const GIMMICK = [
   ["？の色", "瓶の下のほうの色が隠れています。上を注ぎ出すと見えます"],
@@ -582,13 +624,13 @@ const GIMMICK = [
   ["停電", "7秒間、色が見えなくなります。灯台の光が当たった瓶だけ見えます"],
   ["ハッピーアワー", "20秒だけ代金が1.5倍になります"]
 ];
-function guestTypes(s){ const t = []; if (s.cock) t.push("cock"); if (s.rush) t.push("rush"); if (s.vip) t.push("vip"); if (s.critic) t.push("critic"); if (s.regular) t.push("regular"); if (s.resv) t.push("resv"); if (!t.length) t.push("plain"); return t; }
+function guestTypes(s){ const t = []; if (s.cock) t.push("cock"); if (s.rush) t.push("rush"); if (s.vip) t.push("vip"); if (s.critic) t.push("critic"); if (s.regular) t.push("regular"); if (s.resv) t.push("resv"); if (s.sig) t.push("sig"); else if (s.favHit) t.push("fav"); if (!t.length) t.push("plain"); return t; }
 let gInfoT = 0;
 function showGuestInfo(k){
   const s = seats[k], p = lay.seatPos[k], r = cv.getBoundingClientRect(), el = $("gInfo");
   const left = s.state === "wait" ? Math.max(0, Math.ceil((s.pat - (T - s.t0))/1000)) : Math.ceil(s.pat/1000);
   const order = s.cock ? "下から " + s.cock.map(c => CNAME[c]).join("→") : s.order.map((c, j) => CNAME[c] + (s.got[j] ? "✓" : "")).join("・");
-  el.innerHTML = `<b>${GNAME[s.g]}のお客さん</b>　あと${left}秒<br>` + guestTypes(s).map(t => `<span class="tg" style="background:${GTYPE[t][1]}">${GTYPE[t][0]}</span>${GTYPE[t][2]}`).join("<br>") + `<br><small>注文：${order}</small>`;
+  el.innerHTML = `<b>${GNAME[s.g]}のお客さん</b>　あと${left}秒<br>` + guestTypes(s).map(t => `<span class="tg" style="background:${GTYPE[t][1]}">${GTYPE[t][0]}</span>${GTYPE[t][2]}`).join("<br>") + `<br><small>注文：${order}　好きな色：${CNAME[FAVC[s.g]]}</small>`;
   el.classList.remove("hidden"); const w = el.offsetWidth; el.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.left + p.x - w/2)) + "px"; el.style.top = (r.top + p.y + 8) + "px";
   clearTimeout(gInfoT); gInfoT = setTimeout(() => el.classList.add("hidden"), 3200); play("pick", {gain:.3, rate:1.2});
 }

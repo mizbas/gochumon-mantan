@@ -27,7 +27,7 @@ function endPrepDaily(){
   $("resGoal").innerHTML = `${S.label}・目安 ${S.par}手　今日のベスト ${pd.best}手` + (prepHelp ? `<br><small>助けを使ったので★は最大${prepStarCap()}つ</small>` : "");
   $("resStars").classList.remove("hidden"); $("resStars").innerHTML = [0,1,2].map(k => `<span class="${k < st ? "on" : ""}">★</span>`).join("");
   $("resList").innerHTML = [["かかった手数", `${prepMoves}手`], ["目安の手数", `${S.par}手（★3）`], ["★2", `${Math.ceil(S.par*1.3)}手まで`]].map(([a,b]) => `<li><span>${a}</span><b>${b}</b></li>`).join("");
-  $("resEarned").innerHTML = `<div class="earned">` + (reward ? `今日はじめてのクリア！ 財布に <b>+${yen(reward)}</b>` : `今日のごほうびは受け取り済みです`) + `<br>明日はまた新しい1問が出ます。友達と手数を比べてみよう` + (newTr.length ? `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>` : "") + `</div>`;
+  $("resEarned").innerHTML = `<div class="earned">` + (reward ? `今日はじめてのクリア！ 財布に <b>+${yen(reward)}</b>` : `今日のごほうびは受け取り済みです`) + `<br>明日はまた新しい1問が出ます。友達と手数を比べてみよう` + (newTr.length ? `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>` : "") + evAward(reward ? 2 : 0) + `</div>`;
   $("nextBtn").classList.remove("hidden"); $("nextBtn").disabled = false; $("nextBtn").textContent = "記録をシェア"; resNext = null;
   setTimeout(() => { $("result").classList.remove("hidden"); play("fanfare", {gain:.55}); }, 500);
 }
@@ -103,7 +103,7 @@ function renderFriends(){
   $("frList").innerHTML = fr.length ? `<div class="set-h">追加した友達（${fr.length}人）</div>` + fr.map(c => `<div class="fr-l"><span><b>${esc(c.name)}</b>（${esc(c.shop)}）<small>${ago(c.t)}の記録</small></span><button data-id="${esc(c.id)}" aria-label="${esc(c.name)}さんを消す">消す</button></div>`).join("") : "";
   $("frList").querySelectorAll("button[data-id]").forEach(b => b.onclick = () => { delete save.friends[b.dataset.id]; persist(); play("pick", {gain:.3}); renderFriends(); });
 }
-function openFriends(){ audio(); $("frMsg").textContent = ""; $("frIn").value = ""; renderFriends(); $("friendsOv").classList.remove("hidden"); $("friendsOv").querySelector(".card").scrollTop = 0; }
+function openFriends(){ audio(); $("frMsg").textContent = ""; $("frIn").value = ""; renderFriends(); renderWeek(); $("friendsOv").classList.remove("hidden"); $("friendsOv").querySelector(".card").scrollTop = 0; }
 $("frShare").onclick = () => shareMine(null, $("frShare"));
 $("frAdd").onclick = () => { const [ok, m] = addFriend($("frIn").value); $("frMsg").textContent = m; $("frMsg").classList.toggle("ng", !ok); if (ok){ $("frIn").value = ""; play("kira", {gain:.4}); checkTrophies(false); renderFriends(); } else play("bad", {gain:.3}); };
 $("frClose").onclick = () => $("friendsOv").classList.add("hidden");
@@ -126,7 +126,7 @@ function openZoo(){
   $("zooSum").innerHTML = `出会ったお客さん <b>${met} / ${GUESTS.length}</b>　満足させた数で★が増えます（5人・30人・100人）`;
   $("zooList").innerHTML = GUESTS.map((_, g) => { const r = z[g], seen = r && r.n > 0, st = seen ? zooStars(r.ok) : 0;
     return `<div class="zoo-c${seen ? "" : " unk"}"><canvas width="120" height="110" data-g="${g}"></canvas><b>${seen ? GNAME[g] : "？？？"}</b>` +
-      (seen ? `<span class="zs">${"★".repeat(st)}${"☆".repeat(3 - st)}</span><small>来店 ${r.n}回・満足 ${r.ok}人</small><p>${ZOO_TXT[g]}</p>` +
+      (seen ? `<span class="zs">${"★".repeat(st)}${"☆".repeat(3 - st)}</span><small>来店 ${r.n}回・満足 ${r.ok}人</small><small class="zfav"><i style="background:${COLORS[FAVC[g]]}"></i>好きな色：${CNAME[FAVC[g]]}</small><p>${ZOO_TXT[g]}</p>` +
         `<div class="zt">${ZOO_TYPES.map(([t, n]) => `<span class="${r.ty[t] ? "on" : ""}" style="${r.ty[t] ? `background:${GTYPE[t === "cock" ? "cock" : t][1]}` : ""}">${n}</span>`).join("")}</div>`
         : `<small>まだ来たことがありません</small>`) + `</div>`; }).join("");
   $("zooList").querySelectorAll("canvas").forEach(cv2 => { const g = +cv2.dataset.g, x = cv2.getContext("2d"), seen = z[g] && z[g].n > 0;
@@ -136,3 +136,46 @@ function openZoo(){
 }
 $("zooBtn").onclick = openZoo;
 $("zooClose").onclick = () => $("zooOv").classList.add("hidden");
+
+/* ---------- 看板メニュー（自分で決める2色の注文。たまに頼まれて代金1.5倍） ---------- */
+const sigOpen = () => (save.stars["1-8"] || 0) >= 1;
+function sigOn(){ const s = save.sig; return sigOpen() && Array.isArray(s) && s.length === 2 && s.every(c => Number.isInteger(c) && c >= 0 && c < S.colors); }
+let sigPick = 0;
+function renderSig(){
+  const box = $("sigBox"); if (!box) return;
+  if (!sigOpen()){ box.innerHTML = `<div class="set-h">看板メニュー</div><p class="set-p">1-8 をクリアすると、お店の看板メニュー（2色の注文）を決められます。</p>`; return; }
+  const s = Array.isArray(save.sig) ? save.sig : null;
+  const dot = c => `<span class="sigdot" style="background:${COLORS[c]}">${save.cb ? CNAME[c] : ""}</span>`;
+  box.innerHTML = `<div class="set-h">看板メニュー</div><p class="set-p">決めた2色の注文が、ときどき来ます（その色があるステージで）。出すと代金1.5倍。</p>` +
+    `<div class="sigcur">${s ? `${dot(s[0])}${dot(s[1])}<b>${CNAME[s[0]]}と${CNAME[s[1]]}</b>` : "<b>まだ決めていません</b>"}</div>` +
+    `<p class="set-p" style="margin:6px 0 2px">${sigPick === 0 ? "1つめの色をえらぶ" : "2つめの色をえらぶ"}</p><div class="sigpal">` +
+    COLORS.map((col, c) => `<button style="background:${col}" data-c="${c}" aria-label="${CNAME[c]}">${save.cb ? CNAME[c] : ""}</button>`).join("") + `</div>` +
+    (s ? `<div class="set-btns"><button id="sigClear">看板メニューをやめる</button></div>` : "");
+  box.querySelectorAll(".sigpal button").forEach(b => b.onclick = () => { const c = +b.dataset.c;
+    if (sigPick === 0){ save.sigDraft = c; sigPick = 1; } else { save.sig = [save.sigDraft, c]; delete save.sigDraft; sigPick = 0; persist(); play("kira", {gain:.4}); }
+    play("pick", {gain:.3}); renderSig(); });
+  const cl = $("sigClear"); if (cl) cl.onclick = () => { save.sig = null; sigPick = 0; persist(); renderSig(); };
+}
+
+/* ---------- 1週間のまとめ（日替わり・今日の仕込み） ---------- */
+function weekDays(){ const out = [], now = Date.now() + 9*3600e3; for (let i=6;i>=0;i--){ const d = new Date(now - i*86400e3); out.push({key: `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`, wd: PD_WD[d.getUTCDay()], md: `${d.getUTCMonth()+1}/${d.getUTCDate()}`}); } return out; }
+function weekData(){
+  const dh = save.dailyHist || {}, ph = save.prepDailyHist || {};
+  return weekDays().map(d => ({...d, d: dh[d.key] || null, q: ph[d.key] || null}));
+}
+function renderWeek(){
+  const w = weekData(), dn = w.filter(x => x.d && x.d.st >= 1).length, qn = w.filter(x => x.q && x.q.m).length;
+  $("frWeek").innerHTML = `<p class="set-p" style="margin:0 0 6px">日替わり達成 <b>${dn}日</b>・今日の仕込み <b>${qn}日</b>（7日のうち）</p><table class="wk"><thead><tr><th></th>` + w.map(x => `<th>${x.md}<small>${x.wd}</small></th>`).join("") + `</tr></thead><tbody>` +
+    `<tr><th>日替わり</th>` + w.map(x => `<td class="${x.d && x.d.st ? "ok" : ""}">${x.d ? "★".repeat(x.d.st) || "・" : ""}</td>`).join("") + `</tr>` +
+    `<tr><th>仕込み</th>` + w.map(x => `<td class="${x.q && x.q.m ? "ok" : ""}">${x.q && x.q.m ? x.q.m + "手" : ""}</td>`).join("") + `</tr></tbody></table>`;
+}
+function weekText(){
+  const w = weekData(), lines = [`${pShop()}（店主 ${pName()}）の1週間`, `ご注文は満タンで　${w[0].md}〜${w[6].md}`, ""];
+  w.forEach(x => lines.push(`${x.md}(${x.wd}) 日替わり ${x.d ? yen(x.d.best) + " " + "★".repeat(x.d.st) : "—"}　仕込み ${x.q && x.q.m ? x.q.m + "手" : "—"}`));
+  const dn = w.filter(x => x.d && x.d.st >= 1).length, qn = w.filter(x => x.q && x.q.m).length;
+  lines.push("", `日替わり達成 ${dn}日・今日の仕込み ${qn}日`, "", "↓ ゲームの「友達と比べる」に貼ると、今日の記録を比べられます", cardCode(myCard()), "https://mizbas.github.io/gochumon-mantan/");
+  return lines.join("\n");
+}
+$("frWeekShare").onclick = () => { const b = $("frWeekShare"), t = weekText(), label = b.textContent;
+  const done = ok => { b.textContent = ok ? "コピーしました" : "コピーできませんでした"; setTimeout(() => b.textContent = label, 1800); };
+  if (navigator.share && /iPhone|iPad|Android/i.test(navigator.userAgent)) navigator.share({text: t}).catch(() => copyText(t).then(done)); else copyText(t).then(done); };
