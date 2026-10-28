@@ -574,7 +574,7 @@ function checkCocktail(gi){
   }
 }
 // 氷：ふつうのステージは瓶ごとの時間（ICE_MS）で溶ける。満タン瓶を渡すと3秒早まる。仕込みは数字が減っていく
-const ICE_MS = 12000, ICE_CUT = 3000;
+const ICE_MS = 12000, ICE_CUT = 4000;
 function iceMelt(){ bottles.forEach((b, i) => { if (b.ice && b.iceT && T >= b.iceT){ b.ice = 0; b.iceT = 0; meltFx(i); } }); }
 function meltFx(i){ bottles[i].meltT = T; play("reveal", {gain:.5}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "溶けた！", "#9ed8f0", .85);
   for (let k=0;k<12;k++) parts.push({x: lay.pos[i].x + R(-lay.sh.w*.4, lay.sh.w*.4), y: lay.pos[i].y + R(-lay.sh.H*.3, lay.sh.H*.3), vx:R(-1.2,1.2), vy:R(-1.8,-.3), t0:T, life:R(500,900), r:R(1.5,3), ice:true}); }
