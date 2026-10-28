@@ -1,6 +1,6 @@
 // ご注文は満タンで：飲み物の名前と見た目（ワールドごと・イベントごと）
 // 色の番号（0赤 1黄 2青 3緑 4桃 5紫 6橙 7水）ごとに「名前|短い名前|模様」
-// 模様：fizz=炭酸の泡 / foam=上に泡 / steam=湯気 / pulp=つぶ / milk=ミルクのうず / sparkle=きらきら / boil=ぶくぶく / （空）=なし
+// 模様：fizz=炭酸の泡 / foam=層の上に泡の帯（どの位置でも） / steam=湯気 / pulp=つぶ / milk=ミルクのうず / sparkle=きらきら / boil=ぶくぶく / （空）=なし
 const DRINKS = {
   w1: "赤ワイン|ワイン|,レモンサワー|サワー|fizz,ブルーハワイ|ハワイ|sparkle,ミントジュレップ|ミント|pulp,ピーチフィズ|ピーチ|fizz,カシスソーダ|カシス|fizz,スクリュードライバー|スクリュ|pulp,ジントニック|ジン|fizz",
   w2: "いちごミルク|いちご|milk,はちみつレモン|はちみつ|,バタフライピー|ピー|,抹茶ラテ|抹茶|foam,さくらラテ|さくら|foam,ぶどうジュース|ぶどう|,オレンジジュース|オレンジ|pulp,クリームソーダ|ソーダ|fizz",
@@ -42,7 +42,9 @@ function drinkTex(c, tex, x0, x1, yTop, yBot, cx, seed, isTop, w){
   if (tex === "milk"){ c.strokeStyle = "rgba(255,255,255,.32)"; c.lineWidth = Math.max(1, w*.05); c.lineCap = "round"; c.beginPath();
     for (let k=0;k<2;k++){ const py = yTop + hgt*(.3 + .4*k); c.moveTo(x0 + wid*.18, py); c.bezierCurveTo(x0 + wid*.4, py - hgt*.18, x0 + wid*.6, py + hgt*.18, x0 + wid*.82, py); } c.stroke(); }
   if (tex === "boil"){ c.strokeStyle = "rgba(255,255,255,.45)"; c.lineWidth = Math.max(1, w*.03); for (let k=0;k<3;k++){ c.beginPath(); c.arc(x0 + wid*(.25 + .5*r(k)), yTop + hgt*(.25 + .5*r(k + 2)), w*(.06 + .05*r(k+5)), 0, 7); c.stroke(); } }
-  if (isTop && tex === "foam"){ const fh = Math.min(hgt*.45, w*.22); c.fillStyle = "rgba(255,250,240,.92)"; c.fillRect(x0, yTop, wid, fh*.7);
+  if (tex === "foam"){ c.fillStyle = "rgba(255,255,255,.5)"; const n = Math.max(3, Math.round(hgt/8)); for (let k=0;k<n;k++){ c.beginPath(); c.arc(x0 + wid*(.18 + .64*r(k)), yTop + hgt*(.35 + .6*r(k + 9)), Math.max(.8, w*.03 + r(k+3)*w*.025), 0, 7); c.fill(); } }
+  // 泡の飲み物は、上にあっても下に埋まっていても、層の上に泡の帯をつける（見た目をそろえる）
+  if (tex === "foam"){ const fh = Math.min(hgt*.45, w*.22); c.fillStyle = "rgba(255,250,240,.92)"; c.fillRect(x0, yTop, wid, fh*.7);
     for (let k=0;k<6;k++){ c.beginPath(); c.arc(x0 + wid*(k + .5)/6, yTop + fh*.62, wid/10, 0, Math.PI); c.fill(); } }
   if (isTop && tex === "steam"){ c.strokeStyle = "rgba(255,255,255,.4)"; c.lineWidth = Math.max(1, w*.04); c.lineCap = "round";
     for (let k=0;k<2;k++){ const px = cx + (k ? 1 : -1)*w*.12; c.beginPath(); c.moveTo(px, yTop - 1); c.bezierCurveTo(px - w*.08, yTop - w*.12, px + w*.08, yTop - w*.2, px, yTop - w*.32); c.stroke(); } }
