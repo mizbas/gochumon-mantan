@@ -782,6 +782,8 @@ function frame(ts){
     T += dt*SPEED;
     if (S.mode === "prep"){ if (T >= iceTick){ iceTick = T + 15000; if (bottles.some(b => b.ice)) thawPrep(); } } else iceMelt();
     coldWave(); lockWave(); stockFix(); tipCheck(); evTick();
+    // 「？」から見えた色の印は、見え始めの動きが終わったら消す（残ると模様が消えたり、同じ色が別の層に分かれて見える）
+    for (const b of bottles) for (const u of b.units) if (u.rev != null && T - u.rev > 400) delete u.rev;
     if (S.dark && T >= darkT + DARK_LEN){ darkT = T + 26000; }
     if (S.dark && darkSoon() && !S._dw){ S._dw = 1; floatText(W/2, lay.counterY + 40, "停電しそう…", "#9eb8f0", 1); }
     if (S.dark && darkNow() && S._dw === 1){ S._dw = 2; play("wrong", {gain:.2, rate:.6}); }
