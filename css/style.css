@@ -17,6 +17,7 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
 
 /* ---- マップ ---- */
 #map{overflow-y:auto;align-items:center;background:radial-gradient(120% 55% at 50% 0%, #3b261b 0%, var(--night) 70%)}
+#prepSel{overflow-y:auto;-webkit-overflow-scrolling:touch;align-items:center;background:var(--night);padding-bottom:calc(24px + env(safe-area-inset-bottom))}
 .wrap{width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px;padding-bottom:20px}
 .topbar{display:flex;align-items:center;gap:10px}
 .purse{display:flex;align-items:center;gap:8px;background:var(--walnut-2);border-radius:22px;padding:6px 14px 6px 8px}
