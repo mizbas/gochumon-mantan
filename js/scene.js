@@ -310,7 +310,7 @@ function draw(){
       ctx.moveTo(x - sh.w*.3, y - sh.H*.4); ctx.lineTo(x - sh.w*.05, y - sh.H*.25); ctx.lineTo(x - sh.w*.2, y - sh.H*.1);
       ctx.moveTo(x + sh.w*.35, y + sh.H*.1); ctx.lineTo(x + sh.w*.1, y + sh.H*.22); ctx.stroke();
       if (b.ice){ ctx.fillStyle = "#e9f7fd"; ctx.beginPath(); ctx.arc(x, y, sh.w*.34, 0, 7); ctx.fill();
-        ctx.fillStyle = "#2f6f8f"; ctx.font = `900 ${sh.w*.4}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.ice, x, y + 1); }
+        ctx.fillStyle = "#2f6f8f"; ctx.font = `900 ${sh.w*.4}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.iceT ? Math.max(1, Math.ceil((b.iceT - T)/1000)) : b.ice, x, y + 1); }
       ctx.restore(); }
     if (b.glass){ const st = cockState();
       ctx.strokeStyle = `rgba(255,170,220,${.5 + .3*Math.sin(T/300)})`; ctx.lineWidth = 2.5; rr(ctx, x - sh.w*.62, y - sh.H*.58, sh.w*1.24, sh.H*1.14, sh.w*.3); ctx.stroke();

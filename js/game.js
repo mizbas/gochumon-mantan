@@ -471,7 +471,7 @@ function coldWave(){
   if (freezeWarn && T - freezeWarn.t0 >= FREEZE_WARN){
     let i = freezeWarn.i; freezeWarn = null;
     if (!freezeOK(i)) i = -1;
-    if (i >= 0 && bottles.filter(b => b.ice).length < maxIce){ bottles[i].ice = 1; undoSnap = null; play("ice", {gain:.6});
+    if (i >= 0 && bottles.filter(b => b.ice).length < maxIce){ bottles[i].ice = 1; bottles[i].iceT = T + ICE_MS; undoSnap = null; play("ice", {gain:.6});
       floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "凍った！", "#9ed8f0", .9);
       for (let k=0;k<12;k++) parts.push({x: lay.pos[i].x + R(-lay.sh.w*.4, lay.sh.w*.4), y: lay.pos[i].y + R(-lay.sh.H*.3, lay.sh.H*.3), vx:R(-1,1), vy:R(-1.4,-.2), t0:T, life:R(500,900), r:R(1.5,3), ice:true}); }
     freezeT = T + freezeGap();
@@ -481,12 +481,12 @@ function coldWave(){
 let hhT = Infinity, hhOn = false; const HH_LEN = 20000;
 const happyNow = () => T >= hhT && T < hhT + HH_LEN;
 const UNDO_MAX = 3;
-function snap(){ if (S && S.mode === "prep" && undoSnap) undoStack.push(undoSnap); undoSnap = {pm: prepMoves, b: bottles.map(b => ({units: b.units.map(u => ({...u})), corked: b.corked, corkT: b.corkT, ice: b.ice})), stock: stock.map(a => a.slice()), supplyLeft, expSupply, money, dumped, n: bottles.length}; }
+function snap(){ if (S && S.mode === "prep" && undoSnap) undoStack.push(undoSnap); undoSnap = {pm: prepMoves, b: bottles.map(b => ({units: b.units.map(u => ({...u})), corked: b.corked, corkT: b.corkT, ice: b.ice, iceT: b.iceT})), stock: stock.map(a => a.slice()), supplyLeft, expSupply, money, dumped, n: bottles.length}; }
 function doUndo(){
   if (S.mode === "prep" && !undoSnap && undoStack.length) undoSnap = undoStack.pop();
   if (!running || paused || !undoSnap || undoLeft <= 0 || pours.length || undoSnap.n !== bottles.length) return;
   const u = undoSnap; undoSnap = null; undoLeft--;
-  u.b.forEach((o, i) => { const b = bottles[i]; b.units = o.units; b.corked = o.corked; if (o.corkT == null) delete b.corkT; else b.corkT = o.corkT; b.ice = o.ice; waveT[i] = T; });
+  u.b.forEach((o, i) => { const b = bottles[i]; b.units = o.units; b.corked = o.corked; if (o.corkT == null) delete b.corkT; else b.corkT = o.corkT; b.ice = o.ice; b.iceT = o.iceT || 0; if (b.ice && S.mode !== "prep" && !b.iceT) b.iceT = T + ICE_MS; waveT[i] = T; });
   if (S.mode === "prep") prepMoves = u.pm;
   stock = u.stock; supplyLeft = u.supplyLeft; expSupply = u.expSupply; money = u.money; dumped = u.dumped; sel = -1; busy = new Set();
   play("pick", {gain:.5, rate:.8}); floatText(W/2, lay.counterY + 40, S.mode === "prep" ? "ひとつ戻しました" : `ひとつ戻しました（あと${undoLeft}回）`, "#9ed8f0", .85); hud();
@@ -506,7 +506,7 @@ function tapBottle(i){
   if (b.glass) return tapGlass(i);
   if (sel >= 0 && bottles[sel] && bottles[sel].glass && sel !== i){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[sel].x, lay.pos[sel].y - lay.sh.H*.7, "グラスの中身は流しにだけ捨てられます", "#ffb3e6", .7); return; }
   if (b.lock != null){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `🔒${CNAME[b.lock]}の満タン瓶を渡すと開く`, "#f3d27a", .75); return; }
-  if (b.ice){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `あと${b.ice}本渡すか、少し待つと溶ける`, "#9ed8f0", .75); return; }
+  if (b.ice){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, b.iceT ? `あと${Math.ceil((b.iceT - T)/1000)}秒で溶ける（満タン瓶を渡すと早まる）` : `あと${b.ice}本渡すか、少し待つと溶ける`, "#9ed8f0", .75); return; }
   if (b.corked && S.mode === "prep"){ shakeT[i] = T; return; }
   if (b.corked){ if (sel >= 0){ shakeT[i] = T; play("bad", {gain:.3}); return; } deliver(i); return; }
   if (sel < 0){
@@ -573,7 +573,13 @@ function checkCocktail(gi){
     floatText(lay.pos[gi].x, lay.pos[gi].y - lay.sh.H*.7, "カクテル完成！", "#ffb3e6", 1);
   }
 }
-function thaw(){ bottles.forEach((b,i) => { if (b.ice){ b.ice--; if (!b.ice){ b.meltT = T; play("reveal", {gain:.5}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "溶けた！", "#9ed8f0", .85);
+// 氷：ふつうのステージは瓶ごとの時間（ICE_MS）で溶ける。満タン瓶を渡すと3秒早まる。仕込みは数字が減っていく
+const ICE_MS = 12000, ICE_CUT = 3000;
+function iceMelt(){ bottles.forEach((b, i) => { if (b.ice && b.iceT && T >= b.iceT){ b.ice = 0; b.iceT = 0; meltFx(i); } }); }
+function meltFx(i){ bottles[i].meltT = T; play("reveal", {gain:.5}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "溶けた！", "#9ed8f0", .85);
+  for (let k=0;k<12;k++) parts.push({x: lay.pos[i].x + R(-lay.sh.w*.4, lay.sh.w*.4), y: lay.pos[i].y + R(-lay.sh.H*.3, lay.sh.H*.3), vx:R(-1.2,1.2), vy:R(-1.8,-.3), t0:T, life:R(500,900), r:R(1.5,3), ice:true}); }
+function thaw(){ if (S.mode !== "prep"){ bottles.forEach(b => { if (b.ice && b.iceT) b.iceT -= ICE_CUT; }); return; } thawPrep(); }
+function thawPrep(){ bottles.forEach((b,i) => { if (b.ice){ b.ice--; if (!b.ice){ b.meltT = T; play("reveal", {gain:.5}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "溶けた！", "#9ed8f0", .85);
   for (let k=0;k<12;k++) parts.push({x: lay.pos[i].x + R(-lay.sh.w*.4, lay.sh.w*.4), y: lay.pos[i].y + R(-lay.sh.H*.3, lay.sh.H*.3), vx:R(-1.2,1.2), vy:R(-1.8,-.3), t0:T, life:R(500,900), r:R(1.5,3), ice:true}); } } }); }
 function tapSupply(){
   if (!running) return; audio();
@@ -774,7 +780,7 @@ function frame(ts){
   if ($("play").classList.contains("hidden") || !lay) return;
   if (running && !paused){
     T += dt*SPEED;
-    if (T >= iceTick){ iceTick = T + (S.mode === "prep" ? 15000 : 10000); if (bottles.some(b => b.ice)) thaw(); }
+    if (S.mode === "prep"){ if (T >= iceTick){ iceTick = T + 15000; if (bottles.some(b => b.ice)) thawPrep(); } } else iceMelt();
     coldWave(); lockWave(); stockFix(); tipCheck(); evTick();
     if (S.dark && T >= darkT + DARK_LEN){ darkT = T + 26000; }
     if (S.dark && darkSoon() && !S._dw){ S._dw = 1; floatText(W/2, lay.counterY + 40, "停電しそう…", "#9eb8f0", 1); }
