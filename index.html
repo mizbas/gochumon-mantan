@@ -189,14 +189,14 @@
       <label class="pf-l" for="pfShopIn">お店の名前</label><input class="pf-in" id="pfShopIn" maxlength="12" autocomplete="off"><div class="pf-n">12文字まで</div>
       <label class="pf-l" for="pfNameIn">店主の名前（ニックネーム）</label><input class="pf-in" id="pfNameIn" maxlength="10" autocomplete="off"><div class="pf-n">10文字まで・本名は入れないでね</div>
       <label class="pf-l" for="pfMsgIn">ひとこと</label><input class="pf-in" id="pfMsgIn" maxlength="24" autocomplete="off" placeholder="例：今日も満タンでお待ちしてます"><div class="pf-n">24文字まで</div>
-      <div class="pf-l">アバター</div><div class="pick" id="pfAva"></div>
-      <div class="pf-l">服の色</div><div class="pick" id="pfWear"></div>
-      <div class="pf-l">服の柄</div><div class="pick" id="pfFit"></div>
-      <div class="pf-l">小物</div><div class="pick" id="pfAcc"></div>
+      <details class="pf-d"><summary class="pf-l">アバター<span class="pf-now" id="pfAvaNow"></span></summary><div class="pick" id="pfAva"></div></details>
+      <details class="pf-d"><summary class="pf-l">服の色<span class="pf-now" id="pfWearNow"></span></summary><div class="pick" id="pfWear"></div></details>
+      <details class="pf-d"><summary class="pf-l">服の柄<span class="pf-now" id="pfFitNow"></span></summary><div class="pick" id="pfFit"></div></details>
+      <details class="pf-d"><summary class="pf-l">小物<span class="pf-now" id="pfAccNow"></span></summary><div class="pick" id="pfAcc"></div></details>
       <p class="set-p" style="text-align:center">🔒のものは、ショップの「店主」タブで買ったり、エンドレス・日替わり・ランクのほうびでもらえます。タップすると手に入れ方が出ます。</p>
-      <div class="pf-l">称号</div><div class="pick tsel" id="pfTtlSel"></div>
-      <div class="pf-l">飾るトロフィー（3つまで）</div><div class="pick tsel" id="pfTrSel"></div>
-      <div class="pf-l">好きな色（プロフィールの飾りに使います）</div><div class="pick" id="pfFav"></div>
+      <label class="pf-l" for="pfTtlSel">称号</label><select class="pf-in pf-sel" id="pfTtlSel"></select>
+      <div class="pf-l">飾るトロフィー（3つまで）</div><div id="pfTrSel" class="pf-trs"></div>
+      <details class="pf-d"><summary class="pf-l">好きな色<small>（飾りに使います）</small><span class="pf-now" id="pfFavNow"></span></summary><div class="pick" id="pfFav"></div></details>
       <div id="pfErr" class="set-p" style="color:#c0392b;font-weight:700;min-height:18px;text-align:center"></div>
       <div class="set-btns"><button id="pfCancel">やめる</button><button class="m" id="pfSave">保存する</button></div>
     </div>

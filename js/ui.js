@@ -602,34 +602,43 @@ let draft = null;
 function openForm(first){
   draft = Object.assign({fit: "plain"}, save.profile, {ttl: save.titleSel || null, tr: (save.profile.tr || []).slice()});
   $("pfShopIn").value = draft.shop; $("pfNameIn").value = draft.name; $("pfMsgIn").value = draft.msg; $("pfErr").textContent = "";
+  document.querySelectorAll(".pf-d").forEach(d => d.open = !!first && d.querySelector("#pfAva") !== null);
   $("pfH").textContent = first ? "お店をひらこう" : "プロフィールを編集"; $("pfView").classList.add("hidden"); $("pfForm").classList.remove("hidden"); $("profile").classList.remove("hidden");
   renderPick();
 }
 function renderPick(){
   const hint = c => { $("pfErr").style.color = "#8a5a2a"; $("pfErr").textContent = `🔒 ${cosName(c)}：${cosHow(c)}`; play("bad", {gain:.25}); };
   const ava = $("pfAva"); ava.innerHTML = "";
-  COS.filter(c => c.t === "ava").forEach(c => { const g = c.id, own = cosOwned(c), b = document.createElement("button"); b.className = draft.g === g ? "on" : ""; b.setAttribute("aria-label", cosName(c) + (own ? "" : "（未入手）"));
+  COS.filter(c => c.t === "ava").sort((a, b) => cosOwned(b) - cosOwned(a)).forEach(c => { const g = c.id, own = cosOwned(c), b = document.createElement("button"); b.className = draft.g === g ? "on" : ""; b.setAttribute("aria-label", cosName(c) + (own ? "" : "（未入手）"));
     const cv = document.createElement("canvas"); cv.width = 104; cv.height = 104; const x = cv.getContext("2d"); x.save(); x.beginPath(); x.arc(52, 52, 52, 0, 7); x.clip(); if (!own) x.globalAlpha = .3; drawAvatar(x, Object.assign({}, draft, {g}), 52, 54, 50, 600); x.restore();
     if (!own){ x.font = "28px sans-serif"; x.textAlign = "center"; x.textBaseline = "middle"; x.fillText("🔒", 52, 52); }
     b.appendChild(cv); b.onclick = () => { if (!own) return hint(c); draft.g = g; play("pick", {gain:.4}); renderPick(); }; ava.appendChild(b); });
   const wr = $("pfWear"); wr.innerHTML = "";
   COLORS.forEach((col, k) => { const b = document.createElement("button"); b.className = draft.wear === k ? "on" : ""; b.setAttribute("aria-label", CNAME[k]); b.innerHTML = `<span class="sw" style="background:${col}"></span>`; b.onclick = () => { draft.wear = k; play("pick", {gain:.4}); renderPick(); }; wr.appendChild(b); });
-  // 称号：ランクの称号と、ほうびでもらった称号から選ぶ
-  { const r = rankOf(save.total), own = TITLES.filter(([n]) => n <= r).map(t => t[1]).concat(save.titles || []), box = $("pfTtlSel"); box.innerHTML = "";
-    [[null, `ランクの称号（${titleOfRank(r)}）`]].concat(own.filter((t, i, a) => a.indexOf(t) === i).map(t => [t, t])).forEach(([v, label]) => { const b = document.createElement("button"); b.textContent = label; b.className = (draft.ttl || null) === v ? "on" : ""; b.onclick = () => { draft.ttl = v; play("pick", {gain:.4}); renderPick(); }; box.appendChild(b); }); }
-  // 飾るトロフィー：持っているものから3つまで
-  { const box = $("pfTrSel"), got = TROPHIES.filter(t => save.trophies[t.id]); box.innerHTML = got.length ? "" : `<span class="none">トロフィーをとると、ここで選べます</span>`;
-    got.forEach(t => { const on = draft.tr.includes(t.id), b = document.createElement("button"); b.textContent = `${t.ic} ${t.name}`; b.className = on ? "on" : ""; b.setAttribute("aria-pressed", on);
-      b.onclick = () => { if (on) draft.tr = draft.tr.filter(x => x !== t.id); else { if (draft.tr.length >= 3){ $("pfErr").style.color = "#8a5a2a"; $("pfErr").textContent = "飾れるのは3つまでです。外したいものをもう一度タップしてね"; play("bad", {gain:.25}); return; } draft.tr.push(t.id); } $("pfErr").textContent = ""; play("pick", {gain:.4}); renderPick(); }; box.appendChild(b); }); }
+  // 称号：プルダウンで1つ
+  { const r = rankOf(save.total), own = TITLES.filter(([n]) => n <= r).map(t => t[1]).concat(save.titles || []).filter((t, i, a) => a.indexOf(t) === i), sel = $("pfTtlSel");
+    sel.innerHTML = [`<option value="">ランクの称号（${esc(titleOfRank(r))}）</option>`].concat(own.map(t => `<option value="${esc(t)}">${esc(t)}</option>`)).join("");
+    sel.value = draft.ttl && own.includes(draft.ttl) ? draft.ttl : ""; sel.onchange = () => { draft.ttl = sel.value || null; play("pick", {gain:.4}); }; }
+  // 飾るトロフィー：プルダウンを3つ（同じものは選べない）
+  { const box = $("pfTrSel"), got = TROPHIES.filter(t => save.trophies[t.id]); box.innerHTML = "";
+    if (!got.length) box.innerHTML = `<span class="set-p">トロフィーをとると、ここで選べます</span>`;
+    else for (let k = 0; k < 3; k++){ const sel = document.createElement("select"); sel.className = "pf-in pf-sel"; sel.setAttribute("aria-label", `飾るトロフィー ${k+1}つめ`);
+      const cur = draft.tr[k] || "", others = draft.tr.filter((x, q) => q !== k);
+      sel.innerHTML = [`<option value="">${k+1}つめ：なし</option>`].concat(got.filter(t => !others.includes(t.id)).map(t => `<option value="${t.id}">${t.ic} ${esc(t.name)}</option>`)).join("");
+      sel.value = cur; sel.onchange = () => { const a = draft.tr.slice(0, 3); a[k] = sel.value; draft.tr = a.filter(Boolean); play("pick", {gain:.4}); renderPick(); }; box.appendChild(sel); } }
+  // 折りたたみの見出しに、いま選んでいるものを出す
+  { const sw = k => `<i style="background:${COLORS[k]}"></i>${CNAME[k]}`, nm = (t, id) => { const c = COS.find(x => x.t === t && x.id === id); return c ? esc(cosName(c)) : ""; };
+    $("pfAvaNow").innerHTML = nm("ava", draft.g); $("pfWearNow").innerHTML = sw(draft.wear); $("pfFitNow").innerHTML = nm("fit", draft.fit || "plain"); $("pfAccNow").innerHTML = nm("acc", draft.acc); $("pfFavNow").innerHTML = sw(draft.fav); }
   const ac = $("pfAcc"); ac.innerHTML = "";
-  COS.filter(c => c.t === "acc").forEach(c => { const own = cosOwned(c), b = document.createElement("button"); b.className = "ac" + (draft.acc === c.id ? " on" : ""); if (!own) b.style.opacity = ".45"; b.textContent = (own ? "" : "🔒") + c.name; b.onclick = () => { if (!own) return hint(c); draft.acc = c.id; play("pick", {gain:.4}); renderPick(); }; ac.appendChild(b); });
+  COS.filter(c => c.t === "acc").sort((a, b) => cosOwned(b) - cosOwned(a)).forEach(c => { const own = cosOwned(c), b = document.createElement("button"); b.className = "ac" + (draft.acc === c.id ? " on" : ""); if (!own) b.style.opacity = ".45"; b.textContent = (own ? "" : "🔒") + c.name; b.onclick = () => { if (!own) return hint(c); draft.acc = c.id; play("pick", {gain:.4}); renderPick(); }; ac.appendChild(b); });
   const ft = $("pfFit"); ft.innerHTML = "";
-  COS.filter(c => c.t === "fit").forEach(c => { const own = cosOwned(c), b = document.createElement("button"); b.className = "ac" + ((draft.fit || "plain") === c.id ? " on" : ""); if (!own) b.style.opacity = ".45"; b.textContent = (own ? "" : "🔒") + c.name; b.onclick = () => { if (!own) return hint(c); draft.fit = c.id; play("pick", {gain:.4}); renderPick(); }; ft.appendChild(b); });
+  COS.filter(c => c.t === "fit").sort((a, b) => cosOwned(b) - cosOwned(a)).forEach(c => { const own = cosOwned(c), b = document.createElement("button"); b.className = "ac" + ((draft.fit || "plain") === c.id ? " on" : ""); if (!own) b.style.opacity = ".45"; b.textContent = (own ? "" : "🔒") + c.name; b.onclick = () => { if (!own) return hint(c); draft.fit = c.id; play("pick", {gain:.4}); renderPick(); }; ft.appendChild(b); });
   const fv = $("pfFav"); fv.innerHTML = "";
   COLORS.forEach((col, k) => { const b = document.createElement("button"); b.className = draft.fav === k ? "on" : ""; b.setAttribute("aria-label", CNAME[k]); b.innerHTML = `<span class="sw" style="background:${col}"></span>`; b.onclick = () => { draft.fav = k; play("pick", {gain:.4}); renderPick(); }; fv.appendChild(b); });
 }
 $("pChip").onclick = () => { if (!save.profile.set) openForm(true); else openProfile(); };
 $("pfEdit").onclick = () => openForm(false);
+document.querySelectorAll(".pf-d").forEach(d => d.addEventListener("toggle", () => { if (d.open) document.querySelectorAll(".pf-d").forEach(o => { if (o !== d) o.open = false; }); }));
 $("pfCancel").onclick = () => { if (!save.profile.set){ $("profile").classList.add("hidden"); return; } openProfile(); };
 $("pfSave").onclick = () => {
   const shop = sanitize($("pfShopIn").value, 12), name = sanitize($("pfNameIn").value, 10), msg = sanitize($("pfMsgIn").value, 24);
