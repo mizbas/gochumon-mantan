@@ -72,16 +72,17 @@ function clothLocks(st, cloth){
   const L = st.map((b, i) => !!(cloth && cloth[i]));
   for (let changed = true; changed;){ changed = false;
     st.forEach((b, i) => { if (!L[i]) return; const f = cloth[i]; let done = 0;
-      st.forEach((d, k) => { if (k !== i && !L[k] && d.length === CAP && d.every(c => c === d[0]) && (f.c < 0 || d[0] === f.c)) done++; });
+      st.forEach((d, k) => { if (k !== i && !L[k] && d.length === CAP && d.every(c => c % 100 === d[0] % 100) && (f.c < 0 || d[0] % 100 === f.c)) done++; });
       if (done >= f.n){ L[i] = false; changed = true; } }); }
   return L;
 }
 function prepSolve(start, cap, limit, cloth){
-  // start: [[c,c,...], ...] 下から上。戻り値：[{from,to,n}, ...] か null
+  // start: [[c,c,...], ...] 下から上。「？」で隠れている1杯は c+100 で表す（見えている同じ色の続きだけを一度に注げる。注いだあとの一番上は見えるようになる）
+  // 戻り値：[{from,to,n}, ...] か null
   const lk = st => cloth && cloth.some(Boolean) ? clothLocks(st, cloth) : null;
   const keyOf = st => { const L = lk(st); return st.map((b, i) => b.join(",") + (L && L[i] ? "~" + i : "")).sort().join("|"); };
-  const solved = st => st.every(b => !b.length || (b.length === cap && b.every(c => c === b[0])));
-  const h = st => { let x = 0; const where = {}; st.forEach((b, i) => { for (let k=1;k<b.length;k++) if (b[k] !== b[k-1]) x++; if (b.length && b.length < cap) x += .5; new Set(b).forEach(c => where[c] = (where[c]||0) + 1); }); for (const c in where) x += where[c] - 1; return x; };
+  const solved = st => st.every(b => !b.length || (b.length === cap && b.every(c => c % 100 === b[0] % 100)));
+  const h = st => { let x = 0; const where = {}; st.forEach((b, i) => { for (let k=1;k<b.length;k++) if (b[k] % 100 !== b[k-1] % 100) x++; if (b.length && b.length < cap) x += .5; new Set(b.map(c => c % 100)).forEach(c => where[c] = (where[c]||0) + 1); }); for (const c in where) x += where[c] - 1; return x; };
   const heap = [], push = n => { heap.push(n); let i = heap.length - 1; while (i){ const p = (i-1) >> 1; if (heap[p].f <= heap[i].f) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } },
     pop = () => { const top = heap[0], last = heap.pop(); if (heap.length){ heap[0] = last; let i = 0; for (;;){ const l = 2*i+1, r = l+1; let m = i; if (l < heap.length && heap[l].f < heap[m].f) m = l; if (r < heap.length && heap[r].f < heap[m].f) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
   const seen = new Map(); push({st: start, g: 0, f: h(start), path: null}); seen.set(keyOf(start), 0);
@@ -91,6 +92,7 @@ function prepSolve(start, cap, limit, cloth){
     if (solved(st)){ const out = []; for (let p = cur.path; p; p = p.prev) out.push(p.m); return out.reverse(); }
     for (let i=0;i<st.length;i++){
       const a = st[i]; if (!a.length || (L && L[i])) continue;
+      if (a.length === cap && a.every(c => c % 100 === a[0] % 100)) continue; // 満タンにそろった瓶は栓をするので動かせない
       const c = a[a.length-1]; let run = 0; for (let k=a.length-1;k>=0 && a[k]===c;k--) run++;
       const uniform = run === a.length; let triedEmpty = false;
       for (let j=0;j<st.length;j++){
@@ -101,6 +103,7 @@ function prepSolve(start, cap, limit, cloth){
         const m = Math.min(run, cap - b.length);
         if (b.length && uniform && m < run) { /* 一部だけ動かすのは可 */ }
         const nx = st.slice(); nx[i] = a.slice(0, a.length - m); nx[j] = b.concat(Array(m).fill(c));
+        { const s2 = nx[i]; if (s2.length && s2[s2.length-1] >= 100){ nx[i] = s2.slice(); nx[i][s2.length-1] -= 100; } } // 注いだあと、下の1杯が見えるようになる
         const key = keyOf(nx), g = cur.g + 1;
         if (seen.has(key) && seen.get(key) <= g) continue; seen.set(key, g);
         push({st: nx, g, f: g + 1.6*h(nx), path: {m: {from: i, to: j, n: m}, prev: cur.path}});
@@ -109,7 +112,7 @@ function prepSolve(start, cap, limit, cloth){
   }
   return null;
 }
-function prepGen(k, empties, cap, seed, rand, clothN){
+function prepGen(k, empties, cap, seed, rand, clothN, hide){
   for (let tries = 0; tries < (clothN ? 400 : 60); tries++){
     const r = rand(seed + tries*7919), pool = [];
     for (let c=0;c<k;c++) for (let u=0;u<cap;u++) pool.push(c);
@@ -120,7 +123,8 @@ function prepGen(k, empties, cap, seed, rand, clothN){
     let cloth = null;
     if (clothN){ cloth = st.map(() => null); const idx = [...Array(k).keys()];
       for (let q=0; q<clothN; q++){ const i = idx.splice(Math.floor(r()*idx.length), 1)[0]; cloth[i] = r() < .35 ? {c: -1, n: r() < .5 ? 1 : 2} : {c: Math.floor(r()*k), n: 1}; } }
-    const sol = prepSolve(st, cap, 120000, cloth);
+    const st2 = hide ? st.map(b => b.map((c, j) => b.length === cap && j < b.length - 1 ? c + 100 : c)) : st; // ゲームと同じく、満タンの瓶は一番上以外が「？」
+    const sol = prepSolve(st2, cap, 120000, cloth);
     if (sol) return {st, sol, tries, cloth};
   }
   return null;
@@ -135,7 +139,7 @@ const prepCache = {};
 function prepDef(id){
   if (id === "pd") return prepDailyDef();
   const [c, n] = id.slice(1).split("-").map(Number), [k, e, hide, ice, cloth] = PREP_CH[c-1];
-  if (!prepCache[id]) prepCache[id] = prepGen(k, e, CAP, c*1000 + n*37 + 11, mulberry, cloth || 0);
+  if (!prepCache[id]) prepCache[id] = prepGen(k, e, CAP, c*1000 + n*37 + 11, mulberry, cloth || 0, !!hide);
   const g = prepCache[id];
   return {id: prepName(id), pid: id, mode: "prep", ch: c, n, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0, hide: !!hide, ice: ice ? [2] : null, cloth: g && g.cloth ? g.cloth : null, prep: g, par: g ? g.sol.length : 99};
 }
@@ -144,7 +148,7 @@ const prepOpen = () => (save.stars["1-1"] || 0) >= 1;
 let prepMoves = 0, prepHelp = 0, prepHint = null;
 function prepStarCap(){ return Math.max(1, 3 - prepHelp); }
 function prepStars(){ const par = S.par, m = prepMoves; const st = m <= par ? 3 : m <= Math.ceil(par*1.3) ? 2 : 1; return Math.min(st, prepStarCap()); }
-function prepState(){ return bottles.map(b => b.units.map(u => u.c)); }
+function prepState(){ return bottles.map(b => b.units.map(u => u.c + (u.h ? 100 : 0))); }
 const clothNow = () => bottles.map(b => b.cloth ? {c: b.cloth.c, n: b.cloth.n} : null);
 // 満タンができたら、条件のそろった布を取る
 function clothCheck(){
@@ -234,7 +238,7 @@ function dailyDef(){
 const ENDLESS = () => ({id:"エンドレス", mode:"endless", w:1, n:0, colors:4, ord:[1,2], seats:3, guests:Infinity, pat:62, shelf:5, spare:2, goal:0});
 function startPrep(){
   bottles = S.prep.st.map((u, k) => ({units: u.map((c, j) => ({c, h: S.hide && j < u.length - 1 && u.length === CAP})), spare: !u.length}));
-  seats = []; sel = -1; pours = []; flights = []; busy = new Set(); lift = bottles.map(() => 0);
+  seats = []; sel = -1; pours = []; flights = []; busy = new Set(); lift = bottles.map(() => 0); moveQ = [];
   money = 0; combo = 0; maxCombo = 0; servedN = 0; missed = 0; dumped = 0; bottlesOut = 0; guestsLeft = 0; expSupply = 0;
   floats = []; parts = []; shakeT = {}; waveT = {}; T = 0; botNext = 0; ended = false; running = true;
   stock = []; stored = []; bought = 0; storeCap = 0; sandUsed = false; paused = false; pendingStore = -1; supplyLeft = 0; iceTick = 15000;
@@ -283,7 +287,7 @@ function startStage(i){
   for (let k=0;k<S.spare;k++) bottles.push({units: [], spare:true});
   bottles.forEach(b => { if (isFull(b)){ const x = b.units[0]; b.units[0] = b.units[3]; b.units[3] = x; b.units[1] = {c: (b.units[1].c + 1) % S.colors}; } });
   seats = []; for (let k=0;k<S.seats;k++) seats.push({state:"empty", next: 500 + k*1800, order:[], got:[], res:[], g:0, t0:0});
-  sel = -1; pours = []; flights = []; busy = new Set(); lift = bottles.map(()=>0);
+  sel = -1; pours = []; flights = []; busy = new Set(); lift = bottles.map(()=>0); moveQ = [];
   money = 0; combo = 0; maxCombo = 0; servedN = 0; missed = 0; dumped = 0; bottlesOut = 0; guestsLeft = S.guests; expSupply = 0;
   floats = []; parts = []; shakeT = {}; waveT = {}; T = 0; botNext = 0; ended = false; running = true;
   if (S.cocktail){ bottles.push({units: [], glass: true}); lift.push(0); }
@@ -305,10 +309,10 @@ function layout(){
   const st = $("stage"); W = st.clientWidth; H = st.clientHeight;
   dpr = Math.min(window.devicePixelRatio || 1, save.lite ? 1.25 : (save.dprCap || 2)); cv.width = W*dpr; cv.height = H*dpr;
   const n = bottles.length + (S && S.mode === "prep" ? 0 : 3), usableW = Math.min(W - 16, 680);
-  const counterY = Math.min(H*.36, 250), shelfTop = counterY + 26, availH = H - shelfTop - 10;
+  const prep = S && S.mode === "prep", counterY = prep ? Math.min(64, H*.1) : Math.min(H*.36, 250), shelfTop = counterY + (prep ? 14 : 26), availH = H - shelfTop - 10;
   let best = null;
   for (let pr = n; pr >= Math.ceil(n/3); pr--){
-    const rows = Math.ceil(n/pr), slot = usableW/pr; let w = Math.min(slot*.6, 60);
+    const rows = Math.ceil(n/pr), slot = usableW/pr; let w = Math.min(slot*.62, prep ? 84 : 60);
     while (rows*(w*3.05 + w*.9) > availH && w > 16) w -= 1;
     if (!best || w > best.w + .5) best = {w, pr, rows, slot};
   }
@@ -510,20 +514,33 @@ function doUndo(){
   const u = undoSnap; undoSnap = null; undoLeft--;
   u.b.forEach((o, i) => { const b = bottles[i]; b.units = o.units; b.corked = o.corked; if (o.corkT == null) delete b.corkT; else b.corkT = o.corkT; b.ice = o.ice; b.iceT = o.iceT || 0; b.cloth = o.cloth ? {...o.cloth} : null; if (b.ice && S.mode !== "prep" && !b.iceT) b.iceT = T + ICE_MS; waveT[i] = T; });
   if (S.mode === "prep") prepMoves = u.pm;
-  stock = u.stock; supplyLeft = u.supplyLeft; expSupply = u.expSupply; money = u.money; dumped = u.dumped; sel = -1; busy = new Set();
+  stock = u.stock; supplyLeft = u.supplyLeft; expSupply = u.expSupply; money = u.money; dumped = u.dumped; sel = -1; busy = new Set(); moveQ = [];
   play("pick", {gain:.5, rate:.8}); floatText(W/2, lay.counterY + 40, S.mode === "prep" ? "ひとつ戻しました" : `ひとつ戻しました（あと${undoLeft}回）`, "#9ed8f0", .85); hud();
 }
 function tapGlass(i){
   const b = bottles[i];
   if (sel < 0){ if (!b.units.length){ shakeT[i] = T; floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "瓶を選んでから、ここをタップ", "#ffb3e6", .75); return; } sel = i; play("pick", {gain:.5}); return; }
   if (sel === i){ sel = -1; play("pick", {gain:.35, rate:.9}); return; }
-  const a = bottles[sel]; if (!a.units.length || a.corked){ sel = -1; return; }
+  const a = bottles[sel]; if (!a.units.length || a.corked || a.ice || a.lock != null || a.cloth){ sel = -1; return; }
   if (b.units.length >= (S.cockLen ? S.cockLen[1] : CAP)){ shakeT[i] = T; play("bad", {gain:.3}); return; }
   snap(); startPour(sel, i, 1); sel = -1; hud();
 }
-function tapBottle(i){
+// 続けて注ぐ：注いでいる途中の瓶にも次の操作を受け付けて、空いたら順番に注ぐ
+let moveQ = [];
+function runMoveQ(){
+  if (!moveQ.length || paused || !running) return;
+  const [a, b] = moveQ[0]; if (busy.has(a) || busy.has(b)) return;
+  moveQ.shift(); if (!bottles[a] || !bottles[b]) return; const keep = sel; sel = a; tapBottle(b, true); if (keep >= 0) sel = keep; // 待っている間に選んでいた瓶はそのまま
+}
+function tapBottle(i, fromQ){
   if (!running) return; audio();
-  if (busy.has(i)) return;
+  if (!bottles[i]) return;
+  if (!fromQ && (busy.has(i) || (sel >= 0 && busy.has(sel)) || moveQ.length)){
+    if (sel >= 0 && sel !== i){ if (moveQ.length < 12) moveQ.push([sel, i]); sel = -1; play("pick", {gain:.3, rate:1.15}); return; }
+    if (sel < 0 && (bottles[i].units.length || moveQ.some(q => q[1] === i)) && !bottles[i].corked && !bottles[i].ice && (!bottles[i].cloth || moveQ.length) && bottles[i].lock == null && !bottles[i].glass){ sel = i; play("pick", {gain:.5, rate:1.05}); return; }
+    if (sel === i){ sel = -1; return; }
+    return;
+  }
   const b = bottles[i];
   if (b.glass) return tapGlass(i);
   if (sel >= 0 && bottles[sel] && bottles[sel].glass && sel !== i){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[sel].x, lay.pos[sel].y - lay.sh.H*.7, "グラスの中身は流しにだけ捨てられます", "#ffb3e6", .7); return; }
@@ -537,7 +554,7 @@ function tapBottle(i){
     sel = i; play("pick", {gain:.5, rate:1.05}); return;
   }
   if (sel === i){ sel = -1; play("pick", {gain:.35, rate:.9}); return; }
-  const a = bottles[sel]; if (!a.units.length){ sel = -1; return; }
+  const a = bottles[sel]; if (!a.units.length || a.corked || a.ice || a.lock != null || a.cloth){ sel = -1; return; } // 待っている間に栓・氷・カギ・ふきんが付いた瓶からは注がない
   revealTop(sel); if (!topRun(a.units)){ sel = -1; return; } // 念のため：一番上が「？」のままなら見せてから
   const c = a.units[a.units.length-1].c;
   if (b.units.length >= CAP || (b.units.length && b.units[b.units.length-1].c !== c)){ shakeT[i] = T; play("bad", {gain:.3}); return; }
@@ -546,6 +563,7 @@ function tapBottle(i){
 }
 function tapSink(){
   if (!running || sel < 0) return; audio();
+  if (busy.has(sel)){ shakeT[sel] = T; return; } // 注いでいる途中の瓶は流しに捨てない
   snap(); const b = bottles[sel], n = b.glass ? b.units.length : topRun(b.units); b.units.splice(b.units.length - n, n);
   const cost = n*DUMP_COST; money = Math.max(0, money - cost); dumped += n;
   floatText(lay.sink.x, lay.sink.y - lay.sh.H*.3, `−${yen(cost)}`, "#ef6b5b", .8);
@@ -710,7 +728,7 @@ function startPour(from, to, n){
   busy.add(from); busy.add(to);
   const fp = lay.pos[from], tp = lay.pos[to], dir = fp.x <= tp.x ? 1 : -1, sh = lay.sh;
   const a0 = angleFor(sh, srcBefore.length*sh.unit, dir), a1 = angleFor(sh, Math.max((srcBefore.length-n)*sh.unit, sh.unit*.04), dir);
-  const sp = has("spout") ? .67 : 1;
+  const sp = (has("spout") ? .67 : 1)*(S.mode === "prep" ? .8 : 1);
   pours.push({from, to, n, c: moved[0].c, dir, a0, a1, srcBefore, dstBefore, t0: T, T1: 260*sp, T2: (.36 + .13*n)*1000*sp, T3: 260*sp});
 }
 function tipTarget(p){ const sh = lay.sh, q = lay.pos[p.to]; return [q.x - p.dir*sh.nw*.15, q.y - sh.H/2 - sh.H*.16]; }
@@ -736,7 +754,7 @@ function prepProgress(){
 }
 function hud(){
   if (S.mode === "prep"){
-    $("lvlV").textContent = S.daily ? "今日" : S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `${S.daily ? "今日の仕込み" : "仕込み"}・目安${S.par}手`; $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
+    $("lvlV").textContent = S.daily ? "今日" : S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `${S.daily ? "今日の仕込み" : "仕込み"}・目安${S.par}手` + (prepHelp ? `・★最大${prepStarCap()}` : ""); $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
     // ゲージは完成までの進み具合（色ごとに、瓶の底からそろっている数）。色はいまの★（3=緑・2=黄・1=赤）
     const st = prepStars();
     $("moneyBar").style.width = (prepProgress()*100) + "%"; $("moneyBar").style.background = st >= 3 ? "var(--good)" : st === 2 ? "var(--amber)" : "#ef6b5b";
@@ -804,7 +822,7 @@ function frame(ts){
   if (running && !paused){
     T += dt*SPEED;
     if (S.mode === "prep"){ if (T >= iceTick){ iceTick = T + 15000; if (bottles.some(b => b.ice)) thawPrep(); } } else iceMelt();
-    coldWave(); lockWave(); stockFix(); tipCheck(); evTick();
+    coldWave(); lockWave(); stockFix(); tipCheck(); evTick(); runMoveQ();
     // 「？」から見えた色の印は、見え始めの動きが終わったら消す（残ると模様が消えたり、同じ色が別の層に分かれて見える）
     for (const b of bottles) for (const u of b.units) if (u.rev != null && T - u.rev > 400) delete u.rev;
     if (S.dark && T >= darkT + DARK_LEN){ darkT = T + 26000; }

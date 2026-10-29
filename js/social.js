@@ -9,7 +9,7 @@ function prepDailyWd(){ const t = todayJST(); return PD_WD[new Date(Date.UTC(t.y
 function strSeed(s){ let h = 2166136261; for (let i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) % 1000000007; }
 function prepDailyDef(){
   const key = todayKey(), c = prepDailyCh(), [k, e, hide, ice] = PREP_CH[c-1], cid = "pd:" + key;
-  if (!prepCache[cid]) prepCache[cid] = prepGen(k, e, CAP, strSeed("mantan-" + key), mulberry);
+  if (!prepCache[cid]) prepCache[cid] = prepGen(k, e, CAP, strSeed("mantan-" + key), mulberry, 0, !!hide);
   const g = prepCache[cid];
   return {id: "今日の仕込み", pid: "pd", key, daily: true, mode: "prep", ch: c, n: 0, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0,
     hide: !!hide, ice: ice ? [2] : null, prep: g, par: g ? g.sol.length : 99, label: `${key.slice(5).replace("-", "/")}（${prepDailyWd()}）`};

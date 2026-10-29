@@ -222,12 +222,7 @@ function draw(){
     ctx.fillStyle = "#f3d27a"; ctx.font = `900 12px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText("ご予約", bx + 10, by + bh/2);
     const cell = 13; let x = bx + 60;
     resQ.slice(0, 2).forEach((o, k) => { if (k){ ctx.fillStyle = "#bba895"; ctx.fillText("→", x - 4, by + bh/2); x += 12; } o.forEach(c => { miniBottle(ctx, x + cell/2, by + bh - 6, 24, COLORS[c], false, c); x += cell; }); x += 12; }); }
-  if (S.mode === "prep"){ // 仕込み：手数と目安
-    ctx.fillStyle = "#f6ead6"; ctx.font = `400 ${Math.min(30, W*.075)}px ${getComputedStyle(document.body).getPropertyValue("--hand") || "sans-serif"}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(`${prepMoves}手`, W/2, cy*.45);
-    ctx.font = `700 13px "Zen Kaku Gothic New",sans-serif`; ctx.fillStyle = "#bba895"; ctx.fillText(`目安 ${S.par}手で★3　・　全部の瓶を1色ずつそろえよう`, W/2, cy*.45 + 32);
-    if (prepHelp) { ctx.fillStyle = "#e0a020"; ctx.fillText(`助けを使ったので★は最大${prepStarCap()}つ`, W/2, cy*.45 + 54); }
-  }
+  // 仕込み：手数と目安は上の表示に出ているので、絵の中には描かない（飾りと重ならないように）
   // 流し
   const sk = lay.sink, sw = sh.w*1.25, on = sel >= 0;
   if (S.mode !== "prep"){
