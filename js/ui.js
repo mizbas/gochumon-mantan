@@ -233,6 +233,7 @@ function pauseGame(){
   paused = true; sel = -1;
   $("pauseP").innerHTML = S.mode === "prep" ? `いま ${prepMoves}手（目安 ${S.par}手）<br><small>やめると、この仕込みは最初からになります</small>` : `時間は止まっています。<br>いまの売上 <b>${yen(money)}</b>` + (S.mode === "endless" ? "" : `（目標 ${yen(S.goal)}）`) + `<br><small>マップに戻ると、このステージの売上は入りません</small>`;
   $("pauseTop").textContent = S.mode === "prep" ? "仕込みをやめる" : "お店を閉めてマップに戻る";
+  $("pauseRetry").classList.toggle("hidden", S.mode !== "prep");
   $("pauseOv").classList.remove("hidden"); play("pick", {gain:.4});
 }
 // 説明画面に、このお店の飲み物の一覧を出す
@@ -299,6 +300,8 @@ function resumeGame(){
 }
 $("homeBtn").onclick = () => { audio(); pauseGame(); };
 $("pauseGo").onclick = resumeGame;
+// 仕込み：最初からやり直す（同じ問題をはじめから）
+$("pauseRetry").onclick = () => { if (!S || S.mode !== "prep") return; audio(); $("pauseOv").classList.add("hidden"); $("tipOv").classList.add("hidden"); paused = false; startStage(stg); play("pick", {gain:.4, rate:.9}); };
 $("pauseTop").onclick = () => { $("tipOv").classList.add("hidden"); tipOpen = null; if (S && S.mode === "prep"){ $("pauseOv").classList.add("hidden"); running = false; paused = false; openPrepSel(); return; } if (tut){ tut = null; $("tutBox").classList.add("hidden"); } $("pauseOv").classList.add("hidden"); running = false; paused = false; $("rackAsk").classList.add("hidden"); if (S && S.mode === "event") openEvShop(); else showMap(); };
 // アプリを裏に回したら自動で一時停止
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden" && running && !$("play").classList.contains("hidden")) pauseGame(); });

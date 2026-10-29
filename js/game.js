@@ -804,7 +804,7 @@ function prepProgress(){
 }
 function hud(){
   if (S.mode === "prep"){
-    $("lvlV").textContent = S.daily ? "今日" : S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `${S.daily ? "今日の仕込み" : "仕込み"}・目安${S.par}手・★3は${prepLine3()}手まで` + (prepHelp ? `・★最大${prepStarCap()}` : ""); $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
+    $("lvlV").textContent = S.daily ? "今日" : S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `目安${S.par}手・★3は${prepLine3()}手まで` + (prepHelp ? `・★最大${prepStarCap()}` : ""); $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
     // ゲージは完成までの進み具合（色ごとに、瓶の底からそろっている数）。色はいまの★（3=緑・2=黄・1=赤）
     const st = prepStars();
     $("moneyBar").style.width = (prepProgress()*100) + "%"; $("moneyBar").style.background = st >= 3 ? "var(--good)" : st === 2 ? "var(--amber)" : "#ef6b5b";
