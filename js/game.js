@@ -681,6 +681,7 @@ function tapSupply(){
   supplyLeft--; expSupply += SUPPLY_COST; floatText(lay.supply.x, lay.supply.y - lay.sh.H*.7, `仕入れ代 −${yen(SUPPLY_COST)}`, "#bba895", .7);
   bottles[i].units = stock.shift().map((c,j) => ({c, h: !!S.hide && j < CAP-1})); stock.push(stockUnits()); stockT = T;
   bottles[i].refillT = T; waveT[i] = T; evOnSupply(i);
+  if (!bottles[i].corked && isFull(bottles[i])) setTimeout(() => { if (bottles[i] && !bottles[i].corked && isFull(bottles[i])) cork(i); }, 520); /* 仕入れた瓶が最初から1色で満タンなら、そのまま栓をする */
   pourSound(.45, 0, 1); play("pick", {gain:.4, rate:.95});
 }
 function findTarget(c){
