@@ -205,7 +205,7 @@ function endPrep(){
   if (!prev || prepMoves < prev) save.prep.best[id] = prepMoves;
   const master = prepMaster(), firstMaster = master && !(save.prep.master || {})[id]; if (master){ save.prep.master = save.prep.master || {}; save.prep.master[id] = 1; }
   const reward = first ? 100*S.ch : 0; save.wallet += reward;
-  const cleared = Object.keys(save.prep.stars).length; claim("prep", cleared); countDay();
+  const cleared = Object.keys(save.prep.stars).length; claim("prep", cleared); claim("master", masterCount(save)); countDay();
   const newTr = checkTrophies(true); persist();
   $("resH").textContent = master ? "👑 名人！ 仕込み完了" : "仕込み完了！"; $("resMoney").textContent = `${prepMoves}手`;
   $("resGoal").innerHTML = `目安 ${S.par}手` + (prev ? `　ベスト ${Math.min(prev, prepMoves)}手` : "") + (prepHelp ? `<br><small>助けを使ったので★は最大${prepStarCap()}つ</small>` : "");

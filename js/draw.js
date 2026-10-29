@@ -20,7 +20,7 @@ function bottleShape(style, w){
   const key = style + Math.round(w*10); if (shapes.has(key)) return shapes.get(key);
   const H = w*3.05, t = w*.075, hw = w/2 - t, P = [];
   let sh;
-  if (style === "gold" || style === "crystal"){ const b = Object.assign({}, bottleShape(style === "gold" ? "classic" : "square", w), {style}); delete b.T0; shapes.set(key, b); return b; }
+  if (style === "gold" || style === "crystal" || style === "meijin" || style === "ouka"){ const b = Object.assign({}, bottleShape(style === "gold" || style === "meijin" ? "classic" : "square", w), {style}); delete b.T0; shapes.set(key, b); return b; }
   if (style === "tube"){
     const tw = hw*.78, top = -H/2 + t*.4, bottom = H/2 - t;
     P.push([-tw, top]); for (let i=0;i<=12;i++){ const a = Math.PI - i/12*Math.PI; P.push([Math.cos(a)*tw, bottom - tw + Math.sin(a)*tw]); } P.push([tw, top]);
@@ -115,7 +115,7 @@ function drawVesselRaw(c, sh, x, y, a, layers0, o={}){
   c.restore();
   c.save(); if (o.alpha != null) c.globalAlpha = o.alpha;
   pathOf(c, P); c.lineJoin = "round";
-  const rim = sh.style === "gold" ? "rgba(240,190,70,.85)" : sh.style === "crystal" ? "rgba(190,235,255,.7)" : "rgba(235,225,215,.4)";
+  const rim = sh.style === "gold" ? "rgba(240,190,70,.85)" : sh.style === "crystal" ? "rgba(190,235,255,.7)" : sh.style === "meijin" ? "rgba(178,120,230,.85)" : sh.style === "ouka" ? "rgba(245,205,90,.95)" : "rgba(235,225,215,.4)";
   c.lineWidth = sh.t*1.25; c.strokeStyle = o.sel ? "rgba(255,214,140,.95)" : o.glow ? "rgba(255,230,160,.75)" : rim; c.stroke();
   c.lineWidth = Math.max(1, sh.t*.35); c.strokeStyle = "rgba(255,255,255,.35)"; c.stroke();
   c.translate(x, y); c.rotate(a);
@@ -123,12 +123,16 @@ function drawVesselRaw(c, sh, x, y, a, layers0, o={}){
   c.moveTo(-sh.hw*.55, sh.fillY + sh.H*.06); c.lineTo(-sh.hw*.55, sh.bottom - sh.hw*.9);
   if (sh.neckBot > sh.top + 2){ c.moveTo(-sh.nw*.45, sh.top + sh.H*.03); c.lineTo(-sh.nw*.45, sh.neckBot); }
   c.stroke();
+  if (sh.style === "meijin" || sh.style === "ouka"){ /* 名人の瓶・王冠の瓶：肩に小さな王冠 */
+    const cy = sh.fillY - sh.H*.035, cw = sh.hw*.62, chh = cw*.55; c.fillStyle = sh.style === "ouka" ? "#f5cd5a" : "#c99cf0"; c.beginPath();
+    c.moveTo(-cw/2, cy + chh/2); c.lineTo(-cw/2, cy - chh/2); c.lineTo(-cw/4, cy); c.lineTo(0, cy - chh*.7); c.lineTo(cw/4, cy); c.lineTo(cw/2, cy - chh/2); c.lineTo(cw/2, cy + chh/2); c.closePath(); c.fill();
+    if (sh.style === "ouka"){ c.fillStyle = "#d6418f"; c.beginPath(); c.arc(0, cy + chh*.15, chh*.16, 0, 7); c.fill(); } }
   if (sh.style === "crystal"){ c.strokeStyle = "rgba(220,245,255,.45)"; c.lineWidth = 1; c.beginPath();
     for (let k=0;k<3;k++){ const yy = sh.fillY + (sh.bottom - sh.fillY)*(.2 + .3*k); c.moveTo(-sh.hw*.9, yy); c.lineTo(0, yy + sh.hw*.5); c.lineTo(sh.hw*.9, yy); } c.stroke(); }
   c.fillStyle = "rgba(235,225,215,.5)"; rr(c, -sh.nw - sh.t*.9, sh.top - sh.t*.6, sh.nw*2 + sh.t*1.8, sh.t*1.3, sh.t*.5); c.fill();
   if (o.cork != null){
     const k = o.cork, dropY = (1 - k) * -sh.H*.3, cw = sh.nw*2 + sh.t*.6, ch = Math.min(sh.H*.11, cw*1.3);
-    c.fillStyle = sh.style === "gold" ? "#e8b53a" : sh.style === "crystal" ? "#cfe9f5" : "#c79a62"; rr(c, -cw/2, sh.top - ch*.38 + dropY, cw, ch, Math.min(cw*.18, 6)); c.fill();
+    c.fillStyle = sh.style === "gold" || sh.style === "ouka" ? "#e8b53a" : sh.style === "crystal" ? "#cfe9f5" : sh.style === "meijin" ? "#8a4fc0" : "#c79a62"; rr(c, -cw/2, sh.top - ch*.38 + dropY, cw, ch, Math.min(cw*.18, 6)); c.fill();
     c.fillStyle = "#a87a44"; rr(c, -cw/2, sh.top - ch*.38 + dropY, cw, ch*.28, Math.min(cw*.18, 6)); c.fill();
   }
   c.restore();

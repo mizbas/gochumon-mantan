@@ -349,7 +349,7 @@ function showMap(){
   $("prepSel").classList.add("hidden");
   bgm("map");
   renderChip(); if (!save.profile.set && save.tutDone && !save.profile.asked){ save.profile.asked = true; persist(); setTimeout(() => openForm(true), 400); }
-  renderEvent(); drawHero(); checkTrophies(false); claim("rank", rankOf(save.total)); claim("day", save.dailyClears || 0); claim("elv", save.endless.lv || 0); claim("emon", save.endless.best || 0);
+  renderEvent(); drawHero(); checkTrophies(false); claim("rank", rankOf(save.total)); claim("day", save.dailyClears || 0); claim("elv", save.endless.lv || 0); claim("master", masterCount(save)); claim("emon", save.endless.best || 0);
   // しばらく引き継ぎコードを保存していなくて、進み具合が増えていたらお知らせ
   const days = save.backupT ? Math.floor((Date.now() - save.backupT)/864e5) : null, gain = save.total - (save.backupTotal||0);
   const need = save.total >= 3000 && gain >= Math.max(3000, save.total*.1) && (days === null || days >= 7);
@@ -794,10 +794,10 @@ function renderShop(){
   } else {
     const list = shopTab === "bottle" ? BOTTLES : ROOMS, cur = shopTab === "bottle" ? save.bottle : save.room;
     list.forEach(it => {
-      const owned = save.owned.includes(it.id), on = cur === it.id, lock = !owned && it.rank && rank < it.rank;
+      const owned = save.owned.includes(it.id), on = cur === it.id, mlock = !owned && it.master, lock = mlock || (!owned && it.rank && rank < it.rank);
       const el = document.createElement("div"); el.className = "item";
-      el.innerHTML = `<canvas width="88" height="120"></canvas><div class="t"><b>${it.name}</b>${lock ? `ランク${it.rank}で解放` : owned ? (on ? "使用中" : "持っています") : "まだ持っていません"}</div>
-        <button class="buy ${on ? "on" : ""}" ${!owned && (lock || save.wallet < it.cost) ? "disabled" : ""}>${on ? "使用中" : owned ? "使う" : yen(it.cost)}</button>`;
+      el.innerHTML = `<canvas width="88" height="120"></canvas><div class="t"><b>${it.name}</b>${mlock ? `仕込みの👑名人を${it.master}問とるともらえる（いま${masterCount(save)}問）` : lock ? `ランク${it.rank}で解放` : owned ? (on ? "使用中" : "持っています") : "まだ持っていません"}</div>
+        <button class="buy ${on ? "on" : ""}" ${!owned && (lock || save.wallet < it.cost) ? "disabled" : ""}>${on ? "使用中" : owned ? "使う" : mlock ? "👑" : yen(it.cost)}</button>`;
       const c = el.querySelector("canvas"), x = c.getContext("2d");
       if (shopTab === "bottle"){ const sh = bottleShape(it.id, 34); drawVessel(x, sh, 44, 62, 0, [{c:5,v:2},{c:1,v:2}], {cork:1}); }
       else { const g = x.createLinearGradient(0,0,0,112); g.addColorStop(0, it.wall[0]); g.addColorStop(1, it.wall[2]); x.fillStyle = g; rr(x,0,0,88,112,14); x.fill();

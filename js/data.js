@@ -114,6 +114,8 @@ const BOTTLES = [
   {id:"square",  name:"角瓶",           cost:4000},
   {id:"gold",    name:"金の瓶",         cost:120000, rank:12},
   {id:"crystal", name:"クリスタルの瓶", cost:250000, rank:15},
+  {id:"meijin",  name:"名人の瓶",       cost:0, master:15},   // 仕込みの👑名人を集めるともらえる
+  {id:"ouka",    name:"王冠の瓶",       cost:0, master:104},
 ];
 const SPECIAL = [
   {id:"cat",    ic:"🐈", name:"看板ねこ",       desc:"カウンターに猫が座ります。チップ +20%",              cost:30000,  rank:7},
@@ -199,6 +201,13 @@ const REWARDS = [
   {id:"pp40",  k:"prep", v:40,    give:{decor:"alembic", title:"仕込みの名人"}},
   {id:"pp60",  k:"prep", v:60,    give:{money:20000}},
   {id:"pp80",  k:"prep", v:80,    give:{money:30000, title:"満タンの錬金術師"}},
+  {id:"ms1",   k:"master", v:1,   give:{title:"はじめての名人"}},
+  {id:"ms5",   k:"master", v:5,   give:{money:5000}},
+  {id:"ms15",  k:"master", v:15,  give:{bottle:"meijin"}},
+  {id:"ms30",  k:"master", v:30,  give:{money:15000, title:"手数の魔術師"}},
+  {id:"ms52",  k:"master", v:52,  give:{money:30000, title:"仕込みの大名人"}},
+  {id:"ms80",  k:"master", v:80,  give:{money:50000}},
+  {id:"ms104", k:"master", v:104, give:{bottle:"ouka", title:"満タンの名人王"}},
   {id:"dy1",   k:"day",  v:1,     give:{cos:"ava:9"}},
   {id:"dy3",   k:"day",  v:3,     give:{title:"今日のおすすめ担当"}},
   {id:"dy5",   k:"day",  v:5,     give:{cos:"acc:flower"}},
@@ -208,9 +217,9 @@ const REWARDS = [
   {id:"dy14",  k:"day",  v:14,    give:{money:10000}},
   {id:"dy30",  k:"day",  v:30,    give:{title:"毎日が特別営業"}},
 ];
-const KNAME = {prep: v => `仕込みを${v}問クリア`, elv: v => `エンドレス レベル${v}`, emon: v => `エンドレス 売上${yen(v)}`, rank: v => `ランク${v}`, day: v => `日替わりの目標を${v}日達成`};
+const KNAME = {master: v => `仕込みの👑名人を${v}問`, prep: v => `仕込みを${v}問クリア`, elv: v => `エンドレス レベル${v}`, emon: v => `エンドレス 売上${yen(v)}`, rank: v => `ランク${v}`, day: v => `日替わりの目標を${v}日達成`};
 const cosOfKey = k => { const [t, id] = k.split(":"); return cosFind(t, t === "ava" ? +id : id); };
-const giveText = g => [g.cos && `着せかえ「${cosName(cosOfKey(g.cos))}」`, g.decor && `インテリア「${DECOR.find(d => d.id === g.decor).name}」`, g.title && `称号「${g.title}」`, g.money && yen(g.money)].filter(Boolean).join("＋");
+const giveText = g => [g.bottle && `瓶「${BOTTLES.find(b => b.id === g.bottle).name}」`, g.cos && `着せかえ「${cosName(cosOfKey(g.cos))}」`, g.decor && `インテリア「${DECOR.find(d => d.id === g.decor).name}」`, g.title && `称号「${g.title}」`, g.money && yen(g.money)].filter(Boolean).join("＋");
 function claim(k, val){
   const got = [];
   REWARDS.forEach(r => { if (r.k !== k || val < r.v || save.claimed[r.id]) return;
@@ -218,6 +227,7 @@ function claim(k, val){
     if (g.money) save.wallet += g.money;
     if (g.decor && !save.decor.owned.includes(g.decor)) save.decor.owned.push(g.decor);
     if (g.cos && !save.cos.includes(g.cos)) save.cos.push(g.cos);
+    if (g.bottle && !save.owned.includes(g.bottle)) save.owned.push(g.bottle);
     if (g.title && !save.titles.includes(g.title)) save.titles.push(g.title);
     got.push(r); toastQ.push({ic:"🎁", name: giveText(g), sub: `${KNAME[k](r.v)} のほうび`}); });
   if (got.length){ persist(); runToast(); }
@@ -225,6 +235,8 @@ function claim(k, val){
 }
 function titleShown(){ const r = rankOf(save.total), own = TITLES.filter(([n]) => n <= r).map(t => t[1]).concat(save.titles || []);
   return save.titleSel && own.includes(save.titleSel) ? save.titleSel : titleOfRank(r); }
+// 仕込みの👑名人の数（今日の仕込みは入れない）
+const masterCount = s => Object.keys((s.prep||{}).master||{}).filter(id => id !== "pd" && /^p\d+-\d+$/.test(id)).length;
 const TROPHIES = [
   {id:"first",   ic:"🥂", name:"はじめてのお客さん", desc:"お客さんの注文に1回応える",  ok: s => s.stats.served >= 1},
   {id:"c5",      ic:"🔥", name:"5連続",              desc:"5人続けて満足させる",        ok: s => s.stats.maxCombo >= 5},
@@ -259,5 +271,9 @@ const TROPHIES = [
   {id:"cos10",   ic:"👕", name:"おしゃれ店主",       desc:"着せかえアイテムを10個そろえる", ok: s => COS.filter(c => c.src !== "free" && cosOwned(c)).length >= 10},
   {id:"prep1",   ic:"🧪", name:"はじめての仕込み",   desc:"仕込みを1問クリア",          ok: s => Object.keys((s.prep||{}).stars||{}).length >= 1},
   {id:"prep3",   ic:"⚗️", name:"仕込みの達人",       desc:"仕込みを30問★3",             ok: s => Object.values((s.prep||{}).stars||{}).filter(v => v >= 3).length >= 30},
+  {id:"mst1",    ic:"👑", name:"名人の第一歩",       desc:"仕込みで👑名人を1問とる",      ok: s => masterCount(s) >= 1},
+  {id:"mst8",    ic:"🎖️", name:"章の名人",           desc:"仕込みのどれか1章で、8問すべて👑名人", ok: s => { const m = (s.prep||{}).master||{}; for (let c=1;c<=13;c++){ let k = 0; for (let n=1;n<=8;n++) if (m[`p${c}-${n}`]) k++; if (k >= 8) return true; } return false; }},
+  {id:"mst52",   ic:"🏅", name:"半分の名人",         desc:"仕込みで👑名人を52問とる",     ok: s => masterCount(s) >= 52},
+  {id:"mst104",  ic:"🏆", name:"名人王",             desc:"仕込みの104問すべてで👑名人",  ok: s => masterCount(s) >= 104},
   {id:"daily7",  ic:"🗓️", name:"常連さん",           desc:"日替わりの目標を7日達成",      ok: s => (s.dailyClears||0) >= 7},
 ];
