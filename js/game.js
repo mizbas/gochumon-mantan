@@ -163,7 +163,7 @@ function clothCheck(){
 function prepCheck(){
   if (S.mode !== "prep" || ended) return;
   const done = bottles.every(b => !b.units.length || b.corked);
-  if (done && !pours.length){ setTimeout(endPrep, 600); ended = true; return; }
+  if (done && !pours.length){ setTimeout(endPrep, STOW_AT + STOW_LEN + 450); ended = true; return; } // 最後の瓶が棚に並んでからクリア
   // 手詰まり（どこにも注げない）
   const st = prepState(); let any = false;
   bottles.forEach((a, i) => { if (any || !a.units.length || a.corked || a.ice || a.cloth) return; const c = a.units[a.units.length-1].c;
@@ -322,10 +322,10 @@ function layout(){
   let best = null;
   for (let pr = n; pr >= Math.ceil(n/3); pr--){
     const rows = Math.ceil(n/pr), slot = usableW/pr; let w = Math.min(slot*.62, prep ? 84 : 60);
-    while (rows*(w*3.05 + w*.9) > availH && w > 16) w -= 1;
+    while (rows*(w*3.05 + w*.9) + w*.55 > availH && w > 16) w -= 1; // 一番下の瓶の下の文字（空き瓶など）が切れないように
     if (!best || w > best.w + .5) best = {w, pr, rows, slot};
   }
-  const {w, pr, rows, slot} = best, rowH = w*3.05 + w*.9, top = shelfTop + Math.max(0, (availH - rows*rowH)/2), pos = [];
+  const {w, pr, rows, slot} = best, rowH = w*3.05 + w*.9, top = shelfTop + Math.max(0, (availH - rows*rowH - w*.55)/2), pos = [];
   for (let k=0;k<n;k++){ const r = Math.floor(k/pr), inRow = Math.min(pr, n - r*pr), col = k - r*pr; pos.push({x: W/2 + (col-(inRow-1)/2)*slot, y: top + r*rowH + w*.6 + w*3.05/2}); }
   const shelves = []; for (let r=0;r<rows;r++){ const inRow = Math.min(pr, n - r*pr); shelves.push({y: top + r*rowH + w*.6 + w*3.05, half: inRow*slot/2 + w*.3}); }
   const seatW = Math.min(usableW / seats.length, 190);
