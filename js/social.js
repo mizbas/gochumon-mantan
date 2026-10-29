@@ -10,9 +10,10 @@ function strSeed(s){ let h = 2166136261; for (let i=0;i<s.length;i++){ h ^= s.ch
 function prepDailyDef(){
   const key = todayKey(), c = prepDailyCh(), [k, e, hide, ice] = PREP_CH[c-1], cid = "pd:" + key;
   if (!prepCache[cid]) prepCache[cid] = prepGen(k, e, CAP, strSeed("mantan-" + key), mulberry, 0, !!hide);
+  { const g = prepCache[cid]; if (g && g.opt == null){ const o = hide ? null : prepSolve(g.st.map(b => b.slice()), CAP, 400000, null, true); g.opt = o ? o.length : g.sol.length; } } // 今日の仕込みも、いちばん少ない手数を目安に
   const g = prepCache[cid];
   return {id: "今日の仕込み", pid: "pd", key, daily: true, mode: "prep", ch: c, n: 0, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0,
-    hide: !!hide, ice: ice ? [2] : null, prep: g, par: g ? g.sol.length : 99, label: `${key.slice(5).replace("-", "/")}（${prepDailyWd()}）`};
+    hide: !!hide, ice: ice ? [2] : null, prep: g, par: g ? (g.opt || g.sol.length) : 99, label: `${key.slice(5).replace("-", "/")}（${prepDailyWd()}）`};
 }
 const pdToday = () => { const pd = save.prepDaily; return pd && pd.key === todayKey() ? pd : null; };
 function endPrepDaily(){

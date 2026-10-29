@@ -76,16 +76,18 @@ function clothLocks(st, cloth){
       if (done >= f.n){ L[i] = false; changed = true; } }); }
   return L;
 }
-function prepSolve(start, cap, limit, cloth){
+function prepSolve(start, cap, limit, cloth, exact){ // exact：いちばん少ない手数を探す（遅い）
   // start: [[c,c,...], ...] 下から上。「？」で隠れている1杯は c+100 で表す（見えている同じ色の続きだけを一度に注げる。注いだあとの一番上は見えるようになる）
   // 戻り値：[{from,to,n}, ...] か null
   const lk = st => cloth && cloth.some(Boolean) ? clothLocks(st, cloth) : null;
   const keyOf = st => { const L = lk(st); return st.map((b, i) => b.join(",") + (L && L[i] ? "~" + i : "")).sort().join("|"); };
   const solved = st => st.every(b => !b.length || (b.length === cap && b.every(c => c % 100 === b[0] % 100)));
   const h = st => { let x = 0; const where = {}; st.forEach((b, i) => { for (let k=1;k<b.length;k++) if (b[k] % 100 !== b[k-1] % 100) x++; if (b.length && b.length < cap) x += .5; new Set(b.map(c => c % 100)).forEach(c => where[c] = (where[c]||0) + 1); }); for (const c in where) x += where[c] - 1; return x; };
+  // これ以上は少なくならない手数：瓶ごとの「一番下以外の層の数」＋色ごとの「一番下がその色の瓶の数−1」
+  const hx = st => { let x = 0; const bot = {}; st.forEach(b => { if (!b.length) return; let r = 1; for (let k=1;k<b.length;k++) if (b[k] % 100 !== b[k-1] % 100) r++; x += r - 1; const c = b[0] % 100; bot[c] = (bot[c]||0) + 1; }); for (const c in bot) x += bot[c] - 1; return x; };
   const heap = [], push = n => { heap.push(n); let i = heap.length - 1; while (i){ const p = (i-1) >> 1; if (heap[p].f <= heap[i].f) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } },
     pop = () => { const top = heap[0], last = heap.pop(); if (heap.length){ heap[0] = last; let i = 0; for (;;){ const l = 2*i+1, r = l+1; let m = i; if (l < heap.length && heap[l].f < heap[m].f) m = l; if (r < heap.length && heap[r].f < heap[m].f) m = r; if (m === i) break; [heap[m], heap[i]] = [heap[i], heap[m]]; i = m; } } return top; };
-  const seen = new Map(); push({st: start, g: 0, f: h(start), path: null}); seen.set(keyOf(start), 0);
+  const seen = new Map(); push({st: start, g: 0, f: h(start), path: null}); seen.set(keyOf(start), 0); if (exact) heap[0].f = hx(start);
   let n = 0;
   while (heap.length && n++ < limit){
     const cur = pop(), st = cur.st, L = lk(st);
@@ -106,7 +108,7 @@ function prepSolve(start, cap, limit, cloth){
         { const s2 = nx[i]; if (s2.length && s2[s2.length-1] >= 100){ nx[i] = s2.slice(); nx[i][s2.length-1] -= 100; } } // 注いだあと、下の1杯が見えるようになる
         const key = keyOf(nx), g = cur.g + 1;
         if (seen.has(key) && seen.get(key) <= g) continue; seen.set(key, g);
-        push({st: nx, g, f: g + 1.6*h(nx), path: {m: {from: i, to: j, n: m}, prev: cur.path}});
+        push({st: nx, g, f: g + (exact ? hx(nx) : 1.6*h(nx)), path: {m: {from: i, to: j, n: m}, prev: cur.path}});
       }
     }
   }
@@ -136,12 +138,14 @@ const PREP_CH = [[3,2,0,0],[4,2,0,0],[5,2,0,0],[5,2,1,0],[6,2,0,0],[6,2,1,0],[7,
 const PREP_N = 8;
 const prepId = (c, n) => `p${c}-${n}`, prepName = id => "仕込み " + id.slice(1);
 const prepCache = {};
+// 目安の手数：いちばん少ない手数（すべての手を調べて出したもの）。？の章は中身を知らないと届かないので、今までの目安のまま
+const PREP_OPT = {"p1-1":9,"p1-2":6,"p1-3":9,"p1-4":7,"p1-5":9,"p1-6":5,"p1-7":5,"p1-8":7,"p2-1":10,"p2-2":11,"p2-3":11,"p2-4":10,"p2-5":10,"p2-6":10,"p2-7":11,"p2-8":12,"p3-1":17,"p3-2":12,"p3-3":16,"p3-4":13,"p3-5":14,"p3-6":16,"p3-7":13,"p3-8":16,"p5-1":18,"p5-2":18,"p5-3":19,"p5-4":19,"p5-5":19,"p5-6":19,"p5-7":20,"p5-8":19,"p7-1":21,"p7-2":21,"p7-3":20,"p7-4":21,"p7-5":21,"p7-6":22,"p7-7":20,"p7-8":24,"p11-1":12,"p11-2":17,"p11-3":11,"p11-4":17,"p11-5":12,"p11-6":15,"p11-7":17,"p11-8":12,"p12-1":19,"p12-2":18,"p12-3":18,"p12-4":16,"p12-5":16,"p12-6":16,"p12-7":19,"p12-8":17};
 function prepDef(id){
   if (id === "pd") return prepDailyDef();
   const [c, n] = id.slice(1).split("-").map(Number), [k, e, hide, ice, cloth] = PREP_CH[c-1];
   if (!prepCache[id]) prepCache[id] = prepGen(k, e, CAP, c*1000 + n*37 + 11, mulberry, cloth || 0, !!hide);
   const g = prepCache[id];
-  return {id: prepName(id), pid: id, mode: "prep", ch: c, n, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0, hide: !!hide, ice: ice ? [2] : null, cloth: g && g.cloth ? g.cloth : null, prep: g, par: g ? g.sol.length : 99};
+  return {id: prepName(id), pid: id, mode: "prep", ch: c, n, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0, hide: !!hide, ice: ice ? [2] : null, cloth: g && g.cloth ? g.cloth : null, prep: g, par: PREP_OPT[id] || (g ? g.sol.length : 99)};
 }
 const prepUnlocked = id => { const [c, n] = id.slice(1).split("-").map(Number); if (c === 1 && n === 1) return true; const prev = n > 1 ? prepId(c, n-1) : prepId(c-1, PREP_N); return (save.prep.stars[prev] || 0) >= 1; };
 const prepOpen = () => (save.stars["1-1"] || 0) >= 1;
