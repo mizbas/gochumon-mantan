@@ -23,10 +23,10 @@ function endPrepDaily(){
   { const h = save.prepDailyHist || (save.prepDailyHist = {}), cur = h[S.key] || {m: 0, st: 0}; cur.m = cur.m ? Math.min(cur.m, prepMoves) : prepMoves; cur.st = Math.max(cur.st, st); h[S.key] = cur;
     Object.keys(h).sort().slice(0, -30).forEach(k => delete h[k]); }
   countDay(); const newTr = checkTrophies(true); persist();
-  $("resH").textContent = newBest && prev ? "今日の仕込み ベスト更新！" : "今日の仕込み 完了！"; $("resMoney").textContent = `${prepMoves}手`;
+  $("resH").textContent = (prepMaster() ? "👑 名人！ " : "") + (newBest && prev ? "今日の仕込み ベスト更新！" : "今日の仕込み 完了！"); $("resMoney").textContent = `${prepMoves}手`;
   $("resGoal").innerHTML = `${S.label}・目安 ${S.par}手　今日のベスト ${pd.best}手` + (prepHelp ? `<br><small>助けを使ったので★は最大${prepStarCap()}つ</small>` : "");
   $("resStars").classList.remove("hidden"); $("resStars").innerHTML = [0,1,2].map(k => `<span class="${k < st ? "on" : ""}">★</span>`).join("");
-  $("resList").innerHTML = [["かかった手数", `${prepMoves}手`], ["目安の手数", `${S.par}手（★3）`], ["★2", `${Math.ceil(S.par*1.3)}手まで`]].map(([a,b]) => `<li><span>${a}</span><b>${b}</b></li>`).join("");
+  $("resList").innerHTML = [["かかった手数", `${prepMoves}手`], ["目安の手数", `${S.par}手（以内で👑名人）`], ["★3", `${prepLine3()}手まで`], ["★2", `${prepLine2()}手まで`]].map(([a,b]) => `<li><span>${a}</span><b>${b}</b></li>`).join("");
   $("resEarned").innerHTML = `<div class="earned">` + (reward ? `今日はじめてのクリア！ 財布に <b>+${yen(reward)}</b>` : `今日のごほうびは受け取り済みです`) + `<br>明日はまた新しい1問が出ます。友達と手数を比べてみよう` + (newTr.length ? `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>` : "") + evAward(reward ? 2 : 0) + `</div>`;
   $("nextBtn").classList.remove("hidden"); $("nextBtn").disabled = false; $("nextBtn").textContent = "記録をシェア"; resNext = null;
   setTimeout(() => { $("result").classList.remove("hidden"); play("fanfare", {gain:.55}); }, 500);

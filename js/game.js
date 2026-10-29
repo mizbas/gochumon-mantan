@@ -147,7 +147,11 @@ const prepUnlocked = id => { const [c, n] = id.slice(1).split("-").map(Number); 
 const prepOpen = () => (save.stars["1-1"] || 0) >= 1;
 let prepMoves = 0, prepHelp = 0, prepHint = null;
 function prepStarCap(){ return Math.max(1, 3 - prepHelp); }
-function prepStars(){ const par = S.par, m = prepMoves; const st = m <= par ? 3 : m <= Math.ceil(par*1.3) ? 2 : 1; return Math.min(st, prepStarCap()); }
+// ★の手数：「？」のある問題は中身が見えないぶん、目安より少し多くてもよい（中身を知らないプレイヤーを何度も試して決めた）
+const prepLine3 = () => S.hide ? Math.ceil(S.par*1.15) : S.par + 1;
+const prepLine2 = () => S.hide ? Math.ceil(S.par*1.5) : Math.ceil(S.par*1.3);
+const prepMaster = () => prepMoves <= S.par && !prepHelp;   // 目安ちょうど以下・助けなし＝名人
+function prepStars(){ const m = prepMoves; const st = m <= prepLine3() ? 3 : m <= prepLine2() ? 2 : 1; return Math.min(st, prepStarCap()); }
 function prepState(){ return bottles.map(b => b.units.map(u => u.c + (u.h ? 100 : 0))); }
 const clothNow = () => bottles.map(b => b.cloth ? {c: b.cloth.c, n: b.cloth.n} : null);
 // 満タンができたら、条件のそろった布を取る
@@ -179,13 +183,14 @@ function endPrep(){
   const id = S.pid, st = prepStars(), first = !(save.prep.stars[id] >= 1), prev = save.prep.best[id];
   if (st > (save.prep.stars[id] || 0)) save.prep.stars[id] = st;
   if (!prev || prepMoves < prev) save.prep.best[id] = prepMoves;
+  const master = prepMaster(), firstMaster = master && !(save.prep.master || {})[id]; if (master){ save.prep.master = save.prep.master || {}; save.prep.master[id] = 1; }
   const reward = first ? 100*S.ch : 0; save.wallet += reward;
   const cleared = Object.keys(save.prep.stars).length; claim("prep", cleared); countDay();
   const newTr = checkTrophies(true); persist();
-  $("resH").textContent = "仕込み完了！"; $("resMoney").textContent = `${prepMoves}手`;
+  $("resH").textContent = master ? "👑 名人！ 仕込み完了" : "仕込み完了！"; $("resMoney").textContent = `${prepMoves}手`;
   $("resGoal").innerHTML = `目安 ${S.par}手` + (prev ? `　ベスト ${Math.min(prev, prepMoves)}手` : "") + (prepHelp ? `<br><small>助けを使ったので★は最大${prepStarCap()}つ</small>` : "");
   $("resStars").classList.remove("hidden"); $("resStars").innerHTML = [0,1,2].map(k => `<span class="${k < st ? "on" : ""}">★</span>`).join("");
-  $("resList").innerHTML = [["かかった手数", `${prepMoves}手`], ["目安の手数", `${S.par}手（★3）`], ["★2", `${Math.ceil(S.par*1.3)}手まで`]].map(([a,b]) => `<li><span>${a}</span><b>${b}</b></li>`).join("");
+  $("resList").innerHTML = [["かかった手数", `${prepMoves}手`], ["目安の手数", `${S.par}手（以内で👑名人）`], ["★3", `${prepLine3()}手まで`], ["★2", `${prepLine2()}手まで`]].map(([a,b]) => `<li><span>${a}</span><b>${b}</b></li>`).join("");
   $("resEarned").innerHTML = `<div class="earned">` + (first ? `はじめてクリア！ 財布に <b>+${yen(reward)}</b>` : `クリア済みの仕込みです`) + `（仕込みクリア ${cleared}問）` + (newTr.length ? `<br>トロフィー：<b>${newTr.map(t => t.name).join("、")}</b>` : "") + `</div>`;
   const [c, n] = id.slice(1).split("-").map(Number), nx = n < PREP_N ? prepId(c, n+1) : c < PREP_CH.length ? prepId(c+1, 1) : null;
   $("nextBtn").classList.remove("hidden"); $("nextBtn").disabled = !nx; $("nextBtn").textContent = nx ? `${prepName(nx)} へ` : "全部クリア！";
@@ -194,6 +199,10 @@ function endPrep(){
 }
 let resNext = null;
 function openPrepSel(){
+  // ★の基準を変えたので、前のベストが新しい★3の線に入っていれば★3にする（1回だけ）
+  if (!save.prepRestar){ const keep = S; for (const id in save.prep.best){ if ((save.prep.stars[id] || 0) >= 3 || id === "pd") continue;
+      const d = prepDef(id); if (!d.prep) continue; const line = d.hide ? Math.ceil(d.par*1.15) : d.par + 1; if (save.prep.best[id] <= line) save.prep.stars[id] = 3; }
+    S = keep; save.prepRestar = true; persist(); }
   ["map","play","result","intro"].forEach(id => $(id).classList.add("hidden"));
   const box = $("prepList"); box.innerHTML = "";
   { const pd = pdToday(), c = prepDailyCh(), [k] = PREP_CH[c-1], b = document.createElement("button"); b.className = "spbtn pdbtn";
@@ -207,7 +216,7 @@ function openPrepSel(){
     if (open){ const grid = document.createElement("div"); grid.className = "stages";
       for (let n=1;n<=PREP_N;n++){ const id = prepId(c, n), lock = !prepUnlocked(id), s2 = save.prep.stars[id] || 0, best = save.prep.best[id];
         const b = document.createElement("button"); b.className = "sbtn" + (lock ? " locked" : "");
-        b.innerHTML = `<span class="n">${c}-${n}</span><span class="s">${lock ? "🔒" : "★".repeat(s2) + "☆".repeat(3-s2)}</span><span class="b">${!lock && best ? best + "手" : ""}</span>`;
+        b.innerHTML = `<span class="n">${c}-${n}</span><span class="s">${lock ? "🔒" : "★".repeat(s2) + "☆".repeat(3-s2)}</span><span class="b">${!lock && best ? ((save.prep.master || {})[id] ? "👑" : "") + best + "手" : ""}</span>`;
         b.onclick = () => { audio(); if (lock){ play("bad", {gain:.3}); return; } $("prepSel").classList.add("hidden"); showIntro(id); };
         grid.appendChild(b); }
       sec.appendChild(grid); }
@@ -754,7 +763,7 @@ function prepProgress(){
 }
 function hud(){
   if (S.mode === "prep"){
-    $("lvlV").textContent = S.daily ? "今日" : S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `${S.daily ? "今日の仕込み" : "仕込み"}・目安${S.par}手` + (prepHelp ? `・★最大${prepStarCap()}` : ""); $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
+    $("lvlV").textContent = S.daily ? "今日" : S.pid.slice(1); $("moneyV").textContent = `${prepMoves}手`; $("moneyG").textContent = `${S.daily ? "今日の仕込み" : "仕込み"}・目安${S.par}手・★3は${prepLine3()}手まで` + (prepHelp ? `・★最大${prepStarCap()}` : ""); $("leftV").textContent = "★" + prepStars(); $("leftL").textContent = "いまの★";
     // ゲージは完成までの進み具合（色ごとに、瓶の底からそろっている数）。色はいまの★（3=緑・2=黄・1=赤）
     const st = prepStars();
     $("moneyBar").style.width = (prepProgress()*100) + "%"; $("moneyBar").style.background = st >= 3 ? "var(--good)" : st === 2 ? "var(--amber)" : "#ef6b5b";
