@@ -276,15 +276,20 @@ function draw(){
     let x = p.x, y = p.y - lift[i]*sh.w*.5;
     if (shakeT[i] && T - shakeT[i] < 300){ const a = (T - shakeT[i])/300; x += Math.sin(a*Math.PI*6)*(1-a)*sh.w*.1; }
     ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(p.x, p.y + sh.H/2 - 1, sh.w*.45, sh.w*.1, 0, 0, 7); ctx.fill();
-    let layers = b.units.map(u => ({c:u.c, v:1, h:u.h || !!b.cloth, rev:u.rev})), wave = 0;
+    let layers = b.units.map(u => ({c:u.c, v:1, h:u.h || !!(b.cloth && !b.cloth.key), rev:u.rev})), wave = 0;
     if (pr && pr.to === i){ const prog = Math.max(0, Math.min(1, (T - pr.t0 - pr.T1)/pr.T2)); layers = pr.dstBefore.map(u => ({c:u.c, v:1, h:u.h})).concat([{c:pr.c, v: pr.n*prog}]); wave = prog>0 && prog<1 ? sh.w*.035 : 0; }
     else if (waveT[i]){ const a = (T - waveT[i])/900; if (a < 1) wave = sh.w*.04*(1-a); }
+    if (b.small) layers = [{c: -2, v: 1}].concat(layers); // 上げ底（3杯まで）
     if (b.refillT != null && T - b.refillT < 500){ const k = (T - b.refillT)/500; layers = layers.map(L => ({...L, v: L.v*k})); }
     let corkK = null, glow = false;
     if (b.corked){ corkK = Math.min(1, Math.max(0, (T - b.corkT)/320)); corkK = 1 - Math.pow(1 - corkK, 3);
       const need = wantedNow().includes(b.units[0].c); glow = need && Math.sin(T/180) > 0; }
     if (b.glass){ const gs = glassSlots(layers.length); drawCockGlass(ctx, sh, x, y, 0, layers, gs.n, {sel: sel === i, target: gs.target, dark: darkNow() && !litAt(x)}); }
     else drawVessel(ctx, sh, x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow, dark: darkNow() && !litAt(x)});
+    if (b.label != null){ // 専用の瓶：首に色の帯と札
+      ctx.fillStyle = COLORS[b.label]; rr(ctx, x - sh.nw - sh.t, y - sh.H/2 + sh.H*.06, (sh.nw + sh.t)*2, sh.H*.05, 2); ctx.fill();
+      ctx.fillStyle = "#fffaf0"; ctx.beginPath(); ctx.arc(x + sh.nw + sh.w*.12, y - sh.H/2 + sh.H*.14, sh.w*.16, 0, 7); ctx.fill(); ctx.strokeStyle = COLORS[b.label]; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = COLORS[b.label]; ctx.beginPath(); ctx.arc(x + sh.nw + sh.w*.12, y - sh.H/2 + sh.H*.14, sh.w*.09, 0, 7); ctx.fill(); if (save.cb) sym(ctx, b.label, x + sh.nw + sh.w*.12, y - sh.H/2 + sh.H*.14, sh.w*.06); }
     if (b.lock != null || (lockWarn && lockWarn.i === i) || (b.unlockT != null && T - b.unlockT < 500)){ // カギ
       const warn = b.lock == null && lockWarn && lockWarn.i === i, opening = b.lock == null && !warn, k = opening ? 1 - (T - b.unlockT)/500 : 1, c = warn ? lockWarn.c : b.lock;
       ctx.save(); ctx.globalAlpha = warn ? .45 + .4*Math.abs(Math.sin(T/120)) : k;
@@ -323,6 +328,8 @@ function draw(){
       return; }
     if (b.corked && S.mode !== "prep" && !wantedNow().includes(b.units[0].c)){ ctx.fillStyle = "#bba895"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
       ctx.fillText("注文待ち", p.x, p.y - sh.H/2 - sh.w*.3); }
+    else if (b.label != null || b.small){ ctx.fillStyle = b.label != null ? COLORS[b.label] : "#d8b98a"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText(b.label != null ? CNAME[b.label] + "専用" : "3杯まで", p.x, p.y + sh.H/2 + sh.w*.28); }
     else if (!b.units.length && !b.ice){ ctx.fillStyle = "#7d6c5d"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("空き瓶", p.x, p.y + sh.H/2 + sh.w*.28); }
   });
   // 注いでいる瓶
@@ -334,11 +341,12 @@ function draw(){
       if (!p.snd){ p.snd = 1; pourSound(p.T2/1000/SPEED, p.dstBefore.length/CAP, (p.dstBefore.length+p.n)/CAP); } }
     else if (e < p.T1 + p.T2 + p.T3){ const k = ease((e - p.T1 - p.T2)/p.T3); const [px,py] = posForAngle(p, p.a1); a = p.a1*(1-k); x = px + (q0.x-px)*k; y = py + (q0.y-py)*k; vol = p.srcBefore.length - p.n; }
     else { lift[p.from] = 0; finishPour(p); return false; }
-    const keep = p.srcBefore.length - p.n, layers = p.srcBefore.slice(0, keep).map(u => ({c:u.c, v:1, h:u.h})).concat([{c:p.c, v: vol - keep}]);
+    const keep = p.srcBefore.length - p.n; let layers = p.srcBefore.slice(0, keep).map(u => ({c:u.c, v:1, h:u.h})).concat([{c:p.c, v: vol - keep}]); if (bottles[p.from] && bottles[p.from].small) layers = [{c: -2, v: 1}].concat(layers);
     if (stream){
       const tip = rot([[p.dir*sh.nw, sh.top]], a)[0], tx = x + tip[0], ty = y + tip[1], tpos = lay.pos[p.to];
       if (!sh.T0) sh.T0 = table(sh.P);
-      const surf = bottles[p.to] && bottles[p.to].glass ? cockLevel(sh, glassSlots(p.dstBefore.length + p.n).n, p.dstBefore.length + p.n*stream) + tpos.y : levelY(sh.T0, (p.dstBefore.length + p.n*stream)*sh.unit) + tpos.y;
+      const fl = bottles[p.to] && bottles[p.to].small ? 1 : 0;
+      const surf = bottles[p.to] && bottles[p.to].glass ? cockLevel(sh, glassSlots(p.dstBefore.length + p.n).n, p.dstBefore.length + p.n*stream) + tpos.y : levelY(sh.T0, (p.dstBefore.length + fl + p.n*stream)*sh.unit) + tpos.y;
       const sw = sh.w*.12*(stream < .15 ? stream/.15 : stream > .9 ? (1-stream)/.1 : 1), wob = Math.sin(T/40)*sh.w*.012, ex = tpos.x - p.dir*sh.nw*.15;
       ctx.fillStyle = COLORS[p.c]; ctx.beginPath(); ctx.moveTo(tx - sw/2, ty); ctx.quadraticCurveTo(tx - sw/2 + wob, (ty+surf)/2, ex - sw*.4, surf);
       ctx.lineTo(ex + sw*.4, surf); ctx.quadraticCurveTo(tx + sw/2 + wob, (ty+surf)/2, tx + sw/2, ty); ctx.closePath(); ctx.fill();
@@ -381,7 +389,21 @@ function draw(){
 requestAnimationFrame(frame);
 
 // 布をかけた瓶（仕込み11章〜）。赤いチェックのふきんをかぶせて、取れる条件の札を付ける
+function drawKey(c, b, x, y, sh){ // カギの瓶：中身は見える。鎖と南京錠、札の色
+  const off = b.cloth ? 0 : Math.min(1, (T - b.clothOffT)/600), f = b.cloth || b.keyLast || {c: -1, n: 0}; if (b.cloth) b.keyLast = b.cloth;
+  c.save(); c.globalAlpha = 1 - off; c.translate(x, y - off*sh.H*.4);
+  c.strokeStyle = "#9a8a6a"; c.lineWidth = Math.max(2, sh.w*.07); c.setLineDash([sh.w*.12, sh.w*.06]); c.beginPath(); c.moveTo(-sh.w*.62, -sh.H*.3); c.lineTo(sh.w*.62, sh.H*.1); c.moveTo(sh.w*.62, -sh.H*.3); c.lineTo(-sh.w*.62, sh.H*.1); c.stroke(); c.setLineDash([]);
+  const lw = sh.w*.7, ly = -sh.H*.1;
+  c.strokeStyle = "#c9962e"; c.lineWidth = sh.w*.09; c.beginPath(); c.arc(0, ly - lw*.35, lw*.32, Math.PI, 0); c.stroke();
+  c.fillStyle = "#e0b54a"; rr(c, -lw/2, ly - lw*.35, lw, lw*.82, lw*.16); c.fill(); c.strokeStyle = "#a87a2a"; c.lineWidth = 1.5; c.stroke();
+  const r = lw*.24, ty = ly + lw*.06;
+  if (f.c >= 0){ c.fillStyle = COLORS[f.c]; c.beginPath(); c.arc(0, ty, r, 0, 7); c.fill(); c.strokeStyle = "#fffaf0"; c.lineWidth = 2; c.stroke(); if (save.cb) sym(c, f.c, 0, ty, r*.65); }
+  else { c.fillStyle = "#fffaf0"; c.beginPath(); for (let k=0;k<10;k++){ const a = -Math.PI/2 + k*Math.PI/5, rr2 = k % 2 ? r*.45 : r; c.lineTo(Math.cos(a)*rr2, ty + Math.sin(a)*rr2); } c.closePath(); c.fill();
+    c.fillStyle = "#3a2a1c"; c.font = `900 ${r*1.1}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(f.n, 0, ty + lw*.32); }
+  c.restore();
+}
 function drawCloth(c, b, x, y, sh){
+  if (b.keyB) return drawKey(c, b, x, y, sh);
   const off = b.cloth ? 0 : Math.min(1, (T - b.clothOffT)/600), f = b.cloth || {c: -1, n: 0};
   c.save(); c.globalAlpha = 1 - off; c.translate(x, y - off*sh.H*.5);
   const w = sh.w*.68, top = -sh.H*.6, bot = sh.H*.22;
@@ -417,6 +439,14 @@ function drawPrepShelf(sh, cy){
   ctx.save(); ctx.globalAlpha = .8; ctx.strokeStyle = "rgba(187,168,149,.55)"; ctx.setLineDash([3, 4]); ctx.lineWidth = 1.2;
   for (let k = done.length; k < n; k++){ const x = x0 + k*gap; rr(ctx, x - ms.w/2, cy - ms.H - 1, ms.w, ms.H - 2, ms.w*.3); ctx.stroke(); }
   ctx.restore();
+  if (S.hide){ // ？の中身の手がかり：どの色も全部で4杯なので、まだ見えていない杯数を色ごとに出す
+    const seen = {}; bottles.forEach(b => b.units.forEach(u => { if (!u.h) seen[u.c] = (seen[u.c] || 0) + 1; }));
+    const left = []; for (let c = 0; c < S.colors; c++){ const r = CAP - (seen[c] || 0); if (r > 0) left.push([c, r]); }
+    const y = cy + 15, r = 6.5; ctx.font = `700 12px "Zen Kaku Gothic New",sans-serif`; ctx.textBaseline = "middle";
+    const label = left.length ? "？の中身" : "？はもうありません", lw = ctx.measureText(label).width, iw = r*2 + 3 + ctx.measureText("×4").width + 9, tw = lw + 8 + left.length*iw; const sc = Math.min(1, (W - 12)/tw); ctx.save(); ctx.translate(W/2, y); ctx.scale(sc, sc); ctx.translate(-W/2, -y); let x = W/2 - tw/2;
+    ctx.fillStyle = "#bba895"; ctx.textAlign = "left"; ctx.fillText(label, x, y); x += lw + 8;
+    left.forEach(([c, n]) => { ctx.fillStyle = COLORS[c]; ctx.beginPath(); ctx.arc(x + r, y, r, 0, 7); ctx.fill(); if (save.cb) sym(ctx, c, x + r, y, r*.7);
+      ctx.fillStyle = "#f6ead6"; ctx.textAlign = "left"; ctx.fillText("×" + n, x + r*2 + 3, y); x += iw; }); ctx.restore(); }
   done.forEach((i, k) => { const b = bottles[i], e = T - b.corkT - STOW_AT, a = Math.min(1, e/STOW_LEN), q = ease(a), p = lay.pos[i];
     const tx = x0 + k*gap, ty = cy - ms.H/2 - 1, sc = 1 + (ms.w/sh.w - 1)*q;
     const x = p.x + (tx - p.x)*q, y = p.y + (ty - p.y)*q - Math.sin(a*Math.PI)*sh.H*.35;

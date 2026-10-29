@@ -76,11 +76,12 @@ function clothLocks(st, cloth){
       if (done >= f.n){ L[i] = false; changed = true; } }); }
   return L;
 }
-function prepSolve(start, cap, limit, cloth, exact){ // exact：いちばん少ない手数を探す（遅い）
+function prepSolve(start, cap, limit, cloth, exact, ex){ // exact：いちばん少ない手数を探す（遅い）。ex：{lab:[瓶ごとの専用の色], caps:[瓶ごとの入る杯数]}
+  const lab = ex && ex.lab, caps = ex && ex.caps, capOf = j => caps && caps[j] || cap, plain = j => !(lab && lab[j] != null) && capOf(j) === cap;
   // start: [[c,c,...], ...] 下から上。「？」で隠れている1杯は c+100 で表す（見えている同じ色の続きだけを一度に注げる。注いだあとの一番上は見えるようになる）
   // 戻り値：[{from,to,n}, ...] か null
   const lk = st => cloth && cloth.some(Boolean) ? clothLocks(st, cloth) : null;
-  const keyOf = st => { const L = lk(st); return st.map((b, i) => b.join(",") + (L && L[i] ? "~" + i : "")).sort().join("|"); };
+  const keyOf = st => { const L = lk(st); return st.map((b, i) => b.join(",") + (L && L[i] ? "~" + i : "") + (plain(i) ? "" : "#" + i)).sort().join("|"); };
   const solved = st => st.every(b => !b.length || (b.length === cap && b.every(c => c % 100 === b[0] % 100)));
   const h = st => { let x = 0; const where = {}; st.forEach((b, i) => { for (let k=1;k<b.length;k++) if (b[k] % 100 !== b[k-1] % 100) x++; if (b.length && b.length < cap) x += .5; new Set(b.map(c => c % 100)).forEach(c => where[c] = (where[c]||0) + 1); }); for (const c in where) x += where[c] - 1; return x; };
   // これ以上は少なくならない手数：瓶ごとの「一番下以外の層の数」＋色ごとの「一番下がその色の瓶の数−1」
@@ -99,10 +100,11 @@ function prepSolve(start, cap, limit, cloth, exact){ // exact：いちばん少�
       const uniform = run === a.length; let triedEmpty = false;
       for (let j=0;j<st.length;j++){
         if (i === j || (L && L[j])) continue; const b = st[j];
-        if (b.length >= cap) continue;
+        if (b.length >= capOf(j)) continue;
+        if (lab && lab[j] != null && c % 100 !== lab[j]) continue; // 専用の瓶には札の色だけ
         if (b.length){ if (b[b.length-1] !== c) continue; }
-        else { if (uniform || triedEmpty) continue; triedEmpty = true; }
-        const m = Math.min(run, cap - b.length);
+        else if (plain(j)){ if ((uniform && plain(i)) || triedEmpty) continue; triedEmpty = true; }
+        const m = Math.min(run, capOf(j) - b.length);
         if (b.length && uniform && m < run) { /* 一部だけ動かすのは可 */ }
         const nx = st.slice(); nx[i] = a.slice(0, a.length - m); nx[j] = b.concat(Array(m).fill(c));
         { const s2 = nx[i]; if (s2.length && s2[s2.length-1] >= 100){ nx[i] = s2.slice(); nx[i][s2.length-1] -= 100; } } // 注いだあと、下の1杯が見えるようになる
@@ -114,8 +116,9 @@ function prepSolve(start, cap, limit, cloth, exact){ // exact：いちばん少�
   }
   return null;
 }
-function prepGen(k, empties, cap, seed, rand, clothN, hide){
-  for (let tries = 0; tries < (clothN ? 400 : 60); tries++){
+function prepGen(k, empties, cap, seed, rand, clothN, hide, gx){ // gx：{key:カギの瓶の数, label:専用の瓶の数, small:上げ底の瓶の数}
+  gx = gx || {}; const extra = clothN || gx.key || gx.label || gx.small;
+  for (let tries = 0; tries < (extra ? 400 : 60); tries++){
     const r = rand(seed + tries*7919), pool = [];
     for (let c=0;c<k;c++) for (let u=0;u<cap;u++) pool.push(c);
     for (let i=pool.length-1;i>0;i--){ const j = Math.floor(r()*(i+1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
@@ -125,27 +128,35 @@ function prepGen(k, empties, cap, seed, rand, clothN, hide){
     let cloth = null;
     if (clothN){ cloth = st.map(() => null); const idx = [...Array(k).keys()];
       for (let q=0; q<clothN; q++){ const i = idx.splice(Math.floor(r()*idx.length), 1)[0]; cloth[i] = r() < .35 ? {c: -1, n: r() < .5 ? 1 : 2} : {c: Math.floor(r()*k), n: 1}; } }
+    if (gx.key){ cloth = cloth || st.map(() => null); const idx = [...Array(k).keys()].filter(i => !cloth[i]); // カギ：中身は見えるが、札の色の満タン瓶を作るまで触れない
+      for (let q=0; q<gx.key && idx.length; q++){ const i = idx.splice(Math.floor(r()*idx.length), 1)[0]; let c; do { c = Math.floor(r()*k); } while (st[i].includes(c) && r() < .7); cloth[i] = {c, n: 1, key: true}; } }
+    let lab = null, caps = null, ei = [...Array(empties).keys()].map(e => k + e);
+    if (gx.label){ lab = st.map(() => null); for (let q=0; q<gx.label && ei.length; q++){ const i = ei.shift(); lab[i] = Math.floor(r()*k); } }
+    if (gx.small){ caps = st.map(() => cap); for (let q=0; q<gx.small && ei.length; q++){ const i = ei.shift(); caps[i] = cap - 1; } }
     const st2 = hide ? st.map(b => b.map((c, j) => b.length === cap && j < b.length - 1 ? c + 100 : c)) : st; // ゲームと同じく、満タンの瓶は一番上以外が「？」
-    const sol = prepSolve(st2, cap, 120000, cloth);
-    if (sol) return {st, sol, tries, cloth};
+    const sol = prepSolve(st2, cap, 120000, cloth, false, {lab, caps});
+    if (sol) return {st, sol, tries, cloth, lab, caps};
   }
   return null;
 }
 
 
-// 章ごとの難しさ：[色の数, 空き瓶, ？の色, 凍った瓶]
-const PREP_CH = [[3,2,0,0],[4,2,0,0],[5,2,0,0],[5,2,1,0],[6,2,0,0],[6,2,1,0],[7,2,0,0],[7,2,1,1],[8,2,1,0],[8,2,1,1],[5,2,0,0,2],[6,2,0,0,3],[7,2,1,0,3]];
+// 章ごとの難しさ：[色の数, 空き瓶, ？の色(仕込みでは使わない), 凍った瓶, ふきん, カギの瓶, 専用の瓶, 上げ底の瓶]
+// 運の要素をなくすため、仕込みに？は使わない（すべて見えた状態で、頭で解く）
+const PREP_CH = [[3,2,0,0],[4,2,0,0],[5,2,0,0],[5,2,0,0,0,0,1,0],[6,2,0,0],[6,2,0,0,0,2,0,0],[7,2,0,0],[7,2,0,1,0,0,0,1],[8,2,0,0,0,2,1,0],[8,2,0,1,0,1,0,1],[5,2,0,0,2],[6,2,0,0,3],[7,2,0,0,3,0,1,0]];
+const prepGx = ch => ({key: ch[5] || 0, label: ch[6] || 0, small: ch[7] || 0});
+const prepExOf = g => ({lab: g && g.lab, caps: g && g.caps});
 const PREP_N = 8;
 const prepId = (c, n) => `p${c}-${n}`, prepName = id => "仕込み " + id.slice(1);
 const prepCache = {};
-// 目安の手数：いちばん少ない手数（すべての手を調べて出したもの）。？の章は中身を知らないと届かないので、今までの目安のまま
-const PREP_OPT = {"p1-1":9,"p1-2":6,"p1-3":9,"p1-4":7,"p1-5":9,"p1-6":5,"p1-7":5,"p1-8":7,"p2-1":10,"p2-2":11,"p2-3":11,"p2-4":10,"p2-5":10,"p2-6":10,"p2-7":11,"p2-8":12,"p3-1":17,"p3-2":12,"p3-3":16,"p3-4":13,"p3-5":14,"p3-6":16,"p3-7":13,"p3-8":16,"p5-1":18,"p5-2":18,"p5-3":19,"p5-4":19,"p5-5":19,"p5-6":19,"p5-7":20,"p5-8":19,"p7-1":21,"p7-2":21,"p7-3":20,"p7-4":21,"p7-5":21,"p7-6":22,"p7-7":20,"p7-8":24,"p11-1":12,"p11-2":17,"p11-3":11,"p11-4":17,"p11-5":12,"p11-6":15,"p11-7":17,"p11-8":12,"p12-1":19,"p12-2":18,"p12-3":18,"p12-4":16,"p12-5":16,"p12-6":16,"p12-7":19,"p12-8":17};
+// 目安の手数：いちばん少ない手数（すべての手を調べて出したもの）
+const PREP_OPT = {"p1-1":9,"p1-2":6,"p1-3":9,"p1-4":7,"p1-5":9,"p1-6":5,"p1-7":5,"p1-8":7,"p2-1":10,"p2-2":11,"p2-3":11,"p2-4":10,"p2-5":10,"p2-6":10,"p2-7":11,"p2-8":12,"p3-1":17,"p3-2":12,"p3-3":16,"p3-4":13,"p3-5":14,"p3-6":16,"p3-7":13,"p3-8":16,"p5-1":18,"p5-2":18,"p5-3":19,"p5-4":19,"p5-5":19,"p5-6":19,"p5-7":20,"p5-8":19,"p7-1":21,"p7-2":21,"p7-3":20,"p7-4":21,"p7-5":21,"p7-6":22,"p7-7":20,"p7-8":24,"p11-1":12,"p11-2":17,"p11-3":11,"p11-4":17,"p11-5":12,"p11-6":15,"p11-7":17,"p11-8":12,"p12-1":19,"p12-2":18,"p12-3":18,"p12-4":16,"p12-5":16,"p12-6":16,"p12-7":19,"p12-8":17,"p13-1":19,"p13-2":17,"p13-3":25,"p13-4":20,"p13-5":23,"p13-6":18,"p13-7":23,"p13-8":21,"p4-1":11,"p4-2":19,"p4-3":14,"p4-4":13,"p4-5":14,"p4-6":16,"p4-7":17,"p4-8":18,"p10-1":21,"p10-2":26,"p10-3":25,"p10-4":26,"p10-5":25,"p10-6":27,"p10-7":26,"p10-8":25,"p6-1":21,"p6-2":20,"p6-3":19,"p6-4":16,"p6-5":19,"p6-6":20,"p6-7":21,"p6-8":18,"p9-1":23,"p9-2":27,"p9-3":23,"p9-4":26,"p9-5":27,"p9-6":23,"p9-7":25,"p9-8":25,"p8-1":23,"p8-2":22,"p8-3":23,"p8-4":22,"p8-5":23,"p8-6":21,"p8-7":22,"p8-8":23};
 function prepDef(id){
   if (id === "pd") return prepDailyDef();
   const [c, n] = id.slice(1).split("-").map(Number), [k, e, hide, ice, cloth] = PREP_CH[c-1];
-  if (!prepCache[id]) prepCache[id] = prepGen(k, e, CAP, c*1000 + n*37 + 11, mulberry, cloth || 0, !!hide);
+  if (!prepCache[id]) prepCache[id] = prepGen(k, e, CAP, c*1000 + n*37 + 11, mulberry, cloth || 0, !!hide, prepGx(PREP_CH[c-1]));
   const g = prepCache[id];
-  return {id: prepName(id), pid: id, mode: "prep", ch: c, n, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0, hide: !!hide, ice: ice ? [2] : null, cloth: g && g.cloth ? g.cloth : null, prep: g, par: PREP_OPT[id] || (g ? g.sol.length : 99)};
+  return {id: prepName(id), pid: id, mode: "prep", ch: c, n, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0, hide: !!hide, ice: ice ? [2] : null, cloth: g && g.cloth ? g.cloth : null, lab: g && g.lab, caps: g && g.caps, prep: g, par: PREP_OPT[id] || (g ? g.sol.length : 99)};
 }
 const prepUnlocked = id => { const [c, n] = id.slice(1).split("-").map(Number); if (c === 1 && n === 1) return true; const prev = n > 1 ? prepId(c, n-1) : prepId(c-1, PREP_N); return (save.prep.stars[prev] || 0) >= 1; };
 const prepOpen = () => (save.stars["1-1"] || 0) >= 1;
@@ -156,13 +167,15 @@ const prepLine3 = () => S.hide ? Math.ceil(S.par*1.15) : S.par + 1;
 const prepLine2 = () => S.hide ? Math.ceil(S.par*1.5) : Math.ceil(S.par*1.3);
 const prepMaster = () => prepMoves <= S.par && !prepHelp;   // 目安ちょうど以下・助けなし＝名人
 function prepStars(){ const m = prepMoves; const st = m <= prepLine3() ? 3 : m <= prepLine2() ? 2 : 1; return Math.min(st, prepStarCap()); }
+const capOf = b => b.small ? CAP - 1 : CAP; // 上げ底の瓶は3杯まで
+const prepExNow = () => ({lab: bottles.map(b => b.label == null ? null : b.label), caps: bottles.map(capOf)});
 function prepState(){ return bottles.map(b => b.units.map(u => u.c + (u.h ? 100 : 0))); }
 const clothNow = () => bottles.map(b => b.cloth ? {c: b.cloth.c, n: b.cloth.n} : null);
 // 満タンができたら、条件のそろった布を取る
 function clothCheck(){
   if (!bottles.some(b => b.cloth)) return;
   const L = clothLocks(prepState(), clothNow());
-  bottles.forEach((b, i) => { if (b.cloth && !L[i]){ b.cloth = null; b.clothOffT = T; play("kira", {gain:.5}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "ふきんが取れた！", "#ffd56b", .9); } });
+  bottles.forEach((b, i) => { if (b.cloth && !L[i]){ b.cloth = null; b.clothOffT = T; play("kira", {gain:.5}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, b.keyB ? "カギが開いた！" : "ふきんが取れた！", "#ffd56b", .9); } });
 }
 function prepCheck(){
   if (S.mode !== "prep" || ended) return;
@@ -171,12 +184,12 @@ function prepCheck(){
   // 手詰まり（どこにも注げない）
   const st = prepState(); let any = false;
   bottles.forEach((a, i) => { if (any || !a.units.length || a.corked || a.ice || a.cloth) return; const c = a.units[a.units.length-1].c;
-    bottles.forEach((b, j) => { if (i !== j && !b.corked && !b.ice && !b.cloth && b.units.length < CAP && (!b.units.length || b.units[b.units.length-1].c === c)) any = true; }); });
+    bottles.forEach((b, j) => { if (i !== j && !b.corked && !b.ice && !b.cloth && b.units.length < capOf(b) && (b.label == null || b.label === c) && (!b.units.length || b.units[b.units.length-1].c === c)) any = true; }); });
   if (!any && !bottles.some(b => b.ice)) floatText(W/2, lay.counterY + 40, "手詰まり！「↶ 戻す」かやり直しで", "#ef6b5b", .9);
 }
 function prepHintGo(){
   if (S.mode !== "prep" || !running || paused || pours.length) return;
-  const sol = prepSolve(prepState(), CAP, 60000, clothNow());
+  const sol = prepSolve(prepState(), CAP, 60000, clothNow(), false, prepExNow());
   if (!sol || !sol.length){ floatText(W/2, lay.counterY + 40, "この形からは解けないかも。戻してみよう", "#ef6b5b", .85); play("bad", {gain:.3}); return; }
   if (!prepHint || !prepHint.used){ prepHelp = Math.min(2, prepHelp + 1); }
   prepHint = {from: sol[0].from, to: sol[0].to, used: true}; sel = -1; play("kira", {gain:.4}); hud();
@@ -207,6 +220,9 @@ function openPrepSel(){
   if (!save.prepRestar){ const keep = S; for (const id in save.prep.best){ if ((save.prep.stars[id] || 0) >= 3 || id === "pd") continue;
       const d = prepDef(id); if (!d.prep) continue; const line = d.hide ? Math.ceil(d.par*1.15) : d.par + 1; if (save.prep.best[id] <= line) save.prep.stars[id] = 3; }
     S = keep; save.prepRestar = true; persist(); }
+  // ？をなくして問題が変わった章（4・6・8・9・10・13章）は、前の問題のベストと名人を消す（★は残す）。今日の仕込みも作り直し（1回だけ）
+  if (!save.prepNoHide){ const m = save.prep.master || {}; [4,6,8,9,10,13].forEach(c => { for (let n=1;n<=PREP_N;n++){ const id = prepId(c, n); delete save.prep.best[id]; delete m[id]; } });
+    if (save.prepDaily && save.prepDaily.key === todayKey()) save.prepDaily = null; save.prepNoHide = true; persist(); }
   // 前の記録で目安の手数以内に解けていた問題には👑名人をつける（1回だけ）
   if (!save.prepMaster1){ const keep = S; const m = save.prep.master || (save.prep.master = {});
     for (const id in save.prep.best){ if (id === "pd" || m[id]) continue; const d = prepDef(id); if (d.prep && save.prep.best[id] <= d.par) m[id] = 1; }
@@ -216,11 +232,11 @@ function openPrepSel(){
   { const pd = pdToday(), c = prepDailyCh(), [k] = PREP_CH[c-1], b = document.createElement("button"); b.className = "spbtn pdbtn";
     b.innerHTML = `<span class="ic">📅</span><span style="text-align:left"><b>今日の仕込み（${prepDailyWd()}曜日）</b><small>みんな同じ1問・${k}色　${pd && pd.best ? `今日のベスト ${pd.best}手 ${"★".repeat(pd.st)}` : "まだ解いていません"}</small></span>`;
     b.onclick = () => { audio(); $("prepSel").classList.add("hidden"); showIntro("pd"); }; box.appendChild(b); }
-  PREP_CH.forEach(([k, e, hide, ice, cloth], ci) => {
+  PREP_CH.forEach(([k, e, hide, ice, cloth, key, label, small], ci) => {
     const c = ci + 1, open = prepUnlocked(prepId(c, 1));
     let tot = 0; for (let n=1;n<=PREP_N;n++) tot += save.prep.stars[prepId(c, n)] || 0;
     const sec = document.createElement("div"); sec.className = "world" + (open ? "" : " soon");
-    sec.innerHTML = `<h2>仕込み ${c}章 <small>${open ? `★ ${tot} / ${PREP_N*3}` : "🔒"}</small></h2><p style="margin:0;color:var(--mute);font-size:13px">${k}色・空き瓶${e}本${hide ? "・？の色" : ""}${ice ? "・凍った瓶" : ""}${cloth ? "・ふきんの瓶" : ""}</p>`;
+    sec.innerHTML = `<h2>仕込み ${c}章 <small>${open ? `★ ${tot} / ${PREP_N*3}` : "🔒"}</small></h2><p style="margin:0;color:var(--mute);font-size:13px">${k}色・空き瓶${e}本${hide ? "・？の色" : ""}${ice ? "・凍った瓶" : ""}${cloth ? "・ふきんの瓶" : ""}${key ? "・カギの瓶" : ""}${label ? "・専用の瓶" : ""}${small ? "・上げ底の瓶" : ""}</p>`;
     if (open){ const grid = document.createElement("div"); grid.className = "stages";
       for (let n=1;n<=PREP_N;n++){ const id = prepId(c, n), lock = !prepUnlocked(id), s2 = save.prep.stars[id] || 0, best = save.prep.best[id];
         const b = document.createElement("button"); b.className = "sbtn" + (lock ? " locked" : "");
@@ -254,14 +270,16 @@ function dailyDef(){
 }
 const ENDLESS = () => ({id:"エンドレス", mode:"endless", w:1, n:0, colors:4, ord:[1,2], seats:3, guests:Infinity, pat:62, shelf:5, spare:2, goal:0});
 function startPrep(){
-  bottles = S.prep.st.map((u, k) => ({units: u.map((c, j) => ({c, h: S.hide && j < u.length - 1 && u.length === CAP})), spare: !u.length}));
+  bottles = S.prep.st.map((u, k) => ({units: u.map((c, j) => ({c, id: k*10 + j, h: S.hide && j < u.length - 1 && u.length === CAP})), spare: !u.length})); prepKnown = new Set();
   seats = []; sel = -1; pours = []; flights = []; busy = new Set(); lift = bottles.map(() => 0); moveQ = [];
   money = 0; combo = 0; maxCombo = 0; servedN = 0; missed = 0; dumped = 0; bottlesOut = 0; guestsLeft = 0; expSupply = 0;
   floats = []; parts = []; shakeT = {}; waveT = {}; T = 0; botNext = 0; ended = false; running = true;
   stock = []; stored = []; bought = 0; storeCap = 0; sandUsed = false; paused = false; pendingStore = -1; supplyLeft = 0; iceTick = 15000;
   undoSnap = null; undoStack = []; undoLeft = Infinity; prepMoves = 0; prepHelp = 0; prepHint = null; tut = null; hhT = Infinity; freezeT = Infinity; freezeWarn = null; lockT = Infinity; lockWarn = null; resQ = []; darkT = Infinity;
   (S.ice || []).forEach((n, k) => { if (bottles[k]) bottles[k].ice = n; });
-  (S.cloth || []).forEach((f, k) => { if (f && bottles[k]) bottles[k].cloth = {c: f.c, n: f.n}; });
+  (S.cloth || []).forEach((f, k) => { if (f && bottles[k]){ bottles[k].cloth = {c: f.c, n: f.n, key: !!f.key}; if (f.key) bottles[k].keyB = true; } });
+  (S.lab || []).forEach((c, k) => { if (c != null && bottles[k]) bottles[k].label = c; });
+  (S.caps || []).forEach((n, k) => { if (n && n < CAP && bottles[k]) bottles[k].small = true; });
   $("rackAsk").classList.add("hidden"); $("tutBox").classList.add("hidden");
   layout(); hud();
 }
@@ -326,7 +344,7 @@ function layout(){
   const st = $("stage"); W = st.clientWidth; H = st.clientHeight;
   dpr = Math.min(window.devicePixelRatio || 1, save.lite ? 1.25 : (save.dprCap || 2)); cv.width = W*dpr; cv.height = H*dpr;
   const n = bottles.length + (S && S.mode === "prep" ? 0 : 3), usableW = Math.min(W - 16, 680);
-  const prep = S && S.mode === "prep", counterY = prep ? Math.min(64, H*.1) : Math.min(H*.36, 250), shelfTop = counterY + (prep ? 14 : 26), availH = H - shelfTop - 10;
+  const prep = S && S.mode === "prep", counterY = prep ? Math.min(64, H*.1) : Math.min(H*.36, 250), shelfTop = counterY + (prep ? (S.hide ? 32 : 14) : 26), availH = H - shelfTop - 10;
   let best = null;
   for (let pr = n; pr >= Math.ceil(n/3); pr--){
     const rows = Math.ceil(n/pr), slot = usableW/pr; let w = Math.min(slot*.62, prep ? 84 : 60);
@@ -533,7 +551,7 @@ function doUndo(){
   if (!running || paused || !undoSnap || undoLeft <= 0 || pours.length || undoSnap.n !== bottles.length) return;
   const u = undoSnap; undoSnap = null; undoLeft--;
   u.b.forEach((o, i) => { const b = bottles[i]; b.units = o.units; b.corked = o.corked; if (o.corkT == null) delete b.corkT; else b.corkT = o.corkT; b.ice = o.ice; b.iceT = o.iceT || 0; b.cloth = o.cloth ? {...o.cloth} : null; if (b.ice && S.mode !== "prep" && !b.iceT) b.iceT = T + ICE_MS; waveT[i] = T; });
-  if (S.mode === "prep") prepMoves = u.pm;
+  if (S.mode === "prep"){ prepMoves = u.pm; bottles.forEach(b => b.units.forEach(x => { if (x.h && prepKnown.has(x.id)) x.h = false; })); }
   stock = u.stock; supplyLeft = u.supplyLeft; expSupply = u.expSupply; money = u.money; dumped = u.dumped; sel = -1; busy = new Set(); moveQ = [];
   play("pick", {gain:.5, rate:.8}); floatText(W/2, lay.counterY + 40, S.mode === "prep" ? "ひとつ戻しました" : `ひとつ戻しました（あと${undoLeft}回）`, "#9ed8f0", .85); hud();
 }
@@ -570,7 +588,7 @@ function tapBottle(i, fromQ){
   if (sel >= 0 && bottles[sel] && bottles[sel].glass && sel !== i){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[sel].x, lay.pos[sel].y - lay.sh.H*.7, "グラスの中身は流しにだけ捨てられます", "#ffb3e6", .7); return; }
   if (b.lock != null){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `🔒${CNAME[b.lock]}を満タンにすると開く`, "#f3d27a", .75); return; }
   if (b.ice){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, b.iceT ? `あと${Math.ceil((b.iceT - T)/1000)}秒で溶ける（満タン瓶を渡すと早まる）` : `あと${b.ice}本渡すか、少し待つと溶ける`, "#9ed8f0", .75); return; }
-  if (b.cloth){ shakeT[i] = T; play("bad", {gain:.3}); const f = b.cloth; floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, f.c < 0 ? `満タン瓶を${f.n}本作ると、ふきんが取れる` : `${CNAME[f.c]}の満タン瓶を作ると、ふきんが取れる`, "#ffd56b", .75); return; }
+  if (b.cloth){ shakeT[i] = T; play("bad", {gain:.3}); const f = b.cloth, what = f.key ? "カギが開く" : "ふきんが取れる"; floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, f.c < 0 ? `満タン瓶を${f.n}本作ると、${what}` : `${CNAME[f.c]}の満タン瓶を作ると、${what}`, "#ffd56b", .75); return; }
   if (b.corked && S.mode === "prep"){ if (!prepStowed(b)) shakeT[i] = T; return; }
   if (b.corked){ if (sel >= 0){ shakeT[i] = T; play("bad", {gain:.3}); return; } deliver(i); return; }
   if (sel < 0){
@@ -581,8 +599,9 @@ function tapBottle(i, fromQ){
   const a = bottles[sel]; if (!a.units.length || a.corked || a.ice || a.lock != null || a.cloth){ sel = -1; return; } // 待っている間に栓・氷・カギ・ふきんが付いた瓶からは注がない
   revealTop(sel); if (!topRun(a.units)){ sel = -1; return; } // 念のため：一番上が「？」のままなら見せてから
   const c = a.units[a.units.length-1].c;
-  if (b.units.length >= CAP || (b.units.length && b.units[b.units.length-1].c !== c)){ shakeT[i] = T; play("bad", {gain:.3}); return; }
-  snap(); startPour(sel, i, Math.min(topRun(a.units), CAP - b.units.length)); sel = -1;
+  if (b.label != null && b.label !== c){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `${CNAME[b.label]}専用の瓶です`, "#f3d27a", .75); return; }
+  if (b.units.length >= capOf(b) || (b.units.length && b.units[b.units.length-1].c !== c)){ shakeT[i] = T; play("bad", {gain:.3}); if (b.small && b.units.length >= capOf(b)) floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "上げ底の瓶は3杯まで", "#f3d27a", .7); return; }
+  snap(); startPour(sel, i, Math.min(topRun(a.units), capOf(b) - b.units.length)); sel = -1;
   if (S.mode === "prep"){ prepMoves++; if (prepHint) prepHint = null; } hud();
 }
 function tapSink(){
@@ -593,7 +612,9 @@ function tapSink(){
   floatText(lay.sink.x, lay.sink.y - lay.sh.H*.3, `−${yen(cost)}`, "#ef6b5b", .8);
   revealTop(sel); play("sink", {gain:.5}); sel = -1; hud();
 }
-function revealTop(i){ const u = bottles[i].units; if (u.length && u[u.length-1].h){ u[u.length-1].h = false; u[u.length-1].rev = T; play("reveal", {gain:.45, delay:.35}); } }
+// 仕込み：一度見えた？は、戻しても見えたまま（のぞいて、戻して、作戦を立てられる）
+let prepKnown = new Set();
+function revealTop(i){ const u = bottles[i].units; if (u.length && u[u.length-1].h){ if (u[u.length-1].id != null) prepKnown.add(u[u.length-1].id); u[u.length-1].h = false; u[u.length-1].rev = T; play("reveal", {gain:.45, delay:.35}); } }
 function emptyIdx(){ return bottles.findIndex((b,j) => !b.glass && !b.units.length && !busy.has(j) && !b.corked && !b.ice && b.lock == null); }
 function unlockColor(c){ bottles.forEach((b, i) => { if (b.lock === c){ b.lock = null; b.unlockT = T; play("reveal", {gain:.6}); play("kira", {gain:.4, delay:.15}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "カギが開いた！", "#f3d27a", .9);
   for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x, y: lay.pos[i].y, vx:R(-1.5,1.5), vy:R(-2,-.4), t0:T, life:R(500,900), r:R(1.5,3)}); } }); }
@@ -751,7 +772,7 @@ function startPour(from, to, n){
   revealTop(from);
   busy.add(from); busy.add(to);
   const fp = lay.pos[from], tp = lay.pos[to], dir = fp.x <= tp.x ? 1 : -1, sh = lay.sh;
-  const a0 = angleFor(sh, srcBefore.length*sh.unit, dir), a1 = angleFor(sh, Math.max((srcBefore.length-n)*sh.unit, sh.unit*.04), dir);
+  const fl = bottles[from].small ? 1 : 0, a0 = angleFor(sh, (srcBefore.length + fl)*sh.unit, dir), a1 = angleFor(sh, Math.max((srcBefore.length - n + fl)*sh.unit, sh.unit*.04), dir);
   const sp = (has("spout") ? .67 : 1)*(S.mode === "prep" ? .8 : 1);
   pours.push({from, to, n, c: moved[0].c, dir, a0, a1, srcBefore, dstBefore, t0: T, T1: 260*sp, T2: (.36 + .13*n)*1000*sp, T3: 260*sp});
 }
@@ -764,7 +785,7 @@ function finishPour(p){
   if (isFull(d)) cork(p.to);
   if (S.mode === "prep") setTimeout(prepCheck, 0);
 }
-function cork(i){ setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; if (S && S.lock && b.units.length && b.lock == null) setTimeout(() => { if (b.units.length) unlockColor(b.units[0].c); }, 350); /* カギ：同じ色を満タンにした時点で開く */ b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
+function cork(i){ setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; if (S && S.lock && b.units.length && b.lock == null) setTimeout(() => { if (b.units.length) unlockColor(b.units[0].c); }, 350); /* カギ：同じ色を満タンにした時点で開く */ b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; if (u.id != null) prepKnown.add(u.id); } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
   for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x, y: lay.pos[i].y - lay.sh.H/2, vx:R(-1.5,1.5), vy:R(-2,-.4), t0:T + 300, life:R(500,900), r:R(1.5,3)}); }
 
 function floatText(x, y, text, color, size=1, delay=0){ floats.push({x, y, text, color, size, t0: T + delay}); }
