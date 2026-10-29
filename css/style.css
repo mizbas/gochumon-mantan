@@ -36,6 +36,8 @@ button:focus-visible{outline:3px solid var(--amber);outline-offset:3px}
 .pcard .shop{font-family:var(--hand);font-size:26px;color:var(--amber);margin-top:6px;line-height:1.2;word-break:break-all}
 .pcard .own{font-size:14px;color:#e9dcc4;margin-top:2px}
 .pcard .ttl{display:inline-block;margin-top:6px;padding:3px 12px;border-radius:12px;background:#3a2a1c;color:var(--amber);font-size:12.5px;font-weight:700}
+.pcard .ptr{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:8px}.pcard .ptr:empty{display:none}.pcard .ptr span{background:#3a2a1c;color:#f6ead6;border-radius:10px;padding:3px 9px;font-size:12px;font-weight:700}
+.tsel button{padding:6px 11px;font-size:13px;font-weight:700;color:var(--ink);max-width:100%}.tsel .none{font-size:12.5px;color:#8a7a66;padding:4px}
 .pcard .msg{margin-top:8px;font-size:13.5px;color:#f6ead6;font-style:normal;word-break:break-all}
 .pcard .pid{margin-top:8px;font-size:11px;color:#8a7660;letter-spacing:1px}
 .pstats{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 12px}

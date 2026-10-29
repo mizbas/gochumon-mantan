@@ -41,7 +41,7 @@ function myCard(){
   return {v: 1, id: p.id, shop: pShop(), name: pName(), g: p.g, wear: p.wear, acc: p.acc, fit: p.fit || "plain", rk: rankOf(save.total),
     st: Object.values(save.stars).reduce((a, b) => a + b, 0), ps: Object.keys(save.prep.stars).length,
     eb: save.endless.best || 0, el: save.endless.lv || 0, dk: d ? k : "", db: d ? d.best : 0, ds: d ? d.st : 0,
-    qk: q && q.best ? k : "", qm: q ? q.best : 0, qs: q ? q.st : 0, t: Date.now()};
+    qk: q && q.best ? k : "", qm: q ? q.best : 0, qs: q ? q.st : 0, tt: titleShown(), tr: favTrophies().map(t => t.id), t: Date.now()};
 }
 const cardCode = o => { const b = btoa(unescape(encodeURIComponent(JSON.stringify(o)))); return KPRE + b + "-" + sum(b) + "!"; };
 const num = (v, max) => { v = Math.round(+v); return Number.isFinite(v) && v >= 0 ? Math.min(v, max) : 0; };
@@ -51,7 +51,7 @@ function cleanCard(o){
   return {id: o.id, shop: sanitize(o.shop, 12) || "名前のないお店", name: sanitize(o.name, 10) || "店主",
     g: num(o.g, GUESTS.length - 1), wear: num(o.wear, COLORS.length - 1), acc: okCos("acc", o.acc, "none"), fit: okCos("fit", o.fit, "plain"),
     rk: num(o.rk, 999), st: num(o.st, 999), ps: num(o.ps, 999), eb: num(o.eb, 1e9), el: num(o.el, 999),
-    dk: day(o.dk), db: num(o.db, 1e8), ds: num(o.ds, 3), qk: day(o.qk), qm: num(o.qm, 9999), qs: num(o.qs, 3), t: num(o.t, 1e14)};
+    dk: day(o.dk), db: num(o.db, 1e8), ds: num(o.ds, 3), qk: day(o.qk), qm: num(o.qm, 9999), qs: num(o.qs, 3), tt: sanitize(o.tt, 16) || "", tr: Array.isArray(o.tr) ? o.tr.filter(id => TROPHIES.some(t => t.id === id)).slice(0, 3) : [], t: num(o.t, 1e14)};
 }
 function readCard(txt){
   const t = String(txt || "").replace(/\s+/g, ""), m = t.match(/KURABE1-([A-Za-z0-9+/=]+)-([0-9a-z]+)!/);
@@ -101,7 +101,7 @@ function renderFriends(){
     board("ステージの★", stars, c => `★${c.st}<small>ランク${c.rk}</small>`, "");
   $("frBoards").querySelectorAll("canvas.fr-av").forEach(cv2 => { const c = all[+cv2.dataset.i], x = cv2.getContext("2d"); x.clearRect(0, 0, 64, 64); x.save(); x.beginPath(); x.arc(32, 32, 32, 0, 7); x.clip(); drawAvatar(x, c, 32, 38, 26, 600); x.restore(); });
   const fr = Object.values(save.friends || {}).sort((a, b) => b.t - a.t);
-  $("frList").innerHTML = fr.length ? `<div class="set-h">追加した友達（${fr.length}人）</div>` + fr.map(c => `<div class="fr-l"><span><b>${esc(c.name)}</b>（${esc(c.shop)}）<small>${ago(c.t)}の記録</small></span><button data-id="${esc(c.id)}" aria-label="${esc(c.name)}さんを消す">消す</button></div>`).join("") : "";
+  $("frList").innerHTML = fr.length ? `<div class="set-h">追加した友達（${fr.length}人）</div>` + fr.map(c => `<div class="fr-l"><span><b>${esc(c.name)}</b>（${esc(c.shop)}）${c.tt ? `<small>「${esc(c.tt)}」${(c.tr || []).map(id => (TROPHIES.find(t => t.id === id) || {}).ic || "").join("")}</small>` : ""}<small>${ago(c.t)}の記録</small></span><button data-id="${esc(c.id)}" aria-label="${esc(c.name)}さんを消す">消す</button></div>`).join("") : "";
   $("frList").querySelectorAll("button[data-id]").forEach(b => b.onclick = () => { delete save.friends[b.dataset.id]; persist(); play("pick", {gain:.3}); renderFriends(); });
 }
 function openFriends(){ audio(); $("frMsg").textContent = ""; $("frIn").value = ""; renderFriends(); renderWeek(); $("friendsOv").classList.remove("hidden"); $("friendsOv").querySelector(".card").scrollTop = 0; }

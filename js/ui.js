@@ -581,10 +581,13 @@ function sanitize(t, max){ // 改行や見えない文字、URLっぽいもの�
   if (/https?:|www\.|\.(com|jp|net)|@/i.test(t)) return null;
   return [...t].slice(0, max).join("");
 }
+// プロフィールに飾るトロフィー（持っているものだけ）
+const favTrophies = (ids = save.profile.tr) => (ids || []).map(id => TROPHIES.find(t => t.id === id)).filter(t => t && save.trophies[t.id]).slice(0, 3);
 function openProfile(){
   audio(); const p = save.profile, r = rankOf(save.total);
   $("pfShop").textContent = pShop(); $("pfOwn").textContent = `店主　${pName()}`; $("pfTtl").textContent = `ランク${r}　${titleShown()}`;
   $("pfMsg").textContent = p.msg ? `「${p.msg}」` : ""; $("pfId").textContent = `店主ID ${p.id}`;
+  $("pfTr").innerHTML = favTrophies().map(t => `<span>${t.ic} ${esc(t.name)}</span>`).join("");
   $("pfShop").style.color = COLORS[p.fav]; document.querySelector(".pcard").style.boxShadow = `inset 0 0 0 3px ${COLORS[p.fav]}`;
   const c = $("pfCv"), x = c.getContext("2d"); x.clearRect(0, 0, 220, 220); x.save(); x.beginPath(); x.arc(110, 110, 110, 0, 7); x.clip(); drawAvatar(x, p, 110, 112, 100, 600); x.restore();
   const stars = Object.values(save.stars).reduce((a,b) => a+b, 0), tro = Object.keys(save.trophies).length, d = new Date(p.since);
@@ -597,7 +600,7 @@ function openProfile(){
 }
 let draft = null;
 function openForm(first){
-  draft = Object.assign({fit: "plain"}, save.profile);
+  draft = Object.assign({fit: "plain"}, save.profile, {ttl: save.titleSel || null, tr: (save.profile.tr || []).slice()});
   $("pfShopIn").value = draft.shop; $("pfNameIn").value = draft.name; $("pfMsgIn").value = draft.msg; $("pfErr").textContent = "";
   $("pfH").textContent = first ? "お店をひらこう" : "プロフィールを編集"; $("pfView").classList.add("hidden"); $("pfForm").classList.remove("hidden"); $("profile").classList.remove("hidden");
   renderPick();
@@ -611,6 +614,13 @@ function renderPick(){
     b.appendChild(cv); b.onclick = () => { if (!own) return hint(c); draft.g = g; play("pick", {gain:.4}); renderPick(); }; ava.appendChild(b); });
   const wr = $("pfWear"); wr.innerHTML = "";
   COLORS.forEach((col, k) => { const b = document.createElement("button"); b.className = draft.wear === k ? "on" : ""; b.setAttribute("aria-label", CNAME[k]); b.innerHTML = `<span class="sw" style="background:${col}"></span>`; b.onclick = () => { draft.wear = k; play("pick", {gain:.4}); renderPick(); }; wr.appendChild(b); });
+  // 称号：ランクの称号と、ほうびでもらった称号から選ぶ
+  { const r = rankOf(save.total), own = TITLES.filter(([n]) => n <= r).map(t => t[1]).concat(save.titles || []), box = $("pfTtlSel"); box.innerHTML = "";
+    [[null, `ランクの称号（${titleOfRank(r)}）`]].concat(own.filter((t, i, a) => a.indexOf(t) === i).map(t => [t, t])).forEach(([v, label]) => { const b = document.createElement("button"); b.textContent = label; b.className = (draft.ttl || null) === v ? "on" : ""; b.onclick = () => { draft.ttl = v; play("pick", {gain:.4}); renderPick(); }; box.appendChild(b); }); }
+  // 飾るトロフィー：持っているものから3つまで
+  { const box = $("pfTrSel"), got = TROPHIES.filter(t => save.trophies[t.id]); box.innerHTML = got.length ? "" : `<span class="none">トロフィーをとると、ここで選べます</span>`;
+    got.forEach(t => { const on = draft.tr.includes(t.id), b = document.createElement("button"); b.textContent = `${t.ic} ${t.name}`; b.className = on ? "on" : ""; b.setAttribute("aria-pressed", on);
+      b.onclick = () => { if (on) draft.tr = draft.tr.filter(x => x !== t.id); else { if (draft.tr.length >= 3){ $("pfErr").style.color = "#8a5a2a"; $("pfErr").textContent = "飾れるのは3つまでです。外したいものをもう一度タップしてね"; play("bad", {gain:.25}); return; } draft.tr.push(t.id); } $("pfErr").textContent = ""; play("pick", {gain:.4}); renderPick(); }; box.appendChild(b); }); }
   const ac = $("pfAcc"); ac.innerHTML = "";
   COS.filter(c => c.t === "acc").forEach(c => { const own = cosOwned(c), b = document.createElement("button"); b.className = "ac" + (draft.acc === c.id ? " on" : ""); if (!own) b.style.opacity = ".45"; b.textContent = (own ? "" : "🔒") + c.name; b.onclick = () => { if (!own) return hint(c); draft.acc = c.id; play("pick", {gain:.4}); renderPick(); }; ac.appendChild(b); });
   const ft = $("pfFit"); ft.innerHTML = "";
@@ -626,7 +636,8 @@ $("pfSave").onclick = () => {
   if (shop === null || name === null || msg === null){ $("pfErr").textContent = "URLやメールアドレスは入れられません"; return; }
   if (!shop){ $("pfErr").textContent = "お店の名前を入れてください"; return; }
   if (!name){ $("pfErr").textContent = "店主の名前を入れてください"; return; }
-  Object.assign(save.profile, draft, {shop, name, msg, set: true}); persist(); play("pay", {gain:.5}); renderChip(); openProfile();
+  save.titleSel = draft.ttl || null; const d2 = Object.assign({}, draft); delete d2.ttl;
+  Object.assign(save.profile, d2, {shop, name, msg, set: true}); persist(); play("pay", {gain:.5}); renderChip(); openProfile();
 };
 $("pfClose").onclick = () => $("profile").classList.add("hidden");
 $("pfCopy").onclick = () => { const p = save.profile, r = rankOf(save.total);
