@@ -223,6 +223,7 @@ function draw(){
     const cell = 13; let x = bx + 60;
     resQ.slice(0, 2).forEach((o, k) => { if (k){ ctx.fillStyle = "#bba895"; ctx.fillText("→", x - 4, by + bh/2); x += 12; } o.forEach(c => { miniBottle(ctx, x + cell/2, by + bh - 6, 24, COLORS[c], false, c); x += cell; }); x += 12; }); }
   // 仕込み：手数と目安は上の表示に出ているので、絵の中には描かない（飾りと重ならないように）
+  if (S.mode === "prep") drawPrepShelf(sh, cy);
   // 流し
   const sk = lay.sink, sw = sh.w*1.25, on = sel >= 0;
   if (S.mode !== "prep"){
@@ -267,6 +268,9 @@ function draw(){
   // 瓶
   bottles.forEach((b, i) => {
     const p = lay.pos[i];
+    if (prepStowed(b)){ // 仕込み：満タン瓶は上の棚へしまう（あとには点線のあと）
+      ctx.save(); ctx.globalAlpha = Math.min(1, (T - b.corkT - STOW_AT)/300)*.35; ctx.strokeStyle = "#bba895"; ctx.setLineDash([4, 5]); ctx.lineWidth = 1.5;
+      rr(ctx, p.x - sh.w/2, p.y - sh.H/2, sh.w, sh.H, sh.w*.3); ctx.stroke(); ctx.restore(); return; }
     lift[i] += ((sel === i ? 1 : 0) - lift[i]) * .3;
     const pr = active.get(i); if (pr && pr.from === i) return;
     let x = p.x, y = p.y - lift[i]*sh.w*.5;
@@ -317,7 +321,7 @@ function draw(){
       else if (st && st.next != null){ ctx.fillStyle = "#ffb3e6"; ctx.fillText("次：" + CNAME[st.next], p.x, ly); ctx.fillStyle = COLORS[st.next]; ctx.beginPath(); ctx.arc(p.x, ly + sh.w*.5, sh.w*.13, 0, 7); ctx.fill(); if (save.cb) sym(ctx, st.next, p.x, ly + sh.w*.5, sh.w*.09); }
       else { ctx.fillStyle = "#d9a6c4"; ctx.fillText(st && !st.g ? "カクテル用" : "カクテル", p.x, ly); if (st && !st.g){ ctx.font = `700 ${Math.max(9, sh.w*.2)}px "Zen Kaku Gothic New",sans-serif`; ctx.fillText("注文待ち", p.x, ly + sh.w*.34); } }
       return; }
-    if (b.corked && !wantedNow().includes(b.units[0].c)){ ctx.fillStyle = "#bba895"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
+    if (b.corked && S.mode !== "prep" && !wantedNow().includes(b.units[0].c)){ ctx.fillStyle = "#bba895"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
       ctx.fillText("注文待ち", p.x, p.y - sh.H/2 - sh.w*.3); }
     else if (!b.units.length && !b.ice){ ctx.fillStyle = "#7d6c5d"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("空き瓶", p.x, p.y + sh.H/2 + sh.w*.28); }
   });
@@ -400,3 +404,23 @@ function drawCloth(c, b, x, y, sh){
 // カクテルグラスの段の数と目標の色（注文があれば注文の長さ、なければこのステージの最長）
 function glassSlots(have){ const st = typeof cockState === "function" ? cockState() : null, g = st && st.g;
   const n = Math.max(have || 0, g ? g.cock.length : (S && S.cockLen ? S.cockLen[1] : 3)); return {n, target: g ? g.cock : []}; }
+// 仕込み：満タンになった瓶は、栓をしたあと上の棚（カウンター）へ運んで並べる
+const STOW_AT = 650, STOW_LEN = 620;
+const prepStowed = b => !!S && S.mode === "prep" && b.corked && b.corkT != null && T - b.corkT >= STOW_AT;
+function drawPrepShelf(sh, cy){
+  const n = Math.round(bottles.reduce((s, b) => s + b.units.length, 0)/CAP); if (!n) return;
+  const done = bottles.map((b, i) => i).filter(i => prepStowed(bottles[i])).sort((a, b) => bottles[a].corkT - bottles[b].corkT);
+  const gap = Math.min(W*.86/n, sh.w*1.25), ms = bottleShape(save.bottle, Math.min(sh.w*.42, gap*.62, cy*.72/3.05)), x0 = W/2 - gap*(n-1)/2;
+  // 棚の板と、まだの場所の点線
+  { const px = x0 - gap/2 + 2, pw = gap*n - 4, ph = ms.H + 10; ctx.fillStyle = "#2a1a10"; rr(ctx, px, cy - ph, pw, ph, 8); ctx.fill(); ctx.strokeStyle = "rgba(138,90,50,.8)"; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = "#8a5a32"; rr(ctx, px - 3, cy - 4, pw + 6, 6, 3); ctx.fill(); }
+  ctx.save(); ctx.globalAlpha = .8; ctx.strokeStyle = "rgba(187,168,149,.55)"; ctx.setLineDash([3, 4]); ctx.lineWidth = 1.2;
+  for (let k = done.length; k < n; k++){ const x = x0 + k*gap; rr(ctx, x - ms.w/2, cy - ms.H - 1, ms.w, ms.H - 2, ms.w*.3); ctx.stroke(); }
+  ctx.restore();
+  done.forEach((i, k) => { const b = bottles[i], e = T - b.corkT - STOW_AT, a = Math.min(1, e/STOW_LEN), q = ease(a), p = lay.pos[i];
+    const tx = x0 + k*gap, ty = cy - ms.H/2 - 1, sc = 1 + (ms.w/sh.w - 1)*q;
+    const x = p.x + (tx - p.x)*q, y = p.y + (ty - p.y)*q - Math.sin(a*Math.PI)*sh.H*.35;
+    if (a < 1){ ctx.save(); ctx.translate(x, y); ctx.scale(sc, sc); drawVessel(ctx, sh, 0, 0, Math.sin(a*Math.PI)*.18, [{c: b.units[0].c, v: CAP}], {cork: 1}); ctx.restore(); }
+    else { const land = Math.max(0, 1 - (e - STOW_LEN)/250); drawVessel(ctx, ms, tx, ty - land*3, 0, [{c: b.units[0].c, v: CAP}], {cork: 1, glow: land > 0}); }
+    if (a >= 1 && !b._stowSnd){ b._stowSnd = 1; play("pick", {gain:.35, rate:1.25}); } });
+}

@@ -563,7 +563,7 @@ function tapBottle(i, fromQ){
   if (b.lock != null){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `🔒${CNAME[b.lock]}を満タンにすると開く`, "#f3d27a", .75); return; }
   if (b.ice){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, b.iceT ? `あと${Math.ceil((b.iceT - T)/1000)}秒で溶ける（満タン瓶を渡すと早まる）` : `あと${b.ice}本渡すか、少し待つと溶ける`, "#9ed8f0", .75); return; }
   if (b.cloth){ shakeT[i] = T; play("bad", {gain:.3}); const f = b.cloth; floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, f.c < 0 ? `満タン瓶を${f.n}本作ると、ふきんが取れる` : `${CNAME[f.c]}の満タン瓶を作ると、ふきんが取れる`, "#ffd56b", .75); return; }
-  if (b.corked && S.mode === "prep"){ shakeT[i] = T; return; }
+  if (b.corked && S.mode === "prep"){ if (!prepStowed(b)) shakeT[i] = T; return; }
   if (b.corked){ if (sel >= 0){ shakeT[i] = T; play("bad", {gain:.3}); return; } deliver(i); return; }
   if (sel < 0){
     if (!b.units.length){ shakeT[i] = T; return; }
@@ -756,7 +756,7 @@ function finishPour(p){
   if (isFull(d)) cork(p.to);
   if (S.mode === "prep") setTimeout(prepCheck, 0);
 }
-function cork(i){ setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; if (S && S.lock && b.units.length && b.lock == null) setTimeout(() => { if (b.units.length) unlockColor(b.units[0].c); }, 350); // カギ：同じ色を満タンにした時点で開く b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
+function cork(i){ setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; if (S && S.lock && b.units.length && b.lock == null) setTimeout(() => { if (b.units.length) unlockColor(b.units[0].c); }, 350); /* カギ：同じ色を満タンにした時点で開く */ b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
   for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x, y: lay.pos[i].y - lay.sh.H/2, vx:R(-1.5,1.5), vy:R(-2,-.4), t0:T + 300, life:R(500,900), r:R(1.5,3)}); }
 
 function floatText(x, y, text, color, size=1, delay=0){ floats.push({x, y, text, color, size, t0: T + delay}); }
