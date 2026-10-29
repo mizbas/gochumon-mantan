@@ -283,7 +283,7 @@ function draw(){
     if (b.refillT != null && T - b.refillT < 500){ const k = (T - b.refillT)/500; layers = layers.map(L => ({...L, v: L.v*k})); }
     let corkK = null, glow = false;
     if (b.corked){ corkK = Math.min(1, Math.max(0, (T - b.corkT)/320)); corkK = 1 - Math.pow(1 - corkK, 3);
-      const need = wantedNow().includes(b.units[0].c); glow = need && Math.sin(T/180) > 0; }
+      const need = b.units.length && wantedNow().includes(b.units[0].c); glow = need && Math.sin(T/180) > 0; }
     if (b.glass){ const gs = glassSlots(layers.length); drawCockGlass(ctx, sh, x, y, 0, layers, gs.n, {sel: sel === i, target: gs.target, dark: darkNow() && !litAt(x)}); }
     else drawVessel(ctx, sh, x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow, dark: darkNow() && !litAt(x)});
     if (b.drip){ // 一杯ずつの瓶：細い口（首にしずくの印）

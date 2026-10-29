@@ -576,15 +576,23 @@ function tapGlass(i){
 let moveQ = [];
 function runMoveQ(){
   if (!moveQ.length || paused || !running) return;
-  const [a, b] = moveQ[0]; if (busy.has(a) || busy.has(b)) return;
-  moveQ.shift(); if (!bottles[a] || !bottles[b]) return; const keep = sel; sel = a; tapBottle(b, true); if (keep >= 0) sel = keep; // 待っている間に選んでいた瓶はそのまま
+  // 予約した手のうち、空いている瓶どうしで、前の予約とぶつからないものは同時に動かす（何本も並んで注げる）
+  const used = new Set(), keep = sel;
+  for (let k = 0; k < moveQ.length; k++){ const [a, b] = moveQ[k];
+    let free = !busy.has(a) && !busy.has(b) && !used.has(a) && !used.has(b); used.add(a); used.add(b);
+    // カギ・ふきんの瓶は、ほかの瓶を注ぎ終わって開くのを待つ（注いでいる途中なら待つ。もう何も動いていないのに閉じたままなら取り消す）
+    const shut = i => bottles[i] && (bottles[i].cloth || bottles[i].ice || bottles[i].lock != null);
+    if (free && (shut(a) || shut(b)) && (pours.length || bottles.some(x => x.corked && T - (x.corkT || 0) < 700))) free = false;
+    if (!free) continue; moveQ.splice(k, 1); k--; if (!bottles[a] || !bottles[b]) continue; sel = a; tapBottle(b, true); }
+  sel = keep >= 0 && bottles[keep] && !bottles[keep].corked ? keep : -1; /* 待っている間に選んでいた瓶はそのまま */
 }
 function tapBottle(i, fromQ){
   if (!running) return; audio();
   if (!bottles[i]) return;
-  if (!fromQ && (busy.has(i) || (sel >= 0 && busy.has(sel)) || moveQ.length)){
-    if (sel >= 0 && sel !== i){ if (moveQ.length < 12) moveQ.push([sel, i]); sel = -1; play("pick", {gain:.3, rate:1.15}); return; }
-    if (sel < 0 && (bottles[i].units.length || moveQ.some(q => q[1] === i)) && !bottles[i].corked && !bottles[i].ice && (!bottles[i].cloth || moveQ.length) && bottles[i].lock == null && !bottles[i].glass){ sel = i; play("pick", {gain:.5, rate:1.05}); return; }
+  const soon = j => pours.length && bottles[j] && (bottles[j].cloth || bottles[j].ice); /* 注いでいる途中なら、まもなく開くかもしれない瓶も先に選べる */
+  if (!fromQ && (busy.has(i) || (sel >= 0 && busy.has(sel)) || moveQ.length || soon(i) || (sel >= 0 && soon(sel)))){
+    if (sel >= 0 && sel !== i){ if (moveQ.length < 24) moveQ.push([sel, i]); sel = -1; play("pick", {gain:.3, rate:1.15}); return; }
+    if (sel < 0 && (bottles[i].units.length || moveQ.some(q => q[1] === i)) && !bottles[i].corked && (!bottles[i].ice || pours.length) && (!bottles[i].cloth || moveQ.length || pours.length) && bottles[i].lock == null && !bottles[i].glass){ sel = i; play("pick", {gain:.5, rate:1.05}); return; }
     if (sel === i){ sel = -1; return; }
     return;
   }
@@ -612,6 +620,7 @@ function tapBottle(i, fromQ){
 function tapSink(){
   if (!running || sel < 0) return; audio();
   if (busy.has(sel)){ shakeT[sel] = T; return; } // 注いでいる途中の瓶は流しに捨てない
+  { const b0 = bottles[sel]; if (!b0 || b0.corked || b0.cloth || b0.ice || b0.lock != null || !b0.units.length){ sel = -1; return; } } // 栓をした瓶などは捨てない
   snap(); const b = bottles[sel], n = b.glass ? b.units.length : topRun(b.units); b.units.splice(b.units.length - n, n);
   const cost = n*DUMP_COST; money = Math.max(0, money - cost); dumped += n;
   floatText(lay.sink.x, lay.sink.y - lay.sh.H*.3, `−${yen(cost)}`, "#ef6b5b", .8);
@@ -741,7 +750,7 @@ function tapRack(x){ undoSnap = null;
 // 満タン瓶は、その色の注文があれば自動で渡す（栓が閉まるのを見せてから）
 function autoDeliver(){
   bottles.forEach((b,i) => {
-    if (!b.corked || busy.has(i) || T - (b.corkT||0) < 650) return;
+    if (!b.corked || !b.units.length || busy.has(i) || T - (b.corkT||0) < 650) return;
     if (findTarget(b.units[0].c)){ if (sel === i) sel = -1; deliver(i); }
   });
   for (let k=stored.length-1;k>=0;k--){
@@ -780,7 +789,7 @@ function startPour(from, to, n){
   const fp = lay.pos[from], tp = lay.pos[to], dir = fp.x <= tp.x ? 1 : -1, sh = lay.sh;
   const fl = bottles[from].small ? 1 : 0, a0 = angleFor(sh, (srcBefore.length + fl)*sh.unit, dir), a1 = angleFor(sh, Math.max((srcBefore.length - n + fl)*sh.unit, sh.unit*.04), dir);
   const sp = (has("spout") ? .67 : 1)*(S.mode === "prep" ? .8 : 1);
-  pours.push({from, to, n, c: moved[0].c, dir, a0, a1, srcBefore, dstBefore, t0: T, T1: 260*sp, T2: (.36 + .13*n)*1000*sp, T3: 260*sp});
+  pours.push({from, to, n, c: moved[0].c, dir, a0, a1, srcBefore, dstBefore, t0: T, T1: 200*sp, T2: (.27 + .1*n)*1000*sp, T3: 200*sp}); /* 前より約25%速く */
 }
 function tipTarget(p){ const sh = lay.sh, q = lay.pos[p.to]; return [q.x - p.dir*sh.nw*.15, q.y - sh.H/2 - sh.H*.16]; }
 function posForAngle(p, a){ const sh = lay.sh, [tx,ty] = tipTarget(p), tip = rot([[p.dir*sh.nw, sh.top]], a)[0]; return [tx - tip[0], ty - tip[1]]; }
@@ -791,7 +800,7 @@ function finishPour(p){
   if (isFull(d)) cork(p.to);
   if (S.mode === "prep") setTimeout(prepCheck, 0);
 }
-function cork(i){ setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; if (S && S.lock && b.units.length && b.lock == null) setTimeout(() => { if (b.units.length) unlockColor(b.units[0].c); }, 350); /* カギ：同じ色を満タンにした時点で開く */ b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; if (u.id != null) prepKnown.add(u.id); } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
+function cork(i){ if (sel === i) sel = -1; setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; if (S && S.lock && b.units.length && b.lock == null) setTimeout(() => { if (b.units.length) unlockColor(b.units[0].c); }, 350); /* カギ：同じ色を満タンにした時点で開く */ b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; if (u.id != null) prepKnown.add(u.id); } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
   for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x, y: lay.pos[i].y - lay.sh.H/2, vx:R(-1.5,1.5), vy:R(-2,-.4), t0:T + 300, life:R(500,900), r:R(1.5,3)}); }
 
 function floatText(x, y, text, color, size=1, delay=0){ floats.push({x, y, text, color, size, t0: T + delay}); }
