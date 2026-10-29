@@ -203,6 +203,10 @@ function openPrepSel(){
   if (!save.prepRestar){ const keep = S; for (const id in save.prep.best){ if ((save.prep.stars[id] || 0) >= 3 || id === "pd") continue;
       const d = prepDef(id); if (!d.prep) continue; const line = d.hide ? Math.ceil(d.par*1.15) : d.par + 1; if (save.prep.best[id] <= line) save.prep.stars[id] = 3; }
     S = keep; save.prepRestar = true; persist(); }
+  // 前の記録で目安の手数以内に解けていた問題には👑名人をつける（1回だけ）
+  if (!save.prepMaster1){ const keep = S; const m = save.prep.master || (save.prep.master = {});
+    for (const id in save.prep.best){ if (id === "pd" || m[id]) continue; const d = prepDef(id); if (d.prep && save.prep.best[id] <= d.par) m[id] = 1; }
+    S = keep; save.prepMaster1 = true; persist(); }
   ["map","play","result","intro"].forEach(id => $(id).classList.add("hidden"));
   const box = $("prepList"); box.innerHTML = "";
   { const pd = pdToday(), c = prepDailyCh(), [k] = PREP_CH[c-1], b = document.createElement("button"); b.className = "spbtn pdbtn";
