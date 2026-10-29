@@ -315,7 +315,7 @@ function draw(){
       const ly = p.y + sh.H/2 + sh.w*.28;
       if (st && st.u.length && !st.ok){ ctx.fillStyle = Math.sin(T/160) > 0 ? "#ef6b5b" : "#ffb3e6"; ctx.fillText("✗ 流しへ", p.x, ly); }
       else if (st && st.next != null){ ctx.fillStyle = "#ffb3e6"; ctx.fillText("次：" + CNAME[st.next], p.x, ly); ctx.fillStyle = COLORS[st.next]; ctx.beginPath(); ctx.arc(p.x, ly + sh.w*.5, sh.w*.13, 0, 7); ctx.fill(); if (save.cb) sym(ctx, st.next, p.x, ly + sh.w*.5, sh.w*.09); }
-      else { ctx.fillStyle = "#d9a6c4"; ctx.fillText("カクテル", p.x, ly); }
+      else { ctx.fillStyle = "#d9a6c4"; ctx.fillText(st && !st.g ? "カクテル用" : "カクテル", p.x, ly); if (st && !st.g){ ctx.font = `700 ${Math.max(9, sh.w*.2)}px "Zen Kaku Gothic New",sans-serif`; ctx.fillText("注文待ち", p.x, ly + sh.w*.34); } }
       return; }
     if (b.corked && !wantedNow().includes(b.units[0].c)){ ctx.fillStyle = "#bba895"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
       ctx.fillText("注文待ち", p.x, p.y - sh.H/2 - sh.w*.3); }

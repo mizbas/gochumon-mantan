@@ -535,6 +535,10 @@ function tapGlass(i){
   if (sel === i){ sel = -1; play("pick", {gain:.35, rate:.9}); return; }
   const a = bottles[sel]; if (!a.units.length || a.corked || a.ice || a.lock != null || a.cloth){ sel = -1; return; }
   if (b.units.length >= (S.cockLen ? S.cockLen[1] : CAP)){ shakeT[i] = T; play("bad", {gain:.3}); return; }
+  // カクテルの注文がないときや、次の色と違うときは注がない（あとで流す手間をなくす）
+  const st = cockState(), msg = t => { shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, t, "#ffb3e6", .8); };
+  if (!st || !st.g){ sel = -1; return msg("カクテルの注文が来たら使うグラスです"); }
+  if (st.ok && st.next != null && a.units[a.units.length-1].c !== st.next && !a.units[a.units.length-1].h){ return msg(`次は「${CNAME[st.next]}」を注ぎます`); }
   snap(); startPour(sel, i, 1); sel = -1; hud();
 }
 // 続けて注ぐ：注いでいる途中の瓶にも次の操作を受け付けて、空いたら順番に注ぐ
