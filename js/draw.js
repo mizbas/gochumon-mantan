@@ -210,14 +210,16 @@ function sym(c, ci, x, y, r){
   c.stroke(); c.fill("evenodd"); c.restore();
 }
 // カクテル（下から順に層の色）。x,y は下の中心
-function drawCock(c, x, y, h, pat, done){
-  const w = h*.52, n = pat.length, lh = h*.78/n;
+function drawCock(c, x, y, h, pat, done, wide){ // 注文の吹き出し・飛んでいくカクテル：脚つきグラスに下から層
+  const n = pat.length, tw = h*(wide || .36), bw = h*.08, rimY = y - h, botY = y - h*.42, lh = (botY - (rimY + h*.04))/n;
   c.save(); c.globalAlpha = done ? .35 : 1;
-  pat.forEach((ci, k) => { c.fillStyle = COLORS[ci]; c.fillRect(x - w/2, y - (k+1)*lh, w, lh + .5); if (save.cb) sym(c, ci, x, y - (k+.5)*lh, Math.min(w*.26, lh*.36)); });
-  c.strokeStyle = "rgba(60,40,30,.75)"; c.lineWidth = 1.5; c.strokeRect(x - w/2, y - n*lh, w, n*lh);
-  c.strokeStyle = "#c9962e"; c.lineWidth = 2; c.beginPath(); c.moveTo(x - w/2 - 2, y - n*lh); c.lineTo(x + w/2 + 2, y - n*lh); c.stroke();
-  c.fillStyle = "#f6e05a"; c.beginPath(); c.arc(x + w/2, y - n*lh, h*.11, Math.PI, 0); c.fill();
-  c.strokeStyle = "#2f7d32"; c.lineWidth = 1.5; c.beginPath(); c.moveTo(x - w*.1, y - n*lh - h*.18); c.lineTo(x + w*.15, y - n*lh + lh*.4); c.stroke();
+  c.fillStyle = "rgba(235,225,215,.85)"; c.fillRect(x - h*.025, botY, h*.05, y - botY - h*.04); c.beginPath(); c.ellipse(x, y - h*.03, h*.2, h*.045, 0, 0, 7); c.fill();
+  const bowl = () => { c.beginPath(); c.moveTo(x - tw, rimY); c.lineTo(x + tw, rimY); c.bezierCurveTo(x + tw*.95, rimY + (botY - rimY)*.6, x + bw*1.6, botY, x, botY); c.bezierCurveTo(x - bw*1.6, botY, x - tw*.95, rimY + (botY - rimY)*.6, x - tw, rimY); c.closePath(); };
+  c.save(); bowl(); c.clip();
+  pat.forEach((ci, k) => { c.fillStyle = COLORS[ci]; c.fillRect(x - tw - 1, botY - (k+1)*lh, tw*2 + 2, lh + .6); if (save.cb) sym(c, ci, x, botY - (k+.5)*lh, Math.min(tw*.4, lh*.36)); });
+  c.restore();
+  bowl(); c.strokeStyle = "rgba(60,40,30,.75)"; c.lineWidth = 1.5; c.lineJoin = "round"; c.stroke();
+  c.fillStyle = "#f6e05a"; c.beginPath(); c.arc(x + tw*.8, rimY, h*.1, Math.PI, 0); c.fill();
   c.restore();
 }
 function miniBottle(c, x, y, h, col, got, ci){
@@ -232,5 +234,47 @@ function miniBottle(c, x, y, h, col, got, ci){
   c.globalAlpha = 1;
   if (got){ c.strokeStyle = "#2f7d32"; c.lineWidth = Math.max(2, h*.1); c.lineCap = "round"; c.lineJoin = "round";
     c.beginPath(); c.moveTo(-w*.45, -h*.4); c.lineTo(-w*.05, -h*.12); c.lineTo(w*.6, -h*.75); c.stroke(); }
+  c.restore();
+}
+
+/* カクテルグラス：脚つきのグラス。注文の層の数だけ同じ高さの段に分け、まだの段には目標の色をうすく見せる */
+function cockGeo(sh){ const H = sh.H, w = sh.w; return {rimY: -H/2 + H*.1, botY: H*.1, topHw: w*.62, botHw: w*.2, footY: H/2 - H*.03, footHw: w*.42, fillTop: -H/2 + H*.15}; }
+function cockBowl(c, g){ c.beginPath(); c.moveTo(-g.topHw, g.rimY); c.lineTo(g.topHw, g.rimY);
+  c.bezierCurveTo(g.topHw*.95, g.rimY + (g.botY - g.rimY)*.6, g.botHw*1.6, g.botY, 0, g.botY); c.bezierCurveTo(-g.botHw*1.6, g.botY, -g.topHw*.95, g.rimY + (g.botY - g.rimY)*.6, -g.topHw, g.rimY); c.closePath(); }
+// 段 k（0が一番下）の上端・下端（グラスの中心からの高さ）
+function cockSlot(sh, n, k){ const g = cockGeo(sh), h = (g.botY - g.fillTop)/n; return [g.botY - (k+1)*h, g.botY - k*h]; }
+function cockLevel(sh, n, v){ const g = cockGeo(sh); return g.botY - (g.botY - g.fillTop)*Math.min(1, v/n); }
+function drawCockGlass(c, sh, x, y, a, layers, n, o = {}){
+  const g = cockGeo(sh), target = o.target || [];
+  c.save(); c.translate(x, y); c.rotate(a);
+  // 脚と台
+  c.fillStyle = "rgba(235,225,215,.28)"; c.strokeStyle = o.sel ? "rgba(255,214,140,.95)" : "rgba(235,225,215,.55)"; c.lineWidth = sh.t*1.1;
+  c.beginPath(); c.moveTo(-sh.w*.05, g.botY); c.lineTo(-sh.w*.05, g.footY - sh.w*.06); c.lineTo(sh.w*.05, g.footY - sh.w*.06); c.lineTo(sh.w*.05, g.botY); c.fill();
+  c.beginPath(); c.ellipse(0, g.footY - sh.w*.04, g.footHw, sh.w*.08, 0, 0, 7); c.fill(); c.stroke();
+  // 中身
+  c.save(); cockBowl(c, g); c.fillStyle = "rgba(255,240,220,.07)"; c.fill(); c.clip();
+  const x0 = -g.topHw - 2, x1 = g.topHw + 2;
+  let acc = 0;
+  for (let k = 0; k < n; k++){ // まだ入っていない段：目標の色をうすく
+    if (k < layers.length && layers[k].v >= .999) continue; const [t, b] = cockSlot(sh, n, k);
+    if (target[k] != null && !o.dark){ c.globalAlpha = .32; c.fillStyle = COLORS[target[k]]; c.fillRect(x0, t, x1 - x0, b - t); c.globalAlpha = 1; } }
+  layers.forEach((L, k) => { if (L.v <= .001) return; const b = cockLevel(sh, n, acc), t = cockLevel(sh, n, acc + L.v); acc += L.v;
+    c.fillStyle = o.dark ? "#4a4440" : COLORS[L.c]; c.fillRect(x0, t, x1 - x0, b - t + .6);
+    if (!o.dark && Math.abs(a) < .05 && L.v >= .999) drinkTex(c, drinkOf(L.c).tex, x0, x1, t, b, 0, L.c*7 + k*3, k === layers.length - 1, sh.w);
+    if (k === layers.length - 1){ c.fillStyle = "rgba(255,255,255,.25)"; c.fillRect(x0, t, x1 - x0, Math.max(1.5, sh.w*.035)); }
+    if (save.cb && !o.dark && L.v >= .999 && Math.abs(a) < .05) sym(c, L.c, 0, (t + b)/2, Math.min(sh.w*.17, (b - t)*.32)); });
+  // 段の区切り（点線）
+  c.strokeStyle = "rgba(255,230,245,.45)"; c.lineWidth = 1; c.setLineDash([3, 3]);
+  for (let k = 1; k < n; k++){ const yy = cockSlot(sh, n, k)[1]; c.beginPath(); c.moveTo(x0, yy); c.lineTo(x1, yy); c.stroke(); }
+  c.setLineDash([]);
+  const gr = c.createLinearGradient(-g.topHw, 0, g.topHw, 0); gr.addColorStop(0, "rgba(255,255,255,.22)"); gr.addColorStop(.45, "rgba(255,255,255,0)"); gr.addColorStop(1, "rgba(0,0,0,.18)");
+  c.fillStyle = gr; c.fillRect(x0, g.rimY, x1 - x0, g.botY - g.rimY);
+  c.restore();
+  // ふち
+  cockBowl(c, g); c.lineJoin = "round"; c.lineWidth = sh.t*1.25; c.strokeStyle = o.sel ? "rgba(255,214,140,.95)" : "rgba(255,200,235,.7)"; c.stroke();
+  c.lineWidth = Math.max(1, sh.t*.35); c.strokeStyle = "rgba(255,255,255,.4)"; c.stroke();
+  c.strokeStyle = "rgba(255,255,255,.3)"; c.lineWidth = sh.w*.05; c.lineCap = "round"; c.beginPath(); c.moveTo(-g.topHw*.7, g.rimY + sh.H*.05); c.lineTo(-g.botHw*1.2, g.botY - sh.H*.08); c.stroke();
+  // レモン
+  c.fillStyle = "#f6e05a"; c.beginPath(); c.arc(g.topHw*.8, g.rimY, sh.w*.2, Math.PI, 0); c.fill(); c.strokeStyle = "#e0c23a"; c.lineWidth = 1; c.stroke();
   c.restore();
 }

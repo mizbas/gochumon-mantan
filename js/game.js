@@ -951,7 +951,7 @@ function bubbleSprite(s, bw, bh, cell, n){
     c.fillStyle = "#e0a020"; rr(c, bx + bw - 40, by - 9, 42, 18, 9); c.fill(); c.fillStyle = "#2a1a0c"; c.font = `900 11px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText("団体", bx + bw - 19, by); }
     c.fillStyle = "#f6ead6";
     c.beginPath(); c.moveTo(px - 7, by + bh - 1); c.lineTo(px, by + bh + 8); c.lineTo(px + 7, by + bh - 1); c.fill();
-    if (s.cock) drawCock(c, px, by + bh - 13, bh*.66, s.cock, false);
+    if (s.cock) drawCock(c, px, by + bh - 13, bh*.6, s.cock, false, .58);
     else s.order.forEach((cc, j) => { const mx = px + (j - (n-1)/2)*cell; miniBottle(c, mx, by + bh - 14, (bh - 13)*.62, COLORS[cc], s.got[j], cc);
       // 飲み物の名前（小さく、瓶の上に）
       const nm = drinkOf(cc).short, fs = Math.min(10.5, (bh - 13)*.18); c.font = `900 ${fs}px "Zen Kaku Gothic New",sans-serif`; const tw = c.measureText(nm).width, sc = Math.min(1, (cell - 3)/tw);

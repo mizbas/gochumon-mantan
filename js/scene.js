@@ -279,7 +279,8 @@ function draw(){
     let corkK = null, glow = false;
     if (b.corked){ corkK = Math.min(1, Math.max(0, (T - b.corkT)/320)); corkK = 1 - Math.pow(1 - corkK, 3);
       const need = wantedNow().includes(b.units[0].c); glow = need && Math.sin(T/180) > 0; }
-    drawVessel(ctx, sh, x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow, dark: darkNow() && !litAt(x)});
+    if (b.glass){ const gs = glassSlots(layers.length); drawCockGlass(ctx, sh, x, y, 0, layers, gs.n, {sel: sel === i, target: gs.target, dark: darkNow() && !litAt(x)}); }
+    else drawVessel(ctx, sh, x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow, dark: darkNow() && !litAt(x)});
     if (b.lock != null || (lockWarn && lockWarn.i === i) || (b.unlockT != null && T - b.unlockT < 500)){ // カギ
       const warn = b.lock == null && lockWarn && lockWarn.i === i, opening = b.lock == null && !warn, k = opening ? 1 - (T - b.unlockT)/500 : 1, c = warn ? lockWarn.c : b.lock;
       ctx.save(); ctx.globalAlpha = warn ? .45 + .4*Math.abs(Math.sin(T/120)) : k;
@@ -309,8 +310,7 @@ function draw(){
       ctx.restore(); }
     if (b.cloth || (b.clothOffT != null && T - b.clothOffT < 600)) drawCloth(ctx, b, x, y, sh);
     if (b.glass){ const st = cockState();
-      ctx.strokeStyle = `rgba(255,170,220,${.5 + .3*Math.sin(T/300)})`; ctx.lineWidth = 2.5; rr(ctx, x - sh.w*.62, y - sh.H*.58, sh.w*1.24, sh.H*1.14, sh.w*.3); ctx.stroke();
-      ctx.fillStyle = "#f6e05a"; ctx.beginPath(); ctx.arc(x + sh.nw*.9, y - sh.H/2 + sh.H*.02, sh.w*.2, Math.PI*.9, Math.PI*2.1); ctx.fill();
+      ctx.strokeStyle = `rgba(255,170,220,${.5 + .3*Math.sin(T/300)})`; ctx.lineWidth = 2.5; rr(ctx, x - sh.w*.74, y - sh.H*.58, sh.w*1.48, sh.H*1.14, sh.w*.3); ctx.stroke();
       ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
       const ly = p.y + sh.H/2 + sh.w*.28;
       if (st && st.u.length && !st.ok){ ctx.fillStyle = Math.sin(T/160) > 0 ? "#ef6b5b" : "#ffb3e6"; ctx.fillText("✗ 流しへ", p.x, ly); }
@@ -334,7 +334,7 @@ function draw(){
     if (stream){
       const tip = rot([[p.dir*sh.nw, sh.top]], a)[0], tx = x + tip[0], ty = y + tip[1], tpos = lay.pos[p.to];
       if (!sh.T0) sh.T0 = table(sh.P);
-      const surf = levelY(sh.T0, (p.dstBefore.length + p.n*stream)*sh.unit) + tpos.y;
+      const surf = bottles[p.to] && bottles[p.to].glass ? cockLevel(sh, glassSlots(p.dstBefore.length + p.n).n, p.dstBefore.length + p.n*stream) + tpos.y : levelY(sh.T0, (p.dstBefore.length + p.n*stream)*sh.unit) + tpos.y;
       const sw = sh.w*.12*(stream < .15 ? stream/.15 : stream > .9 ? (1-stream)/.1 : 1), wob = Math.sin(T/40)*sh.w*.012, ex = tpos.x - p.dir*sh.nw*.15;
       ctx.fillStyle = COLORS[p.c]; ctx.beginPath(); ctx.moveTo(tx - sw/2, ty); ctx.quadraticCurveTo(tx - sw/2 + wob, (ty+surf)/2, ex - sw*.4, surf);
       ctx.lineTo(ex + sw*.4, surf); ctx.quadraticCurveTo(tx + sw/2 + wob, (ty+surf)/2, tx + sw/2, ty); ctx.closePath(); ctx.fill();
@@ -342,7 +342,8 @@ function draw(){
         ctx.beginPath(); ctx.moveTo(gx, gy - r*2); ctx.lineTo(gx + r*.6, gy); ctx.lineTo(gx, gy + r*2); ctx.lineTo(gx - r*.6, gy); ctx.closePath(); ctx.fill(); ctx.beginPath(); ctx.moveTo(gx - r*2, gy); ctx.lineTo(gx, gy + r*.6); ctx.lineTo(gx + r*2, gy); ctx.lineTo(gx, gy - r*.6); ctx.closePath(); ctx.fill(); }
         ctx.strokeStyle = "#e0b54a"; ctx.lineWidth = Math.max(2, sh.w*.06); ctx.beginPath(); ctx.arc(tx, ty, sh.w*.09, 0, 7); ctx.stroke(); }
     }
-    drawVessel(ctx, sh, x, y, a, layers, {t: T, dark: darkNow() && !litAt(x)});
+    if (bottles[p.from] && bottles[p.from].glass) drawCockGlass(ctx, sh, x, y, a, layers, glassSlots(p.srcBefore.length).n, {dark: darkNow() && !litAt(x)});
+    else drawVessel(ctx, sh, x, y, a, layers, {t: T, dark: darkNow() && !litAt(x)});
     return true;
   });
   // お客さんへ飛んでいく瓶
@@ -396,3 +397,6 @@ function drawCloth(c, b, x, y, sh){
   c.fillStyle = "#3a2a1c"; c.font = `900 ${r*.62}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(f.n || "", 0, ty + r*.55);
   c.restore();
 }
+// カクテルグラスの段の数と目標の色（注文があれば注文の長さ、なければこのステージの最長）
+function glassSlots(have){ const st = typeof cockState === "function" ? cockState() : null, g = st && st.g;
+  const n = Math.max(have || 0, g ? g.cock.length : (S && S.cockLen ? S.cockLen[1] : 3)); return {n, target: g ? g.cock : []}; }
