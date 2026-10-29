@@ -286,6 +286,10 @@ function draw(){
       const need = wantedNow().includes(b.units[0].c); glow = need && Math.sin(T/180) > 0; }
     if (b.glass){ const gs = glassSlots(layers.length); drawCockGlass(ctx, sh, x, y, 0, layers, gs.n, {sel: sel === i, target: gs.target, dark: darkNow() && !litAt(x)}); }
     else drawVessel(ctx, sh, x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow, dark: darkNow() && !litAt(x)});
+    if (b.drip){ // 一杯ずつの瓶：細い口（首にしずくの印）
+      const dy = y - sh.H/2 + sh.H*.1; ctx.fillStyle = "#9ed8f0"; ctx.beginPath(); ctx.moveTo(x + sh.nw + sh.w*.14, dy - sh.w*.16); ctx.quadraticCurveTo(x + sh.nw + sh.w*.28, dy + sh.w*.02, x + sh.nw + sh.w*.14, dy + sh.w*.1); ctx.quadraticCurveTo(x + sh.nw, dy + sh.w*.02, x + sh.nw + sh.w*.14, dy - sh.w*.16); ctx.fill();
+      ctx.strokeStyle = "#9ed8f0"; ctx.lineWidth = Math.max(2, sh.w*.06); ctx.beginPath(); ctx.moveTo(x - sh.nw*.55, y - sh.H/2 + sh.H*.02); ctx.lineTo(x - sh.nw*.55, y - sh.H/2 + sh.H*.13); ctx.moveTo(x + sh.nw*.55, y - sh.H/2 + sh.H*.02); ctx.lineTo(x + sh.nw*.55, y - sh.H/2 + sh.H*.13); ctx.stroke();
+      ctx.fillStyle = "#9ed8f0"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("1杯ずつ", p.x, p.y + sh.H/2 + sh.w*.28); }
     if (b.label != null){ // 専用の瓶：首に色の帯と札
       ctx.fillStyle = COLORS[b.label]; rr(ctx, x - sh.nw - sh.t, y - sh.H/2 + sh.H*.06, (sh.nw + sh.t)*2, sh.H*.05, 2); ctx.fill();
       ctx.fillStyle = "#fffaf0"; ctx.beginPath(); ctx.arc(x + sh.nw + sh.w*.12, y - sh.H/2 + sh.H*.14, sh.w*.16, 0, 7); ctx.fill(); ctx.strokeStyle = COLORS[b.label]; ctx.lineWidth = 2; ctx.stroke();
@@ -330,7 +334,7 @@ function draw(){
       ctx.fillText("注文待ち", p.x, p.y - sh.H/2 - sh.w*.3); }
     else if (b.label != null || b.small){ ctx.fillStyle = b.label != null ? COLORS[b.label] : "#d8b98a"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
       ctx.fillText(b.label != null ? CNAME[b.label] + "専用" : "3杯まで", p.x, p.y + sh.H/2 + sh.w*.28); }
-    else if (!b.units.length && !b.ice){ ctx.fillStyle = "#7d6c5d"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("空き瓶", p.x, p.y + sh.H/2 + sh.w*.28); }
+    else if (!b.units.length && !b.ice && !b.drip){ ctx.fillStyle = "#7d6c5d"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("空き瓶", p.x, p.y + sh.H/2 + sh.w*.28); }
   });
   // 注いでいる瓶
   pours = pours.filter(p => {
