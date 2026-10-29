@@ -66,9 +66,20 @@ let lockT = Infinity, lockWarn = null;
 
 /* ---------- 仕込みモード（じっくり解くパズル） ---------- */
 // 仕込みモード：盤面づくりと解く仕組み（必ず解けることを確かめ、目安の手数とヒントに使う）
-function prepSolve(start, cap, limit){
+// 布をかけた瓶：cloth[i] = {c, n}（c = 色。-1 はどの色でも）。その色の満タン瓶が n 本できるまで、注ぐことも注がれることもできない
+// 布が取れた瓶も、満タンになれば数に入る（取れるまでくり返し調べる）
+function clothLocks(st, cloth){
+  const L = st.map((b, i) => !!(cloth && cloth[i]));
+  for (let changed = true; changed;){ changed = false;
+    st.forEach((b, i) => { if (!L[i]) return; const f = cloth[i]; let done = 0;
+      st.forEach((d, k) => { if (k !== i && !L[k] && d.length === CAP && d.every(c => c === d[0]) && (f.c < 0 || d[0] === f.c)) done++; });
+      if (done >= f.n){ L[i] = false; changed = true; } }); }
+  return L;
+}
+function prepSolve(start, cap, limit, cloth){
   // start: [[c,c,...], ...] 下から上。戻り値：[{from,to,n}, ...] か null
-  const keyOf = st => st.map(b => b.join(",")).sort().join("|");
+  const lk = st => cloth && cloth.some(Boolean) ? clothLocks(st, cloth) : null;
+  const keyOf = st => { const L = lk(st); return st.map((b, i) => b.join(",") + (L && L[i] ? "~" + i : "")).sort().join("|"); };
   const solved = st => st.every(b => !b.length || (b.length === cap && b.every(c => c === b[0])));
   const h = st => { let x = 0; const where = {}; st.forEach((b, i) => { for (let k=1;k<b.length;k++) if (b[k] !== b[k-1]) x++; if (b.length && b.length < cap) x += .5; new Set(b).forEach(c => where[c] = (where[c]||0) + 1); }); for (const c in where) x += where[c] - 1; return x; };
   const heap = [], push = n => { heap.push(n); let i = heap.length - 1; while (i){ const p = (i-1) >> 1; if (heap[p].f <= heap[i].f) break; [heap[p], heap[i]] = [heap[i], heap[p]]; i = p; } },
@@ -76,14 +87,14 @@ function prepSolve(start, cap, limit){
   const seen = new Map(); push({st: start, g: 0, f: h(start), path: null}); seen.set(keyOf(start), 0);
   let n = 0;
   while (heap.length && n++ < limit){
-    const cur = pop(), st = cur.st;
+    const cur = pop(), st = cur.st, L = lk(st);
     if (solved(st)){ const out = []; for (let p = cur.path; p; p = p.prev) out.push(p.m); return out.reverse(); }
     for (let i=0;i<st.length;i++){
-      const a = st[i]; if (!a.length) continue;
+      const a = st[i]; if (!a.length || (L && L[i])) continue;
       const c = a[a.length-1]; let run = 0; for (let k=a.length-1;k>=0 && a[k]===c;k--) run++;
       const uniform = run === a.length; let triedEmpty = false;
       for (let j=0;j<st.length;j++){
-        if (i === j) continue; const b = st[j];
+        if (i === j || (L && L[j])) continue; const b = st[j];
         if (b.length >= cap) continue;
         if (b.length){ if (b[b.length-1] !== c) continue; }
         else { if (uniform || triedEmpty) continue; triedEmpty = true; }
@@ -98,32 +109,35 @@ function prepSolve(start, cap, limit){
   }
   return null;
 }
-function prepGen(k, empties, cap, seed, rand){
-  for (let tries = 0; tries < 60; tries++){
+function prepGen(k, empties, cap, seed, rand, clothN){
+  for (let tries = 0; tries < (clothN ? 400 : 60); tries++){
     const r = rand(seed + tries*7919), pool = [];
     for (let c=0;c<k;c++) for (let u=0;u<cap;u++) pool.push(c);
     for (let i=pool.length-1;i>0;i--){ const j = Math.floor(r()*(i+1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
     const st = []; for (let b=0;b<k;b++) st.push(pool.slice(b*cap, b*cap + cap)); for (let e=0;e<empties;e++) st.push([]);
     if (st.some(b => b.length === cap && b.every(c => c === b[0]))) continue;           // 最初から満タンは作らない
     if (st.some(b => { let x = 0; for (let q=1;q<b.length;q++) if (b[q] !== b[q-1]) x++; return x === 0 && b.length; })) continue;
-    const sol = prepSolve(st, cap, 120000);
-    if (sol) return {st, sol, tries};
+    let cloth = null;
+    if (clothN){ cloth = st.map(() => null); const idx = [...Array(k).keys()];
+      for (let q=0; q<clothN; q++){ const i = idx.splice(Math.floor(r()*idx.length), 1)[0]; cloth[i] = r() < .35 ? {c: -1, n: r() < .5 ? 1 : 2} : {c: Math.floor(r()*k), n: 1}; } }
+    const sol = prepSolve(st, cap, 120000, cloth);
+    if (sol) return {st, sol, tries, cloth};
   }
   return null;
 }
 
 
 // 章ごとの難しさ：[色の数, 空き瓶, ？の色, 凍った瓶]
-const PREP_CH = [[3,2,0,0],[4,2,0,0],[5,2,0,0],[5,2,1,0],[6,2,0,0],[6,2,1,0],[7,2,0,0],[7,2,1,1],[8,2,1,0],[8,2,1,1]];
+const PREP_CH = [[3,2,0,0],[4,2,0,0],[5,2,0,0],[5,2,1,0],[6,2,0,0],[6,2,1,0],[7,2,0,0],[7,2,1,1],[8,2,1,0],[8,2,1,1],[5,2,0,0,2],[6,2,0,0,3],[7,2,1,0,3]];
 const PREP_N = 8;
 const prepId = (c, n) => `p${c}-${n}`, prepName = id => "仕込み " + id.slice(1);
 const prepCache = {};
 function prepDef(id){
   if (id === "pd") return prepDailyDef();
-  const [c, n] = id.slice(1).split("-").map(Number), [k, e, hide, ice] = PREP_CH[c-1];
-  if (!prepCache[id]) prepCache[id] = prepGen(k, e, CAP, c*1000 + n*37 + 11, mulberry);
+  const [c, n] = id.slice(1).split("-").map(Number), [k, e, hide, ice, cloth] = PREP_CH[c-1];
+  if (!prepCache[id]) prepCache[id] = prepGen(k, e, CAP, c*1000 + n*37 + 11, mulberry, cloth || 0);
   const g = prepCache[id];
-  return {id: prepName(id), pid: id, mode: "prep", ch: c, n, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0, hide: !!hide, ice: ice ? [2] : null, prep: g, par: g ? g.sol.length : 99};
+  return {id: prepName(id), pid: id, mode: "prep", ch: c, n, w: 1 + ((c - 1) % 9), colors: k, shelf: k, spare: e, seats: 0, guests: 0, pat: 60, goal: 0, hide: !!hide, ice: ice ? [2] : null, cloth: g && g.cloth ? g.cloth : null, prep: g, par: g ? g.sol.length : 99};
 }
 const prepUnlocked = id => { const [c, n] = id.slice(1).split("-").map(Number); if (c === 1 && n === 1) return true; const prev = n > 1 ? prepId(c, n-1) : prepId(c-1, PREP_N); return (save.prep.stars[prev] || 0) >= 1; };
 const prepOpen = () => (save.stars["1-1"] || 0) >= 1;
@@ -131,19 +145,26 @@ let prepMoves = 0, prepHelp = 0, prepHint = null;
 function prepStarCap(){ return Math.max(1, 3 - prepHelp); }
 function prepStars(){ const par = S.par, m = prepMoves; const st = m <= par ? 3 : m <= Math.ceil(par*1.3) ? 2 : 1; return Math.min(st, prepStarCap()); }
 function prepState(){ return bottles.map(b => b.units.map(u => u.c)); }
+const clothNow = () => bottles.map(b => b.cloth ? {c: b.cloth.c, n: b.cloth.n} : null);
+// 満タンができたら、条件のそろった布を取る
+function clothCheck(){
+  if (!bottles.some(b => b.cloth)) return;
+  const L = clothLocks(prepState(), clothNow());
+  bottles.forEach((b, i) => { if (b.cloth && !L[i]){ b.cloth = null; b.clothOffT = T; play("kira", {gain:.5}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "ふきんが取れた！", "#ffd56b", .9); } });
+}
 function prepCheck(){
   if (S.mode !== "prep" || ended) return;
   const done = bottles.every(b => !b.units.length || b.corked);
   if (done && !pours.length){ setTimeout(endPrep, 600); ended = true; return; }
   // 手詰まり（どこにも注げない）
   const st = prepState(); let any = false;
-  bottles.forEach((a, i) => { if (any || !a.units.length || a.corked || a.ice) return; const c = a.units[a.units.length-1].c;
-    bottles.forEach((b, j) => { if (i !== j && !b.corked && !b.ice && b.units.length < CAP && (!b.units.length || b.units[b.units.length-1].c === c)) any = true; }); });
+  bottles.forEach((a, i) => { if (any || !a.units.length || a.corked || a.ice || a.cloth) return; const c = a.units[a.units.length-1].c;
+    bottles.forEach((b, j) => { if (i !== j && !b.corked && !b.ice && !b.cloth && b.units.length < CAP && (!b.units.length || b.units[b.units.length-1].c === c)) any = true; }); });
   if (!any && !bottles.some(b => b.ice)) floatText(W/2, lay.counterY + 40, "手詰まり！「↶ 戻す」かやり直しで", "#ef6b5b", .9);
 }
 function prepHintGo(){
   if (S.mode !== "prep" || !running || paused || pours.length) return;
-  const sol = prepSolve(prepState(), CAP, 60000);
+  const sol = prepSolve(prepState(), CAP, 60000, clothNow());
   if (!sol || !sol.length){ floatText(W/2, lay.counterY + 40, "この形からは解けないかも。戻してみよう", "#ef6b5b", .85); play("bad", {gain:.3}); return; }
   if (!prepHint || !prepHint.used){ prepHelp = Math.min(2, prepHelp + 1); }
   prepHint = {from: sol[0].from, to: sol[0].to, used: true}; sel = -1; play("kira", {gain:.4}); hud();
@@ -174,11 +195,11 @@ function openPrepSel(){
   { const pd = pdToday(), c = prepDailyCh(), [k] = PREP_CH[c-1], b = document.createElement("button"); b.className = "spbtn pdbtn";
     b.innerHTML = `<span class="ic">📅</span><span style="text-align:left"><b>今日の仕込み（${prepDailyWd()}曜日）</b><small>みんな同じ1問・${k}色　${pd && pd.best ? `今日のベスト ${pd.best}手 ${"★".repeat(pd.st)}` : "まだ解いていません"}</small></span>`;
     b.onclick = () => { audio(); $("prepSel").classList.add("hidden"); showIntro("pd"); }; box.appendChild(b); }
-  PREP_CH.forEach(([k, e, hide, ice], ci) => {
+  PREP_CH.forEach(([k, e, hide, ice, cloth], ci) => {
     const c = ci + 1, open = prepUnlocked(prepId(c, 1));
     let tot = 0; for (let n=1;n<=PREP_N;n++) tot += save.prep.stars[prepId(c, n)] || 0;
     const sec = document.createElement("div"); sec.className = "world" + (open ? "" : " soon");
-    sec.innerHTML = `<h2>仕込み ${c}章 <small>${open ? `★ ${tot} / ${PREP_N*3}` : "🔒"}</small></h2><p style="margin:0;color:var(--mute);font-size:13px">${k}色・空き瓶${e}本${hide ? "・？の色" : ""}${ice ? "・凍った瓶" : ""}</p>`;
+    sec.innerHTML = `<h2>仕込み ${c}章 <small>${open ? `★ ${tot} / ${PREP_N*3}` : "🔒"}</small></h2><p style="margin:0;color:var(--mute);font-size:13px">${k}色・空き瓶${e}本${hide ? "・？の色" : ""}${ice ? "・凍った瓶" : ""}${cloth ? "・ふきんの瓶" : ""}</p>`;
     if (open){ const grid = document.createElement("div"); grid.className = "stages";
       for (let n=1;n<=PREP_N;n++){ const id = prepId(c, n), lock = !prepUnlocked(id), s2 = save.prep.stars[id] || 0, best = save.prep.best[id];
         const b = document.createElement("button"); b.className = "sbtn" + (lock ? " locked" : "");
@@ -219,6 +240,7 @@ function startPrep(){
   stock = []; stored = []; bought = 0; storeCap = 0; sandUsed = false; paused = false; pendingStore = -1; supplyLeft = 0; iceTick = 15000;
   undoSnap = null; undoStack = []; undoLeft = Infinity; prepMoves = 0; prepHelp = 0; prepHint = null; tut = null; hhT = Infinity; freezeT = Infinity; freezeWarn = null; lockT = Infinity; lockWarn = null; resQ = []; darkT = Infinity;
   (S.ice || []).forEach((n, k) => { if (bottles[k]) bottles[k].ice = n; });
+  (S.cloth || []).forEach((f, k) => { if (f && bottles[k]) bottles[k].cloth = {c: f.c, n: f.n}; });
   $("rackAsk").classList.add("hidden"); $("tutBox").classList.add("hidden");
   layout(); hud();
 }
@@ -481,12 +503,12 @@ function coldWave(){
 let hhT = Infinity, hhOn = false; const HH_LEN = 20000;
 const happyNow = () => T >= hhT && T < hhT + HH_LEN;
 const UNDO_MAX = 3;
-function snap(){ if (S && S.mode === "prep" && undoSnap) undoStack.push(undoSnap); undoSnap = {pm: prepMoves, b: bottles.map(b => ({units: b.units.map(u => ({...u})), corked: b.corked, corkT: b.corkT, ice: b.ice, iceT: b.iceT})), stock: stock.map(a => a.slice()), supplyLeft, expSupply, money, dumped, n: bottles.length}; }
+function snap(){ if (S && S.mode === "prep" && undoSnap) undoStack.push(undoSnap); undoSnap = {pm: prepMoves, b: bottles.map(b => ({units: b.units.map(u => ({...u})), corked: b.corked, corkT: b.corkT, ice: b.ice, iceT: b.iceT, cloth: b.cloth ? {...b.cloth} : null})), stock: stock.map(a => a.slice()), supplyLeft, expSupply, money, dumped, n: bottles.length}; }
 function doUndo(){
   if (S.mode === "prep" && !undoSnap && undoStack.length) undoSnap = undoStack.pop();
   if (!running || paused || !undoSnap || undoLeft <= 0 || pours.length || undoSnap.n !== bottles.length) return;
   const u = undoSnap; undoSnap = null; undoLeft--;
-  u.b.forEach((o, i) => { const b = bottles[i]; b.units = o.units; b.corked = o.corked; if (o.corkT == null) delete b.corkT; else b.corkT = o.corkT; b.ice = o.ice; b.iceT = o.iceT || 0; if (b.ice && S.mode !== "prep" && !b.iceT) b.iceT = T + ICE_MS; waveT[i] = T; });
+  u.b.forEach((o, i) => { const b = bottles[i]; b.units = o.units; b.corked = o.corked; if (o.corkT == null) delete b.corkT; else b.corkT = o.corkT; b.ice = o.ice; b.iceT = o.iceT || 0; b.cloth = o.cloth ? {...o.cloth} : null; if (b.ice && S.mode !== "prep" && !b.iceT) b.iceT = T + ICE_MS; waveT[i] = T; });
   if (S.mode === "prep") prepMoves = u.pm;
   stock = u.stock; supplyLeft = u.supplyLeft; expSupply = u.expSupply; money = u.money; dumped = u.dumped; sel = -1; busy = new Set();
   play("pick", {gain:.5, rate:.8}); floatText(W/2, lay.counterY + 40, S.mode === "prep" ? "ひとつ戻しました" : `ひとつ戻しました（あと${undoLeft}回）`, "#9ed8f0", .85); hud();
@@ -507,6 +529,7 @@ function tapBottle(i){
   if (sel >= 0 && bottles[sel] && bottles[sel].glass && sel !== i){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[sel].x, lay.pos[sel].y - lay.sh.H*.7, "グラスの中身は流しにだけ捨てられます", "#ffb3e6", .7); return; }
   if (b.lock != null){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `🔒${CNAME[b.lock]}の満タン瓶を渡すと開く`, "#f3d27a", .75); return; }
   if (b.ice){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, b.iceT ? `あと${Math.ceil((b.iceT - T)/1000)}秒で溶ける（満タン瓶を渡すと早まる）` : `あと${b.ice}本渡すか、少し待つと溶ける`, "#9ed8f0", .75); return; }
+  if (b.cloth){ shakeT[i] = T; play("bad", {gain:.3}); const f = b.cloth; floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, f.c < 0 ? `満タン瓶を${f.n}本作ると、ふきんが取れる` : `${CNAME[f.c]}の満タン瓶を作ると、ふきんが取れる`, "#ffd56b", .75); return; }
   if (b.corked && S.mode === "prep"){ shakeT[i] = T; return; }
   if (b.corked){ if (sel >= 0){ shakeT[i] = T; play("bad", {gain:.3}); return; } deliver(i); return; }
   if (sel < 0){
@@ -699,7 +722,7 @@ function finishPour(p){
   if (isFull(d)) cork(p.to);
   if (S.mode === "prep") setTimeout(prepCheck, 0);
 }
-function cork(i){ const b = bottles[i]; b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
+function cork(i){ setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
   for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x, y: lay.pos[i].y - lay.sh.H/2, vx:R(-1.5,1.5), vy:R(-2,-.4), t0:T + 300, life:R(500,900), r:R(1.5,3)}); }
 
 function floatText(x, y, text, color, size=1, delay=0){ floats.push({x, y, text, color, size, t0: T + delay}); }

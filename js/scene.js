@@ -277,7 +277,7 @@ function draw(){
     let x = p.x, y = p.y - lift[i]*sh.w*.5;
     if (shakeT[i] && T - shakeT[i] < 300){ const a = (T - shakeT[i])/300; x += Math.sin(a*Math.PI*6)*(1-a)*sh.w*.1; }
     ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.beginPath(); ctx.ellipse(p.x, p.y + sh.H/2 - 1, sh.w*.45, sh.w*.1, 0, 0, 7); ctx.fill();
-    let layers = b.units.map(u => ({c:u.c, v:1, h:u.h, rev:u.rev})), wave = 0;
+    let layers = b.units.map(u => ({c:u.c, v:1, h:u.h || !!b.cloth, rev:u.rev})), wave = 0;
     if (pr && pr.to === i){ const prog = Math.max(0, Math.min(1, (T - pr.t0 - pr.T1)/pr.T2)); layers = pr.dstBefore.map(u => ({c:u.c, v:1, h:u.h})).concat([{c:pr.c, v: pr.n*prog}]); wave = prog>0 && prog<1 ? sh.w*.035 : 0; }
     else if (waveT[i]){ const a = (T - waveT[i])/900; if (a < 1) wave = sh.w*.04*(1-a); }
     if (b.refillT != null && T - b.refillT < 500){ const k = (T - b.refillT)/500; layers = layers.map(L => ({...L, v: L.v*k})); }
@@ -312,6 +312,7 @@ function draw(){
       if (b.ice){ ctx.fillStyle = "#e9f7fd"; ctx.beginPath(); ctx.arc(x, y, sh.w*.34, 0, 7); ctx.fill();
         ctx.fillStyle = "#2f6f8f"; ctx.font = `900 ${sh.w*.4}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(b.iceT ? Math.max(1, Math.ceil((b.iceT - T)/1000)) : b.ice, x, y + 1); }
       ctx.restore(); }
+    if (b.cloth || (b.clothOffT != null && T - b.clothOffT < 600)) drawCloth(ctx, b, x, y, sh);
     if (b.glass){ const st = cockState();
       ctx.strokeStyle = `rgba(255,170,220,${.5 + .3*Math.sin(T/300)})`; ctx.lineWidth = 2.5; rr(ctx, x - sh.w*.62, y - sh.H*.58, sh.w*1.24, sh.H*1.14, sh.w*.3); ctx.stroke();
       ctx.fillStyle = "#f6e05a"; ctx.beginPath(); ctx.arc(x + sh.nw*.9, y - sh.H/2 + sh.H*.02, sh.w*.2, Math.PI*.9, Math.PI*2.1); ctx.fill();
@@ -378,3 +379,25 @@ function draw(){
     ctx.lineWidth = 4; ctx.strokeStyle = "rgba(20,12,8,.85)"; ctx.strokeText(f.text, f.x, f.y - a*30); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y - a*30); ctx.globalAlpha = 1; });
 }
 requestAnimationFrame(frame);
+
+// 布をかけた瓶（仕込み11章〜）。赤いチェックのふきんをかぶせて、取れる条件の札を付ける
+function drawCloth(c, b, x, y, sh){
+  const off = b.cloth ? 0 : Math.min(1, (T - b.clothOffT)/600), f = b.cloth || {c: -1, n: 0};
+  c.save(); c.globalAlpha = 1 - off; c.translate(x, y - off*sh.H*.5);
+  const w = sh.w*.68, top = -sh.H*.6, bot = sh.H*.22;
+  c.beginPath(); c.moveTo(-w*.55, top + sh.w*.2); c.quadraticCurveTo(0, top - sh.w*.25, w*.55, top + sh.w*.2);
+  c.lineTo(w, bot); for (let k=0;k<=6;k++){ const px = w - k*w*2/6; c.quadraticCurveTo(px + w/6, bot + (k % 2 ? -1 : 1)*sh.w*.08, px, bot); } c.closePath();
+  c.fillStyle = "#fbf4e6"; c.fill(); c.save(); c.clip();
+  c.fillStyle = "rgba(204,64,56,.32)"; const step = sh.w*.22;
+  for (let px = -w; px < w; px += step*2) c.fillRect(px, top - sh.w*.3, step, bot - top + sh.w*.5);
+  for (let py = top - sh.w*.3; py < bot + sh.w*.2; py += step*2) c.fillRect(-w, py, w*2, step);
+  c.restore();
+  c.strokeStyle = "rgba(120,40,30,.35)"; c.lineWidth = 1.2; c.stroke();
+  // 札：色の丸と数字（どの色でもよいときは★）
+  const r = sh.w*.32, ty = top + (bot - top)*.45;
+  c.fillStyle = "#fffaf0"; c.beginPath(); c.arc(0, ty, r, 0, 7); c.fill(); c.strokeStyle = f.c < 0 ? "#c9962e" : COLORS[f.c]; c.lineWidth = Math.max(2, sh.w*.07); c.stroke();
+  if (f.c >= 0){ c.fillStyle = COLORS[f.c]; c.beginPath(); c.arc(0, ty - r*.18, r*.42, 0, 7); c.fill(); if (save.cb) sym(c, f.c, 0, ty - r*.18, r*.28); }
+  else { c.fillStyle = "#e0b54a"; c.beginPath(); for (let k=0;k<10;k++){ const a = -Math.PI/2 + k*Math.PI/5, rr2 = k % 2 ? r*.2 : r*.45; c.lineTo(Math.cos(a)*rr2, ty - r*.18 + Math.sin(a)*rr2); } c.closePath(); c.fill(); }
+  c.fillStyle = "#3a2a1c"; c.font = `900 ${r*.62}px "Zen Kaku Gothic New",sans-serif`; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(f.n || "", 0, ty + r*.55);
+  c.restore();
+}
