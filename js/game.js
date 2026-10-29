@@ -192,7 +192,7 @@ function prepCheck(){
 }
 function prepHintGo(){
   if (S.mode !== "prep" || !running || paused || pours.length) return;
-  const sol = prepSolve(prepState(), CAP, 60000, clothNow(), false, prepExNow());
+  const sol = prepSolve(prepState(), CAP, 400000, clothNow(), true, prepExNow()) || prepSolve(prepState(), CAP, 60000, clothNow(), false, prepExNow()); /* ヒントも、いちばん少ない手数の道を教える */
   if (!sol || !sol.length){ floatText(W/2, lay.counterY + 40, "この形からは解けないかも。戻してみよう", "#ef6b5b", .85); play("bad", {gain:.3}); return; }
   if (!prepHint || !prepHint.used){ prepHelp = Math.min(2, prepHelp + 1); }
   prepHint = {from: sol[0].from, to: sol[0].to, used: true}; sel = -1; play("kira", {gain:.4}); hud();
