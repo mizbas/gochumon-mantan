@@ -489,6 +489,8 @@ let undoSnap = null, undoLeft = 3, undoStack = [];
 let freezeT = Infinity, freezeWarn = null;
 const FREEZE_WARN = 3000;
 const freezeGap = () => S.w === 4 && S.n ? 30000 - (S.n - 1)*1000 : 26000;
+// 予告したしかけは、触っている瓶にもかかる（選択は外し、その瓶がからむ予約の手は取り消す）。注いでいる最中だけは終わるまで待つ
+function gimHit(i){ if (sel === i) sel = -1; moveQ = moveQ.filter(q => q[0] !== i && q[1] !== i); }
 function freezeOK(i){ const b = bottles[i]; return b && !b.glass && !b.ice && b.lock == null && !b.corked && !busy.has(i) && sel !== i; }
 function coldWave(){
   if (!S.ice || !lay) return;
@@ -504,8 +506,9 @@ function coldWave(){
     floatText(W/2, lay.counterY + 40, "寒波が来る！", "#9ed8f0", 1.1); play("ice", {gain:.35, rate:1.2});
   }
   if (freezeWarn && T - freezeWarn.t0 >= FREEZE_WARN){
-    let i = freezeWarn.i; freezeWarn = null;
-    if (!freezeOK(i)) i = -1;
+    let i = freezeWarn.i; if (busy.has(i) && T - freezeWarn.t0 < FREEZE_WARN + 4000) return; freezeWarn = null;
+    const b = bottles[i]; if (!b || b.glass || b.ice || b.lock != null || b.corked || busy.has(i)) i = -1;
+    if (i >= 0) gimHit(i);
     if (i >= 0 && bottles.filter(b => b.ice).length < maxIce){ bottles[i].ice = 1; bottles[i].iceT = T + ICE_MS; undoSnap = null; play("ice", {gain:.6});
       floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "凍った！", "#9ed8f0", .9);
       for (let k=0;k<12;k++) parts.push({x: lay.pos[i].x + R(-lay.sh.w*.4, lay.sh.w*.4), y: lay.pos[i].y + R(-lay.sh.H*.3, lay.sh.H*.3), vx:R(-1,1), vy:R(-1.4,-.2), t0:T, life:R(500,900), r:R(1.5,3), ice:true}); }
@@ -553,7 +556,7 @@ function tapBottle(i, fromQ){
   const b = bottles[i];
   if (b.glass) return tapGlass(i);
   if (sel >= 0 && bottles[sel] && bottles[sel].glass && sel !== i){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[sel].x, lay.pos[sel].y - lay.sh.H*.7, "グラスの中身は流しにだけ捨てられます", "#ffb3e6", .7); return; }
-  if (b.lock != null){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `🔒${CNAME[b.lock]}の満タン瓶を渡すと開く`, "#f3d27a", .75); return; }
+  if (b.lock != null){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, `🔒${CNAME[b.lock]}を満タンにすると開く`, "#f3d27a", .75); return; }
   if (b.ice){ shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, b.iceT ? `あと${Math.ceil((b.iceT - T)/1000)}秒で溶ける（満タン瓶を渡すと早まる）` : `あと${b.ice}本渡すか、少し待つと溶ける`, "#9ed8f0", .75); return; }
   if (b.cloth){ shakeT[i] = T; play("bad", {gain:.3}); const f = b.cloth; floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, f.c < 0 ? `満タン瓶を${f.n}本作ると、ふきんが取れる` : `${CNAME[f.c]}の満タン瓶を作ると、ふきんが取れる`, "#ffd56b", .75); return; }
   if (b.corked && S.mode === "prep"){ shakeT[i] = T; return; }
@@ -595,8 +598,8 @@ function lockWave(){
     if (!cand.length){ lockT = T + 8000; return; }
     lockWarn = {i: cand[Math.floor(Math.random()*cand.length)], c: lockPick(), t0: T}; floatText(W/2, lay.counterY + 40, "からくりが動き出した！", "#f3d27a", 1); play("cork", {gain:.4, rate:.7});
   }
-  if (lockWarn && T - lockWarn.t0 >= 3000){ const {i, c} = lockWarn; lockWarn = null; const b = bottles[i];
-    if (b && b.lock == null && !b.ice && !b.corked && !busy.has(i) && sel !== i){ b.lock = c; b.lockT0 = T; undoSnap = null; play("cork", {gain:.7, rate:.6}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "カギがかかった", "#f3d27a", .85); }
+  if (lockWarn && T - lockWarn.t0 >= 3000){ const {i, c} = lockWarn; if (busy.has(i) && T - lockWarn.t0 < 7000) return; lockWarn = null; const b = bottles[i];
+    if (b && b.lock == null && !b.ice && !b.corked && !busy.has(i)){ gimHit(i); b.lock = c; b.lockT0 = T; undoSnap = null; play("cork", {gain:.7, rate:.6}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "カギがかかった", "#f3d27a", .85); }
     lockT = T + 34000; }
 }
 const glassIdx = () => bottles.findIndex(b => b.glass);
@@ -749,7 +752,7 @@ function finishPour(p){
   if (isFull(d)) cork(p.to);
   if (S.mode === "prep") setTimeout(prepCheck, 0);
 }
-function cork(i){ setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
+function cork(i){ setTimeout(() => { if (S && S.mode === "prep") clothCheck(); }, 0); const b = bottles[i]; if (S && S.lock && b.units.length && b.lock == null) setTimeout(() => { if (b.units.length) unlockColor(b.units[0].c); }, 350); // カギ：同じ色を満タンにした時点で開く b.units.forEach(u => { if (u.h){ u.h = false; u.rev = T; } }); b.corked = true; b.corkT = T; play("cork", {gain:.85, delay:.28}); play("kira", {gain:.45, delay:.4});
   for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x, y: lay.pos[i].y - lay.sh.H/2, vx:R(-1.5,1.5), vy:R(-2,-.4), t0:T + 300, life:R(500,900), r:R(1.5,3)}); }
 
 function floatText(x, y, text, color, size=1, delay=0){ floats.push({x, y, text, color, size, t0: T + delay}); }

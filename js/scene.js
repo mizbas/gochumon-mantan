@@ -289,13 +289,13 @@ function draw(){
       ctx.fillStyle = "#e0b54a"; rr(ctx, x - lw/2, ly - lw*.35, lw, lw*.8, lw*.15); ctx.fill(); ctx.fillStyle = COLORS[c]; ctx.beginPath(); ctx.arc(x, ly + lw*.05, lw*.22, 0, 7); ctx.fill();
       if (save.cb) sym(ctx, c, x, ly + lw*.05, lw*.14);
       if (b.lock != null){ ctx.fillStyle = "#f3d27a"; ctx.font = `900 ${Math.max(10, sh.w*.24)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText(`あと${Math.max(0, Math.ceil((LOCK_LEN - (T - (b.lockT0||0)))/1000))}秒`, x, ly + lw*.5); }
-      if (warn){ ctx.fillStyle = "#f3d27a"; ctx.font = `900 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(`🔒まもなく ${Math.ceil((3000 - (T - lockWarn.t0))/1000)}`, p.x, p.y - sh.H/2 - sh.w*.3); }
+      if (warn){ ctx.fillStyle = "#f3d27a"; ctx.font = `900 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom"; ctx.fillText(`🔒まもなく ${Math.max(1, Math.ceil((3000 - (T - lockWarn.t0))/1000))}`, p.x, p.y - sh.H/2 - sh.w*.3); }
       ctx.restore(); }
     if (freezeWarn && freezeWarn.i === i){ const k = Math.min(1, (T - freezeWarn.t0)/FREEZE_WARN);
       ctx.save(); ctx.globalAlpha = .15 + .45*k; ctx.fillStyle = "rgba(190,230,250,.8)"; rr(ctx, x - sh.w*.62, y - sh.H*.56, sh.w*1.24, sh.H*1.1, sh.w*.3); ctx.fill(); ctx.globalAlpha = 1;
       ctx.strokeStyle = `rgba(235,250,255,${.4 + .5*Math.abs(Math.sin(T/120))})`; ctx.lineWidth = 2; ctx.setLineDash([4,4]); rr(ctx, x - sh.w*.62, y - sh.H*.56, sh.w*1.24, sh.H*1.1, sh.w*.3); ctx.stroke(); ctx.setLineDash([]);
       ctx.fillStyle = "#e9f7fd"; ctx.font = `900 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
-      ctx.fillText(`❄凍りそう！ ${Math.ceil((FREEZE_WARN - (T - freezeWarn.t0))/1000)}`, p.x, p.y - sh.H/2 - sh.w*.3); ctx.restore(); }
+      ctx.fillText(`❄凍りそう！ ${Math.max(1, Math.ceil((FREEZE_WARN - (T - freezeWarn.t0))/1000))}`, p.x, p.y - sh.H/2 - sh.w*.3); ctx.restore(); }
     const melt = b.meltT != null && T - b.meltT < 600 ? 1 - (T - b.meltT)/600 : 0;
     if (b.ice || melt){
       ctx.save(); ctx.globalAlpha = b.ice ? 1 : melt;

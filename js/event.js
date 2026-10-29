@@ -139,8 +139,9 @@ function evTick(){
     if (!evWarn){ const c = idx.filter(i => ok(i) && bottles[i].units.length); if (c.length < 2){ evT = T + 5000; return; }
       const a = c.splice(Math.floor(Math.random()*c.length), 1)[0], b = c[Math.floor(Math.random()*c.length)]; evWarn = {a, b, t0: T};
       floatText(W/2, lay.counterY + 40, "おばけがいたずらしそう…", "#c9b8f0", 1); play("reveal", {gain:.3, rate:.7}); evT = T + 3000; return; }
-    const {a, b} = evWarn; evWarn = null;
-    if (ok(a) && ok(b)){ const t = bottles[a].units; bottles[a].units = bottles[b].units; bottles[b].units = t; waveT[a] = waveT[b] = T; undoSnap = null;
+    const {a, b} = evWarn, hit = i => { const o = bottles[i]; return o && !o.glass && !o.corked && !o.ice && o.lock == null; };
+    if ((busy.has(a) || busy.has(b)) && T - evWarn.t0 < 7000) return; evWarn = null;
+    if (hit(a) && hit(b) && !busy.has(a) && !busy.has(b)){ gimHit(a); gimHit(b); const t = bottles[a].units; bottles[a].units = bottles[b].units; bottles[b].units = t; waveT[a] = waveT[b] = T; undoSnap = null;
       floatText(W/2, lay.counterY + 40, "ばあっ！ 中身が入れ替わった", "#c9b8f0", 1.05); play("kira", {gain:.4, rate:.8});
       [a, b].forEach(i => { for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x + R(-lay.sh.w*.4, lay.sh.w*.4), y: lay.pos[i].y + R(-lay.sh.H*.3, lay.sh.H*.3), vx: R(-1,1), vy: R(-1.4,-.2), t0: T, life: R(500,900), r: R(1.5,3), ice: true}); }); }
     evT = T + 24000; return;
