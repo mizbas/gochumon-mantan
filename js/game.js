@@ -789,7 +789,7 @@ function startPour(from, to, n){
   const fp = lay.pos[from], tp = lay.pos[to], dir = fp.x <= tp.x ? 1 : -1, sh = lay.sh;
   const fl = bottles[from].small ? 1 : 0, a0 = angleFor(sh, (srcBefore.length + fl)*sh.unit, dir), a1 = angleFor(sh, Math.max((srcBefore.length - n + fl)*sh.unit, sh.unit*.04), dir);
   const sp = (has("spout") ? .67 : 1)*(S.mode === "prep" ? .8 : 1);
-  pours.push({from, to, n, c: moved[0].c, dir, a0, a1, srcBefore, dstBefore, t0: T, T1: 200*sp, T2: (.27 + .1*n)*1000*sp, T3: 200*sp}); /* 前より約25%速く */
+  pours.push({from, to, n, c: moved[0].c, dir, a0, a1, srcBefore, dstBefore, t0: T, T1: 200*sp, T2: (.36 + .13*n)*1000*sp, T3: 200*sp}); /* 持ち上げと戻しは速く、注いでいる間（音が鳴るところ）は元の長さ */
 }
 function tipTarget(p){ const sh = lay.sh, q = lay.pos[p.to]; return [q.x - p.dir*sh.nw*.15, q.y - sh.H/2 - sh.H*.16]; }
 function posForAngle(p, a){ const sh = lay.sh, [tx,ty] = tipTarget(p), tip = rot([[p.dir*sh.nw, sh.top]], a)[0]; return [tx - tip[0], ty - tip[1]]; }
