@@ -45,6 +45,10 @@ function bottleShape(style, w){
   sh.unit = areaBelow(table(sh.P), sh.fillY) / CAP;
   shapes.set(key, sh); return sh;
 }
+// ビール樽の形：角瓶をもとに、8杯ぶんの目盛りにする
+function kegShape(w){ const key = "keg" + Math.round(w*10); if (shapes.has(key)) return shapes.get(key);
+  const b = Object.assign({}, bottleShape("square", w), {style: "keg"}); delete b.T0; b.unit = areaBelow(table(b.P), b.fillY) / 8; shapes.set(key, b); return b; }
+const shOf = i => bottles[i] && bottles[i].keg ? kegShape(lay.sh.w) : lay.sh;
 function capAtAngle(sh, a, dir){ const P = rot(sh.P, a), tip = rot([[dir*sh.nw, sh.top]], a)[0]; return areaBelow(table(P), tip[1]); }
 function angleFor(sh, vol, dir){ let lo = 0, hi = 2.1; if (capAtAngle(sh, 0, dir) <= vol) return 0;
   for (let i=0;i<20;i++){ const m = (lo+hi)/2; if (capAtAngle(sh, m*dir, dir) > vol) lo = m; else hi = m; } return hi*dir; }
@@ -115,7 +119,7 @@ function drawVesselRaw(c, sh, x, y, a, layers0, o={}){
   c.restore();
   c.save(); if (o.alpha != null) c.globalAlpha = o.alpha;
   pathOf(c, P); c.lineJoin = "round";
-  const rim = sh.style === "gold" ? "rgba(240,190,70,.85)" : sh.style === "crystal" ? "rgba(190,235,255,.7)" : sh.style === "meijin" ? "rgba(178,120,230,.85)" : sh.style === "ouka" ? "rgba(245,205,90,.95)" : "rgba(235,225,215,.4)";
+  const rim = sh.style === "gold" ? "rgba(240,190,70,.85)" : sh.style === "crystal" ? "rgba(190,235,255,.7)" : sh.style === "meijin" ? "rgba(178,120,230,.85)" : sh.style === "ouka" ? "rgba(245,205,90,.95)" : sh.style === "keg" ? "rgba(196,140,80,.95)" : "rgba(235,225,215,.4)";
   c.lineWidth = sh.t*1.25; c.strokeStyle = o.sel ? "rgba(255,214,140,.95)" : o.glow ? "rgba(255,230,160,.75)" : rim; c.stroke();
   c.lineWidth = Math.max(1, sh.t*.35); c.strokeStyle = "rgba(255,255,255,.35)"; c.stroke();
   c.translate(x, y); c.rotate(a);
@@ -127,6 +131,8 @@ function drawVesselRaw(c, sh, x, y, a, layers0, o={}){
     const cy = sh.fillY - sh.H*.035, cw = sh.hw*.62, chh = cw*.55; c.fillStyle = sh.style === "ouka" ? "#f5cd5a" : "#c99cf0"; c.beginPath();
     c.moveTo(-cw/2, cy + chh/2); c.lineTo(-cw/2, cy - chh/2); c.lineTo(-cw/4, cy); c.lineTo(0, cy - chh*.7); c.lineTo(cw/4, cy); c.lineTo(cw/2, cy - chh/2); c.lineTo(cw/2, cy + chh/2); c.closePath(); c.fill();
     if (sh.style === "ouka"){ c.fillStyle = "#d6418f"; c.beginPath(); c.arc(0, cy + chh*.15, chh*.16, 0, 7); c.fill(); } }
+  if (sh.style === "keg"){ /* 樽のたが（2本の帯） */ c.strokeStyle = "rgba(150,95,45,.85)"; c.lineWidth = Math.max(2, sh.w*.07);
+    for (const f of [.3, .72]){ const yy = sh.fillY + (sh.bottom - sh.fillY)*f; c.beginPath(); c.moveTo(-sh.hw - sh.t*.3, yy); c.lineTo(sh.hw + sh.t*.3, yy); c.stroke(); } }
   if (sh.style === "crystal"){ c.strokeStyle = "rgba(220,245,255,.45)"; c.lineWidth = 1; c.beginPath();
     for (let k=0;k<3;k++){ const yy = sh.fillY + (sh.bottom - sh.fillY)*(.2 + .3*k); c.moveTo(-sh.hw*.9, yy); c.lineTo(0, yy + sh.hw*.5); c.lineTo(sh.hw*.9, yy); } c.stroke(); }
   c.fillStyle = "rgba(235,225,215,.5)"; rr(c, -sh.nw - sh.t*.9, sh.top - sh.t*.6, sh.nw*2 + sh.t*1.8, sh.t*1.3, sh.t*.5); c.fill();

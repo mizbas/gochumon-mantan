@@ -127,7 +127,7 @@ function evTick(){
   if (!S || S.mode !== "event" || !lay) return;
   if (S.evg === "star" && T > hhT + HH_LEN + 14000) hhT = T + 3000;
   if (T < evT) return;
-  const ok = i => { const b = bottles[i]; return b && !b.glass && !b.corked && !b.ice && b.lock == null && !busy.has(i) && sel !== i; };
+  const ok = i => { const b = bottles[i]; return b && !b.glass && !b.keg && !b.corked && !b.ice && b.lock == null && !busy.has(i) && sel !== i; };
   const idx = bottles.map((b, i) => i);
   if (S.evg === "rain"){
     const c = idx.filter(i => ok(i) && bottles[i].units.length && bottles[i].units.length < CAP);

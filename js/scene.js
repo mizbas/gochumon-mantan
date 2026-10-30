@@ -285,7 +285,7 @@ function draw(){
     if (b.corked){ corkK = Math.min(1, Math.max(0, (T - b.corkT)/320)); corkK = 1 - Math.pow(1 - corkK, 3);
       const need = b.units.length && wantedNow().includes(b.units[0].c); glow = need && Math.sin(T/180) > 0; }
     if (b.glass){ const gs = glassSlots(layers.length); drawCockGlass(ctx, sh, x, y, 0, layers, gs.n, {sel: sel === i, target: gs.target, dark: darkNow() && !litAt(x)}); }
-    else drawVessel(ctx, sh, x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow, dark: darkNow() && !litAt(x)});
+    else drawVessel(ctx, shOf(i), x, y, 0, layers, {wave, t: T, sel: sel === i, cork: corkK, glow, dark: darkNow() && !litAt(x)});
     if (b.drip){ // 一杯ずつの瓶：細い口（首にしずくの印）
       const dy = y - sh.H/2 + sh.H*.1; ctx.fillStyle = "#9ed8f0"; ctx.beginPath(); ctx.moveTo(x + sh.nw + sh.w*.14, dy - sh.w*.16); ctx.quadraticCurveTo(x + sh.nw + sh.w*.28, dy + sh.w*.02, x + sh.nw + sh.w*.14, dy + sh.w*.1); ctx.quadraticCurveTo(x + sh.nw, dy + sh.w*.02, x + sh.nw + sh.w*.14, dy - sh.w*.16); ctx.fill();
       ctx.strokeStyle = "#9ed8f0"; ctx.lineWidth = Math.max(2, sh.w*.06); ctx.beginPath(); ctx.moveTo(x - sh.nw*.55, y - sh.H/2 + sh.H*.02); ctx.lineTo(x - sh.nw*.55, y - sh.H/2 + sh.H*.13); ctx.moveTo(x + sh.nw*.55, y - sh.H/2 + sh.H*.02); ctx.lineTo(x + sh.nw*.55, y - sh.H/2 + sh.H*.13); ctx.stroke();
@@ -332,6 +332,8 @@ function draw(){
       return; }
     if (b.corked && S.mode !== "prep" && !wantedNow().includes(b.units[0].c)){ ctx.fillStyle = "#bba895"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "bottom";
       ctx.fillText("注文待ち", p.x, p.y - sh.H/2 - sh.w*.3); }
+    else if (b.keg){ ctx.fillStyle = b.corked ? "#ffd56b" : "#d8b98a"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText(b.corked ? `樽 あと${Math.round(b.units.length/CAP)}人分` : `樽 ${b.units.length}/${KEG}杯`, p.x, p.y + sh.H/2 + sh.w*.28); }
     else if (b.label != null || b.small){ ctx.fillStyle = b.label != null ? COLORS[b.label] : "#d8b98a"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top";
       ctx.fillText(b.label != null ? CNAME[b.label] + "専用" : "3杯まで", p.x, p.y + sh.H/2 + sh.w*.28); }
     else if (!b.units.length && !b.ice && !b.drip){ ctx.fillStyle = "#7d6c5d"; ctx.font = `700 ${Math.max(10, sh.w*.26)}px "Zen Kaku Gothic New",sans-serif`; ctx.textAlign = "center"; ctx.textBaseline = "top"; ctx.fillText("空き瓶", p.x, p.y + sh.H/2 + sh.w*.28); }
@@ -349,8 +351,8 @@ function draw(){
     if (stream){
       const tip = rot([[p.dir*sh.nw, sh.top]], a)[0], tx = x + tip[0], ty = y + tip[1], tpos = lay.pos[p.to];
       if (!sh.T0) sh.T0 = table(sh.P);
-      const fl = bottles[p.to] && bottles[p.to].small ? 1 : 0;
-      const surf = bottles[p.to] && bottles[p.to].glass ? cockLevel(sh, glassSlots(p.dstBefore.length + p.n).n, p.dstBefore.length + p.n*stream) + tpos.y : levelY(sh.T0, (p.dstBefore.length + fl + p.n*stream)*sh.unit) + tpos.y;
+      const fl = bottles[p.to] && bottles[p.to].small ? 1 : 0, tsh = shOf(p.to); if (!tsh.T0) tsh.T0 = table(tsh.P);
+      const surf = bottles[p.to] && bottles[p.to].glass ? cockLevel(sh, glassSlots(p.dstBefore.length + p.n).n, p.dstBefore.length + p.n*stream) + tpos.y : levelY(tsh.T0, (p.dstBefore.length + fl + p.n*stream)*tsh.unit) + tpos.y;
       const sw = sh.w*.12*(stream < .15 ? stream/.15 : stream > .9 ? (1-stream)/.1 : 1), wob = Math.sin(T/40)*sh.w*.012, ex = tpos.x - p.dir*sh.nw*.15;
       ctx.fillStyle = COLORS[p.c]; ctx.beginPath(); ctx.moveTo(tx - sw/2, ty); ctx.quadraticCurveTo(tx - sw/2 + wob, (ty+surf)/2, ex - sw*.4, surf);
       ctx.lineTo(ex + sw*.4, surf); ctx.quadraticCurveTo(tx + sw/2 + wob, (ty+surf)/2, tx + sw/2, ty); ctx.closePath(); ctx.fill();
@@ -359,7 +361,7 @@ function draw(){
         ctx.strokeStyle = "#e0b54a"; ctx.lineWidth = Math.max(2, sh.w*.06); ctx.beginPath(); ctx.arc(tx, ty, sh.w*.09, 0, 7); ctx.stroke(); }
     }
     if (bottles[p.from] && bottles[p.from].glass) drawCockGlass(ctx, sh, x, y, a, layers, glassSlots(p.srcBefore.length).n, {dark: darkNow() && !litAt(x)});
-    else drawVessel(ctx, sh, x, y, a, layers, {t: T, dark: darkNow() && !litAt(x)});
+    else drawVessel(ctx, shOf(p.from), x, y, a, layers, {t: T, dark: darkNow() && !litAt(x)});
     return true;
   });
   // お客さんへ飛んでいく瓶

@@ -10,7 +10,7 @@ const RG = (a,b) => a + rnd()*(b-a);
 const pick = a => a[Math.floor(rnd()*a.length)];
 function mulberry(a){ return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const palette = () => [...Array(S.colors).keys()];
-const isFull = b => !b.glass && b.units.length === CAP && b.units.every(u => u.c === b.units[0].c); // 隠れた色も同じ色なら満タン（栓をするときに見せる）
+const isFull = b => !b.glass && b.units.length === capOf(b) && b.units.length > 0 && b.units.every(u => u.c === b.units[0].c); // 隠れた色も同じ色なら満タン（栓をするときに見せる）
 const topRun = u => { if (!u.length) return 0; const c = u[u.length-1].c; let n = 0; for (let i=u.length-1;i>=0 && u[i].c===c && !u[i].h;i--) n++; return n; };
 let stored = [], bought = 0, supplyLeft = Infinity, iceTick = 15000;
 const shapeNow = () => bottleShape(save.bottle, lay ? lay.w : 50);
@@ -38,7 +38,7 @@ function shortNeed(){
   const need = {}; wantedNow().forEach(c => need[c] = (need[c]||0) + CAP);
   const cg = cockGuest(); if (cg) cg.cock.forEach(c => need[c] = (need[c]||0) + 1);
   const have = {};
-  bottles.forEach(b => { if (!b.units.length || b.glass) return; const c = b.units[b.units.length-1].c; have[c] = (have[c]||0) + (b.corked ? CAP : topRun(b.units)); });
+  bottles.forEach(b => { if (!b.units.length || b.glass) return; const c = b.units[b.units.length-1].c; have[c] = (have[c]||0) + (b.corked ? b.units.length : topRun(b.units)); });
   stored.forEach(c => have[c] = (have[c]||0) + CAP);
   const out = {}; Object.keys(need).forEach(c => { const m = need[c] - (have[c]||0); if (m > 0) out[c] = m; }); return out;
 }
@@ -170,7 +170,8 @@ const prepLine3 = () => S.hide ? Math.ceil(S.par*1.15) : S.par + 1;
 const prepLine2 = () => S.hide ? Math.ceil(S.par*1.5) : Math.ceil(S.par*1.3);
 const prepMaster = () => prepMoves <= S.par && !prepHelp;   // 目安ちょうど以下・助けなし＝名人
 function prepStars(){ const m = prepMoves; const st = m <= prepLine3() ? 3 : m <= prepLine2() ? 2 : 1; return Math.min(st, prepStarCap()); }
-const capOf = b => b.small ? CAP - 1 : CAP; // 上げ底の瓶は3杯まで
+const KEG = 8; /* ビール樽：瓶2本分 */
+const capOf = b => b.keg ? KEG : b.small ? CAP - 1 : CAP; // 上げ底の瓶は3杯まで
 const prepExNow = () => ({lab: bottles.map(b => b.label == null ? null : b.label), caps: bottles.map(capOf), drip: bottles.map(b => !!b.drip)});
 function prepState(){ return bottles.map(b => b.units.map(u => u.c + (u.h ? 100 : 0))); }
 const clothNow = () => bottles.map(b => b.cloth ? {c: b.cloth.c, n: b.cloth.n} : null);
@@ -259,13 +260,13 @@ function todayKey(){ const t = todayJST(); return `${t.y}-${String(t.m).padStart
 function dailyDef(){
   const t = todayJST(), seed = t.y*10000 + t.m*100 + t.d, r = mulberry(seed*7919 + 17);
   const w = 1 + Math.floor(r()*5), colors = 5 + Math.floor(r()*3);
-  const pool = ["hide","rush","ice","supply","reserve","lock","dark"], gm = [];
+  const pool = ["hide","rush","ice","supply","keg","lock","dark"], gm = [];
   while (gm.length < 2){ const g = pool[Math.floor(r()*pool.length)]; if (!gm.includes(g)) gm.push(g); }
   const d = {id:"日替わり", mode:"daily", w, n:0, colors, ord:[1,3], seats:3, guests:12, pat:60, shelf:colors, spare:2, seed, key: todayKey(), label:`${t.m}月${t.d}日`, gm};
   if (gm.includes("hide")){ d.hide = true; d.pat += 4; }
   if (gm.includes("rush")) d.rush = .3;
   if (gm.includes("ice")){ d.ice = colors >= 7 ? [2,3] : [1,2]; d.pat += 2; }
-  if (gm.includes("reserve")) d.reserve = true;
+  if (gm.includes("keg")) d.keg = true;
   if (gm.includes("lock")){ d.lock = 1; d.relock = true; d.pat += 2; }
   if (gm.includes("dark")){ d.dark = true; d.pat += 2; }
   if (gm.includes("supply")){ d.supply = 34 + (colors-5)*2; d.vip = .2; d.pat += 4; }
@@ -331,6 +332,7 @@ function startStage(i){
   money = 0; combo = 0; maxCombo = 0; servedN = 0; missed = 0; dumped = 0; bottlesOut = 0; guestsLeft = S.guests; expSupply = 0;
   floats = []; parts = []; shakeT = {}; waveT = {}; T = 0; botNext = 0; ended = false; running = true;
   if (S.cocktail){ bottles.push({units: [], glass: true}); lift.push(0); }
+  if (S.keg){ bottles.push({units: [], keg: true}); lift.push(0); }
   stock = []; stock.push(stockUnits(), stockUnits(), stockUnits()); stockT = -1e9; stored = []; bought = 0; storeCap = has("rack") ? 2 : 1; sandUsed = false; paused = false; pendingStore = -1; $("rackAsk").classList.add("hidden");
   supplyLeft = S.supply || Infinity; iceTick = 10000; undoSnap = null; undoLeft = UNDO_MAX;
   tut = (i === 0 && !save.tutDone) ? {step: 0, t0: 0} : null; TUT.forEach(t => delete t.shown); $("tutBox").classList.add("hidden");
@@ -338,7 +340,7 @@ function startStage(i){
   hhT = (S.mode === "daily" || (typeof i === "number" && i >= 8)) && rnd() < .75 ? RG(40000, 80000) : Infinity; hhOn = false;
   if (S.lock){ const cand = bottles.map((b, i) => i).filter(i => !bottles[i].spare && !bottles[i].glass && bottles[i].units.length); for (let k=0; k<S.lock && cand.length; k++){ const j = cand.splice(Math.floor(rnd()*cand.length), 1)[0]; bottles[j].lock = Math.floor(rnd()*S.colors); bottles[j].lockT0 = 0; } }
   lockWarn = null; lockT = S.relock ? 30000 : Infinity;
-  resQ = []; if (S.reserve){ resQ.push(newOrder(), newOrder()); }
+  resQ = [];
   darkT = S.dark ? 22000 : Infinity; S._dw = 0;
   // 最初から凍っている瓶はなし（待ち時間が長くなるため）。凍るのは予告つきの寒波だけ
   evStart();
@@ -372,7 +374,7 @@ function newOrder(fixed){
   const pal = palette(), n = fixed || Math.round(RG(S.ord[0]-.49, S.ord[1]+.49)), o = [];
   const want = {}; wanted().forEach(c => want[c] = (want[c]||0) + 1);
   // まだ誰にも頼まれていない満タン瓶（棚の栓つき・保管棚）の色を優先して注文してもらう
-  const spare = {}; bottles.forEach(b => { if (b.corked) spare[b.units[0].c] = (spare[b.units[0].c]||0) + 1; }); stored.forEach(c => spare[c] = (spare[c]||0) + 1);
+  const spare = {}; bottles.forEach(b => { if (b.corked && b.units.length) spare[b.units[0].c] = (spare[b.units[0].c]||0) + Math.round(b.units.length/CAP); }); stored.forEach(c => spare[c] = (spare[c]||0) + 1);
   for (const c in want) spare[c] = (spare[c]||0) - want[c];
   const avail = {}; bottles.forEach(b => b.units.forEach(u => avail[u.c] = (avail[u.c]||0) + 1));
   if (supplyLeft > 0) stock.forEach(st => st.forEach(c => avail[c] = (avail[c]||0) + 1));
@@ -397,14 +399,14 @@ let tut = null; // {step}
 function hintMove(){
   const ok = i => !busy.has(i) && !bottles[i].ice && bottles[i].lock == null && !bottles[i].glass && !bottles[i].corked;
   const need = wanted(); if (!need.length) return null;
-  const topC = b => b.units.length ? b.units[b.units.length-1].c : -1, room = b => CAP - b.units.length;
+  const topC = b => b.units.length ? b.units[b.units.length-1].c : -1, room = b => capOf(b) - b.units.length;
   for (const c of need){
     if (bottles.some(b => b.corked && b.units[0].c === c)) continue;
     const srcs = bottles.map((b,i) => i).filter(i => ok(i) && topC(bottles[i]) === c);
     // 同じ色が多い瓶へ集める
     const dsts = srcs.filter(i => room(bottles[i]) > 0).sort((a,b) => bottles[b].units.filter(u => u.c === c).length - bottles[a].units.filter(u => u.c === c).length);
     for (const d of dsts) for (const s2 of srcs) if (s2 !== d && bottles[s2].units.filter(u=>u.c===c).length <= bottles[d].units.filter(u=>u.c===c).length) return {from: s2, to: d};
-    const empty = bottles.findIndex((b,i) => ok(i) && !b.units.length);
+    const empty = bottles.findIndex((b,i) => ok(i) && !b.units.length && !b.keg); /* 樽は「空き瓶」としては使わない */
     if (srcs.length && empty >= 0 && !bottles[srcs[0]].units.every(u => u.c === c)) return {from: srcs[0], to: empty};
     // 下に埋まっている色を掘り出す
     for (let i=0;i<bottles.length;i++){ const b = bottles[i]; if (!ok(i) || !b.units.length || topC(b) === c || !b.units.some(u => u.c === c)) continue;
@@ -454,7 +456,7 @@ function updateSeats(){
   seats.forEach((s, k) => {
     if (s.state === "empty" && guestsLeft > 0 && T >= s.next){
       guestsLeft--; s.state = "in"; s.t0 = T; s.g = Math.floor(rnd()*GUESTS.length);
-      s.order = S.reserve && resQ.length ? resQ.shift() : newOrder(); s.resv = !!S.reserve;
+      s.order = S.reserve && resQ.length ? resQ.shift() : newOrder(); s.resv = false; s.kegN = 0;
       if (S.reserve){ while (resQ.length < Math.min(2, guestsLeft)) resQ.push(newOrder()); resQ.length = Math.min(resQ.length, guestsLeft); } /* 予約は、まだ来るお客さんの分だけ */ s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order);
       s.rush = !!S.rush && rnd() < S.rush; if (s.rush) s.pat *= .6;
       s.vip = !s.rush && !!S.vip && rnd() < S.vip;
@@ -490,8 +492,8 @@ function payGuest(k){
   const s = seats[k], n = s.cock ? (s.cock.length >= 4 ? 3 : 2.4) : s.order.length, sp = lay.seatPos[k];
   const left = Math.max(0, 1 - (T - s.t0)/s.pat);
   const base = PRICE*n*(1 + .1*upg("price"))*(s.rush ? 1.4 : 1)*(s.vip ? 2 : 1)*(s.critic ? 2.5 : 1)*(happyNow() ? 1.5 : 1)*(s.favHit ? 1.2 : 1)*(s.sig ? 1.5 : 1)*evPay(s);
-  const resvOK = s.resv && left > .6;
-  if (resvOK){ floatText(sp.x, sp.y - 140, "予約どおり！ ×1.3", "#ffd56b", .9, 480); }
+  const resvOK = !!s.kegN; /* 樽から出した注文があると1.3倍 */
+  if (resvOK){ floatText(sp.x, sp.y - 140, "樽出し！ ×1.3", "#ffd56b", .9, 480); }
   const tip = base*(.3 + .1*upg("tip"))*(has("cat") ? 1.2 : 1)*(s.regular ? 2 : 1)*Math.max(0, (left - .5)/.5);
   if (s.critic) floatText(sp.x, sp.y - 120, "評論家「すばらしい！」", "#d6b3ff", .9, 360);
   if (s.sig) floatText(sp.x, sp.y - 146, "看板メニュー！ ×1.5", "#ffb27a", .9, 420); else if (s.favHit) floatText(sp.x, sp.y - 146, `大好物の${CNAME[FAVC[s.g]]}！ ×1.2`, "#ff9ec0", .8, 420);
@@ -524,7 +526,7 @@ const FREEZE_WARN = 3000;
 const freezeGap = () => S.w === 4 && S.n ? 30000 - (S.n - 1)*1000 : 26000;
 // 予告したしかけは、触っている瓶にもかかる（選択は外し、その瓶がからむ予約の手は取り消す）。注いでいる最中だけは終わるまで待つ
 function gimHit(i){ if (sel === i) sel = -1; moveQ = moveQ.filter(q => q[0] !== i && q[1] !== i); }
-function freezeOK(i){ const b = bottles[i]; return b && !b.glass && !b.ice && b.lock == null && !b.corked && !busy.has(i) && sel !== i; }
+function freezeOK(i){ const b = bottles[i]; return b && !b.glass && !b.keg && !b.ice && b.lock == null && !b.corked && !busy.has(i) && sel !== i; }
 function coldWave(){
   if (!S.ice || !lay) return;
   // 詰まないように：凍っている瓶が1本でもあるうちは寒波は来ない。凍らせるのは「今の注文に関係のない色」の瓶を優先
@@ -631,7 +633,7 @@ function tapSink(){
 // 仕込み：一度見えた？は、戻しても見えたまま（のぞいて、戻して、作戦を立てられる）
 let prepKnown = new Set();
 function revealTop(i){ const u = bottles[i].units; if (u.length && u[u.length-1].h){ if (u[u.length-1].id != null) prepKnown.add(u[u.length-1].id); u[u.length-1].h = false; u[u.length-1].rev = T; play("reveal", {gain:.45, delay:.35}); } }
-function emptyIdx(){ return bottles.findIndex((b,j) => !b.glass && !b.units.length && !busy.has(j) && !b.corked && !b.ice && b.lock == null); }
+function emptyIdx(){ return bottles.findIndex((b,j) => !b.glass && !b.keg && !b.units.length && !busy.has(j) && !b.corked && !b.ice && b.lock == null); }
 function unlockColor(c){ bottles.forEach((b, i) => { if (b.lock === c){ b.lock = null; b.unlockT = T; play("reveal", {gain:.6}); play("kira", {gain:.4, delay:.15}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, "カギが開いた！", "#f3d27a", .9);
   for (let k=0;k<10;k++) parts.push({x: lay.pos[i].x, y: lay.pos[i].y, vx:R(-1.5,1.5), vy:R(-2,-.4), t0:T, life:R(500,900), r:R(1.5,3)}); } }); }
 function lockPick(){ // カギの色：今いる注文の色を優先（開けやすく）
@@ -643,7 +645,7 @@ function lockWave(){
   if (!S.relock) return;
   if (!lockWarn && T >= lockT - 3000){
     if (bottles.some(b => b.lock != null) || emptyIdx() < 0){ lockT = T + 8000; return; }
-    const cand = bottles.map((b, i) => i).filter(i => { const b = bottles[i]; return !b.glass && !b.ice && b.lock == null && !b.corked && !busy.has(i) && sel !== i && b.units.length; });
+    const cand = bottles.map((b, i) => i).filter(i => { const b = bottles[i]; return !b.glass && !b.keg && !b.ice && b.lock == null && !b.corked && !busy.has(i) && sel !== i && b.units.length; });
     if (!cand.length){ lockT = T + 8000; return; }
     lockWarn = {i: cand[Math.floor(Math.random()*cand.length)], c: lockPick(), t0: T}; floatText(W/2, lay.counterY + 40, "からくりが動き出した！", "#f3d27a", 1); play("cork", {gain:.4, rate:.7});
   }
@@ -710,14 +712,16 @@ function deliver(i){
       const cost = rackCost();
       if (storeCap < storeMax() && save.wallet >= cost){ askRack(i); return; }
       shakeT[i] = T; play("bad", {gain:.3}); floatText(lay.pos[i].x, lay.pos[i].y - lay.sh.H*.7, storeCap < storeMax() ? "保管棚がいっぱい（財布が足りません）" : "保管棚がいっぱい", "#ef6b5b", .75); return; }
-    stored.push(c); storeT = T; b.units = []; b.corked = false; delete b.corkT;
+    stored.push(c); storeT = T; takeOut(b);
     floatText(lay.rack.x, lay.rack.y - lay.sh.H*.55, "保管", "#bba895", .75); play("pick", {gain:.5, rate:.9}); return;
   }
   seats[tg.k].res[tg.j] = true;
-  flights.push({c, k: tg.k, j: tg.j, from: {x: lay.pos[i].x, y: lay.pos[i].y}, t0: T, dur: 520});
-  b.units = []; b.corked = false; delete b.corkT;
+  flights.push({c, k: tg.k, j: tg.j, keg: !!b.keg, from: {x: lay.pos[i].x, y: lay.pos[i].y}, t0: T, dur: 520});
+  takeOut(b);
   bottlesOut++; thaw(); play("pick", {gain:.5, rate:1.2});
 }
+// 満タン瓶を出す：樽は1本分（4杯）ずつ。空になったら栓を外す
+function takeOut(b){ if (b.keg && b.units.length > CAP){ b.units.splice(b.units.length - CAP, CAP); b.kegT = T; return; } b.units = []; b.corked = false; delete b.corkT; }
 let storeT = -1e9;
 function rackCost(){ return RACK_COST_ALL[storeCap - (has("rack") ? 2 : 1)] || 800; }
 function rackSlot(k){ const r = lay.rack, cw = Math.min(lay.slot*.3, lay.slot*.92/storeCap); return {x: r.x + (k - (storeCap-1)/2)*cw, y: r.y + lay.sh.H*.18}; }
@@ -776,7 +780,7 @@ function landFlight(f){
   const s = seats[f.k];
   if (!f.cock && S.lock) unlockColor(f.c);
   if (f.cock){ play("cheers", {gain:.6}); payGuest(f.k); return; }
-  s.got[f.j] = true; s.res[f.j] = false;
+  s.got[f.j] = true; s.res[f.j] = false; if (f.keg) s.kegN = (s.kegN || 0) + 1;
   play("cheers", {gain:.55});
   if (s.got.every(Boolean)) payGuest(f.k);
 }
@@ -788,13 +792,13 @@ function startPour(from, to, n){
   const moved = src.splice(src.length - n, n); moved.forEach(u => dst.push({c:u.c}));
   revealTop(from);
   busy.add(from); busy.add(to);
-  const fp = lay.pos[from], tp = lay.pos[to], dir = fp.x <= tp.x ? 1 : -1, sh = lay.sh;
+  const fp = lay.pos[from], tp = lay.pos[to], dir = fp.x <= tp.x ? 1 : -1, sh = shOf(from);
   const fl = bottles[from].small ? 1 : 0, a0 = angleFor(sh, (srcBefore.length + fl)*sh.unit, dir), a1 = angleFor(sh, Math.max((srcBefore.length - n + fl)*sh.unit, sh.unit*.04), dir);
   const sp = (has("spout") ? .67 : 1)*(S.mode === "prep" ? .8 : 1);
   pours.push({from, to, n, c: moved[0].c, dir, a0, a1, srcBefore, dstBefore, t0: T, T1: 200*sp, T2: (.36 + .13*n)*1000*sp, T3: 200*sp}); /* 持ち上げと戻しは速く、注いでいる間（音が鳴るところ）は元の長さ */
 }
 function tipTarget(p){ const sh = lay.sh, q = lay.pos[p.to]; return [q.x - p.dir*sh.nw*.15, q.y - sh.H/2 - sh.H*.16]; }
-function posForAngle(p, a){ const sh = lay.sh, [tx,ty] = tipTarget(p), tip = rot([[p.dir*sh.nw, sh.top]], a)[0]; return [tx - tip[0], ty - tip[1]]; }
+function posForAngle(p, a){ const sh = shOf(p.from), [tx,ty] = tipTarget(p), tip = rot([[p.dir*sh.nw, sh.top]], a)[0]; return [tx - tip[0], ty - tip[1]]; }
 function finishPour(p){
   busy.delete(p.from); busy.delete(p.to); waveT[p.to] = T; setTimeout(hud, 0);
   const d = bottles[p.to];

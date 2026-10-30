@@ -185,7 +185,7 @@ function showIntro(i){
     $("intro").classList.remove("hidden"); return;
   }
   if (S.mode === "daily"){
-    const dd = save.daily.key === S.key ? save.daily : {}, names = {hide:"？の色", rush:"急ぎのお客さん", ice:"寒波（瓶が凍る）", supply:"仕入れ制限と団体さん", reserve:"予約", lock:"カギつき瓶", dark:"停電"};
+    const dd = save.daily.key === S.key ? save.daily : {}, names = {hide:"？の色", rush:"急ぎのお客さん", ice:"寒波（瓶が凍る）", supply:"仕入れ制限と団体さん", keg:"ビール樽", lock:"カギつき瓶", dark:"停電"};
     $("introH").textContent = `日替わり特別営業　${S.label}`;
     $("introGoal").textContent = `目標 ${yen(S.goal)}・お客さん ${S.guests}人・${WORLDS[S.w-1].name}`;
     $("introRules").innerHTML = `今日のお題：<b>${S.colors}色・${S.gm.map(g => names[g]).join("＋")}</b><br>
@@ -210,7 +210,7 @@ function showIntro(i){
     ・こまったら瓶を選んで「流し」へ（1杯 ${yen(DUMP_COST)}）<br>
     ・財布に入るのは<b>利益</b>です。売上から、仕入れ代（1回 ${yen(SUPPLY_COST)}）と家賃・光熱費（${yen(rentOf(S))}）を引いた分です` :
     (S.n === 1 && WORLDS[S.w-1].note ? `<b>新しいお店：</b>${WORLDS[S.w-1].note}<br><br>` : "") +
-    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・寒波（瓶が凍る）" : ""}${S.reserve ? "・予約" : ""}${S.lock ? "・カギつき瓶" : ""}${S.dark ? "・停電" : ""}${S.cocktail ? "・カクテル" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*STAR2)}、★3 は ${yen(S.goal*STAR3)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
+    `${S.colors}色・注文は${S.ord[0] === S.ord[1] ? S.ord[0] : S.ord[0]+"〜"+S.ord[1]}本・${S.seats}席${S.hide ? "・？の色あり" : ""}${S.rush ? "・急ぎのお客さん" : ""}${S.ice ? "・寒波（瓶が凍る）" : ""}${S.keg ? "・ビール樽" : ""}${S.lock ? "・カギつき瓶" : ""}${S.dark ? "・停電" : ""}${S.cocktail ? "・カクテル" : ""}${S.supply ? `・仕入れ${S.supply}回まで` : ""}${S.vip ? "・団体さん" : ""}<br>★2 は ${yen(S.goal*STAR2)}、★3 は ${yen(S.goal*STAR3)} 以上<br>経費：仕入れ1回 ${yen(SUPPLY_COST)}・家賃 ${yen(rentOf(S))}（財布に入るのは売上から経費を引いた利益）`;
   const r = stageRec(S.id), stn = save.stars[S.id] || 0;
   $("introRec").innerHTML = recBox(`${S.id} の記録`, r ? [["ベスト売上", yen(r.best) + (r.bestT ? `（${md(r.bestT)}）` : ""), 1], ["星", "★".repeat(stn) + "☆".repeat(3-stn)]]
       .concat(r.plays ? [["最高連続", `${r.combo||0}連続`], ["最多のお客さん", `${r.served||0}人`], ["全員満足", `${r.perfect||0}回`], ["遊んだ回数", `${r.plays}回（クリア ${r.clears||0}回）`]] : []) : [], "まだ記録はありません");
@@ -248,7 +248,7 @@ const TIPS = {
   ice:      ["❄️", "寒波", "ときどき寒波が来て、瓶が1本凍ります。凍った瓶は注ぐことも注がれることもできません。<br>「寒波が来る！」と出たら、3秒のうちに中身を移せば逃がせます。12秒で溶け、満タン瓶を渡すたびに4秒早まります。"],
   supply:   ["⚓", "仕入れは回数まで", "仕入れ台を使える回数に限りがあります（残りは仕入れ台に表示）。<br>流しに捨てる量を減らして、大事に使いましょう。"],
   cocktail: ["🍸", "カクテル", "カクテルのお客さんには、グラスに<b>下から順に</b>注文どおりの色を1杯ずつ重ねます。グラスはカクテルの注文が来るまで使えません。注げるのは、グラスの下に出る「次：〇〇」の色だけです。<br>お客さんが帰ってしまって中身が残ったら、グラスを選んで流しへ。"],
-  reserve:  ["📋", "予約ボード", "次に来る2人の注文が、先にボードに出ます。<br>来る前に満タン瓶を用意しておいて、来てすぐ出すと代金1.3倍です。"],
+  keg:      ["🍺", "ビール樽", "樽には8杯（瓶2本分）入ります。1色で満タンにすると栓がされ、その色の注文を2人分出せます。<br>樽から出した注文は代金1.3倍（樽出し）。"],
   lock:     ["🔒", "カギつき瓶", "カギのかかった瓶は使えません。<br>カギと同じ色の瓶を満タンにするか、30秒たつと開きます。"],
   dark:     ["🔦", "停電", "ときどき7秒間停電して、瓶の色が見えなくなります。灯台の光が当たった瓶だけ見えます。<br>「停電しそう…」と出たら、先に注ぐ瓶を決めておきましょう。"],
   happy:    ["🎉", "ハッピーアワー", "20秒だけ、代金が1.5倍になります。どんどん出しましょう！"],
@@ -259,12 +259,12 @@ const TIPS = {
   sig:      ["⭐", "看板メニュー", "あなたが決めた看板メニューの注文が来ました！ 代金1.5倍です。<br>看板メニューはプロフィールでいつでも変えられます。"],
   vip:      ["👥", "団体さん", "黄色の札のお客さんは団体さん。2色を2本ずつ、満タン瓶4本の大口注文です。待てる時間は長めで、代金は2倍。"]
 };
-const TIP_ORDER = ["hide", "ice", "supply", "cocktail", "reserve", "lock", "dark", "happy", "rush", "vip", "critic", "regular", "sig", "fav"];
+const TIP_ORDER = ["hide", "ice", "supply", "cocktail", "keg", "lock", "dark", "happy", "rush", "vip", "critic", "regular", "sig", "fav"];
 // 前から遊んでいる人は、クリア済みのステージに出てきたものは知っているとみなす
 function tipsMigrate(){
   if (save.tipsInit) return; save.tips = save.tips || {};
   STAGES.forEach((d, i) => { if (!(save.stars[d.id] >= 1)) return;
-    ["hide", "ice", "supply", "cocktail", "reserve", "dark", "rush", "vip"].forEach(k => { if (d[k]) save.tips[k] = 1; });
+    ["hide", "ice", "supply", "cocktail", "keg", "dark", "rush", "vip"].forEach(k => { if (d[k]) save.tips[k] = 1; });
     if (d.lock || d.relock) save.tips.lock = 1;
     if (i >= 3){ save.tips.regular = save.tips.critic = 1; } if (i >= 8) save.tips.happy = 1; });
   if (save.endless.plays || save.dailyClears) TIP_ORDER.forEach(k => { if (["regular", "critic", "rush"].includes(k)) save.tips[k] = 1; });
@@ -275,7 +275,7 @@ let tipT = 0, tipOpen = null;
 function tipNeed(){
   if (!S || S.mode === "prep") return null;
   const g = t => seats.some(s => (s.state === "in" || s.state === "wait") && s[t]);
-  const on = {hide: S.hide, ice: S.ice, supply: S.supply && isFinite(S.supply), cocktail: S.cocktail || g("cock"), reserve: S.reserve, lock: S.lock || S.relock, dark: S.dark,
+  const on = {hide: S.hide, ice: S.ice, supply: S.supply && isFinite(S.supply), cocktail: S.cocktail || g("cock"), keg: S.keg, lock: S.lock || S.relock, dark: S.dark,
     happy: happyNow(), rush: g("rush"), vip: g("vip"), critic: g("critic"), regular: g("regular"), sig: g("sig"), fav: g("favHit")};
   const k0 = TIP_ORDER.find(k => on[k] && !(save.tips || {})[k]); if (k0) return k0;
   const e = evNow(); if (e && g("evc") && !(save.tips || {})["evc_" + e.id]) return "evc_" + e.id;
@@ -661,7 +661,6 @@ const GTYPE = {
   rush:    ["急ぎ", "#d9473a", "待てる時間が短い（0.6倍）。代金1.4倍"],
   vip:     ["団体さん", "#e0a020", "2色を2本ずつ、満タン瓶4本の大口注文。代金2倍"],
   cock:    ["カクテル", "#d6418f", "カクテルグラスに、下から順に注文どおりの色を1杯ずつ重ねる"],
-  resv:    ["予約", "#c9962e", "予約ボードに出ていた注文。来てすぐ出すと代金1.3倍"],
   sig:     ["看板メニュー", "#b5562a", "あなたのお店の看板メニューを注文。代金1.5倍"],
   fav:     ["大好物", "#ef6b8a", "好きな色が注文に入っている。代金1.2倍"],
   evc:     ["イベントのお客さん", "#c0392b", "イベントのあいだだけ来る特別なお客さん。代金2倍"],
@@ -671,8 +670,8 @@ const GIMMICK = [
   ["？の色", "瓶の下のほうの色が隠れています。上を注ぎ出すと見えます"],
   ["凍った瓶", "寒波で瓶が1本凍ります（3秒前に予告）。12秒で溶け、満タン瓶を渡すたびに4秒早まります。仕込みでは15秒ごとに1つ減ります"],
   ["仕入れ制限", "仕入れ台を使える回数に限りがあります"],
-  ["カクテルグラス", "どの色でも1杯ずつ注げます。間違えたらグラスを選んで流しへ"],
-  ["予約ボード", "次に来る2人の注文が先に出ます"],
+  ["カクテルグラス", "カクテルの注文が来たら、下から順に「次：〇〇」の色を1杯ずつ注ぎます"],
+  ["ビール樽", "8杯入る樽。1色で満タンにすると同じ色の注文を2人分出せて、代金1.3倍"],
   ["カギつき瓶", "カギと同じ色の瓶を満タンにするか、30秒で開きます"],
   ["停電", "7秒間、色が見えなくなります。灯台の光が当たった瓶だけ見えます"],
   ["ハッピーアワー", "20秒だけ代金が1.5倍になります"]
