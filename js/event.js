@@ -165,7 +165,7 @@ function evOnGuest(s, r){
   s.evc = false; s.pair = false; const e = evNow();
   if (!e || S.mode === "prep" || (typeof stg === "number" && stg < 1)) return;
   if (!s.cock && !s.vip && !s.sig && r < (S.mode === "event" ? .15 : .05)){ s.evc = true; s.pat *= 1.3; }
-  if (S.evg === "pair" && !s.cock && !s.vip && !s.sig && !s.evc && Math.random() < .3){ const c = s.order[0]; s.order = [c, c]; s.got = [false, false]; s.res = [false, false]; s.pair = true; s.favHit = c === FAVC[s.g]; }
+  if (S.evg === "pair" && !s.cock && !s.vip && !s.sig && !s.evc && !s.resv && Math.random() < .3){ const c = s.order[0]; s.order = [c, c]; s.got = [false, false]; s.res = [false, false]; s.pair = true; s.favHit = c === FAVC[s.g]; }
 }
 function evArrive(s, k){ if (!s.evc) return; const e = evNow(); if (!e) return; const p = lay.seatPos[k]; floatText(p.x, lay.counterY - 150, `${e.chara.name}「${e.chara.line}」`, e.col[0], .8, 300); play("kira", {gain:.35}); }
 function evPay(s){ const e = evNow(); let m = 1;

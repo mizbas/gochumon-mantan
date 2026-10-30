@@ -455,7 +455,7 @@ function updateSeats(){
     if (s.state === "empty" && guestsLeft > 0 && T >= s.next){
       guestsLeft--; s.state = "in"; s.t0 = T; s.g = Math.floor(rnd()*GUESTS.length);
       s.order = S.reserve && resQ.length ? resQ.shift() : newOrder(); s.resv = !!S.reserve;
-      if (S.reserve){ while (resQ.length < 2) resQ.push(newOrder()); } s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order);
+      if (S.reserve){ while (resQ.length < Math.min(2, guestsLeft)) resQ.push(newOrder()); resQ.length = Math.min(resQ.length, guestsLeft); } /* 予約は、まだ来るお客さんの分だけ */ s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order);
       s.rush = !!S.rush && rnd() < S.rush; if (s.rush) s.pat *= .6;
       s.vip = !s.rush && !!S.vip && rnd() < S.vip;
       // 評論家（たまに来る。待てる時間が短いが代金2.5倍）・常連さん（気長に待ってくれて、チップ2倍）
@@ -463,8 +463,10 @@ function updateSeats(){
       s.critic = !s.rush && !s.vip && rnd() < critP; if (s.critic) s.pat *= .85;
       s.cock = null;
       if (S.cocktail && !seats.some(x => x !== s && x.cock && (x.state === "in" || x.state === "wait")) && rnd() < S.cocktail){
+        if (s.resv){ resQ.unshift(s.order); resQ.length = Math.min(resQ.length, guestsLeft); s.resv = false; } /* カクテルのお客さんは予約を使わない（次のお客さんに回す） */
         s.rush = s.vip = s.critic = false; s.cock = genCock(); s.order = []; s.got = []; s.res = []; s.pat = S.pat*1000*(1.2 + .15*s.cock.length)*(1 + .12*upg("pat")); }
       s.regular = !s.cock && !s.rush && !s.vip && !s.critic && !(typeof stg === "number" && stg < 1) && rnd() < .12; if (s.regular) s.pat *= 1.4;
+      if (s.vip && s.resv){ resQ.unshift(s.order); resQ.length = Math.min(resQ.length, guestsLeft); s.resv = false; } /* 団体さんも予約は次へ */
       if (s.vip){ const two = newOrder(2); s.order = [two[0], two[0], two[1], two[1]]; s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order)*1.25; }
       { const r1 = rnd(), r2 = rnd(), r3 = rnd(), f = FAVC[s.g]; s.sig = false;
         if (!s.cock && !s.vip && !s.resv){
