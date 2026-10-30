@@ -370,6 +370,8 @@ function layout(){
 window.addEventListener("resize", () => { if (!$("play").classList.contains("hidden")) layout(); });
 
 /* ---------- お客さん ---------- */
+// 誰にも頼まれていない満タン瓶（棚の栓つき・保管棚）の本数
+function spareCount(){ const want = {}; wanted().forEach(c => want[c] = (want[c]||0) + 1); const sp = {}; bottles.forEach(b => { if (b.corked && b.units.length) sp[b.units[0].c] = (sp[b.units[0].c]||0) + Math.round(b.units.length/CAP); }); stored.forEach(c => sp[c] = (sp[c]||0) + 1); let n = 0; for (const c in sp) n += Math.max(0, sp[c] - (want[c]||0)); return n; }
 function newOrder(fixed){
   const pal = palette(), n = fixed || Math.round(RG(S.ord[0]-.49, S.ord[1]+.49)), o = [];
   const want = {}; wanted().forEach(c => want[c] = (want[c]||0) + 1);
@@ -379,10 +381,12 @@ function newOrder(fixed){
   const avail = {}; bottles.forEach(b => b.units.forEach(u => avail[u.c] = (avail[u.c]||0) + 1));
   if (supplyLeft > 0) stock.forEach(st => st.forEach(c => avail[c] = (avail[c]||0) + 1));
   for (const c in want) avail[c] = (avail[c]||0) - want[c]*CAP;
+  const glut = Object.values(spare).reduce((a, v) => a + Math.max(0, v), 0); newOrder.used = 0;
   for (let i=0;i<n;i++){
     const ready = pal.filter(c => (spare[c]||0) > 0);
     let c;
-    if (ready.length && rnd() < .8){ c = pick(ready); spare[c]--; }
+    /* 余っている満タン瓶があれば、その色を頼んでもらう（2本以上たまっていたら必ず） */
+    if (ready.length && (glut >= 2 || rnd() < .85)){ c = pick(ready); spare[c]--; newOrder.used++; }
     else {
       // すでにたくさん頼まれている色は選ばれにくくする
       const wts = pal.map(c => Math.max(.15, Math.max(0, avail[c]||0) + 1) / (1 + 2*(want[c]||0) + (o.includes(c) ? 1.5 : 0)));
@@ -464,14 +468,15 @@ function updateSeats(){
       const critP = S.mode === "endless" ? (elvl >= 6 ? .06 : 0) : (typeof stg === "number" && stg < 3) ? 0 : .06;
       s.critic = !s.rush && !s.vip && rnd() < critP; if (s.critic) s.pat *= .85;
       s.cock = null;
-      if (S.cocktail && !seats.some(x => x !== s && x.cock && (x.state === "in" || x.state === "wait")) && rnd() < S.cocktail){
+      const glutNow = newOrder.used > 0 && spareCount() + newOrder.used >= 2; /* 満タン瓶がたまっているときは、それを使うお客さんを優先 */
+      if (S.cocktail && !glutNow && !seats.some(x => x !== s && x.cock && (x.state === "in" || x.state === "wait")) && rnd() < S.cocktail){
         if (s.resv){ resQ.unshift(s.order); resQ.length = Math.min(resQ.length, guestsLeft); s.resv = false; } /* カクテルのお客さんは予約を使わない（次のお客さんに回す） */
         s.rush = s.vip = s.critic = false; s.cock = genCock(); s.order = []; s.got = []; s.res = []; s.pat = S.pat*1000*(1.2 + .15*s.cock.length)*(1 + .12*upg("pat")); }
       s.regular = !s.cock && !s.rush && !s.vip && !s.critic && !(typeof stg === "number" && stg < 1) && rnd() < .12; if (s.regular) s.pat *= 1.4;
       if (s.vip && s.resv){ resQ.unshift(s.order); resQ.length = Math.min(resQ.length, guestsLeft); s.resv = false; } /* 団体さんも予約は次へ */
       if (s.vip){ const two = newOrder(2); s.order = [two[0], two[0], two[1], two[1]]; s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); s.pat = patienceFor(s.order)*1.25; }
       { const r1 = rnd(), r2 = rnd(), r3 = rnd(), f = FAVC[s.g]; s.sig = false;
-        if (!s.cock && !s.vip && !s.resv){
+        if (!s.cock && !s.vip && !s.resv && !(newOrder.used > 0 && !s.vip)){ /* 余っていた満タン瓶の注文は、看板メニューや大好物で書き換えない */
           if (sigOn() && r1 < .12){ const m = s.pat/patienceFor(s.order); s.order = save.sig.slice(); s.sig = true; s.pat = patienceFor(s.order)*m; }
           else if (f < S.colors && !s.order.includes(f) && r2 < .35) s.order[Math.floor(r3*s.order.length)] = f;
           s.got = s.order.map(()=>false); s.res = s.order.map(()=>false); }
